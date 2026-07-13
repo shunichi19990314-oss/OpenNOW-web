@@ -1,0 +1,52 @@
+{
+  "name": "opennow-web",
+  "version": "0.1.0",
+  "description": "Browser-native OpenNOW client using QR authentication and WebRTC streaming.",
+  "private": true,
+  "type": "module",
+  "author": "OpenCloudGaming",
+  "homepage": "https://github.com/OpenCloudGaming/Opennow-web#readme",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/OpenCloudGaming/Opennow-web.git"
+  },
+  "bugs": {
+    "url": "https://github.com/OpenCloudGaming/Opennow-web/issues"
+  },
+  "scripts": {
+    "dev": "tsx watch src/server/index.ts",
+    "build": "npm run typecheck && vite build",
+    "start": "tsx src/server/index.ts",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:load": "node scripts/load-test.mjs"
+  },
+  "dependencies": {
+    "@react-three/fiber": "^9.6.1",
+    "@vitejs/plugin-react": "^5.2.0",
+    "express": "^5.1.0",
+    "lucide-react": "^0.468.0",
+    "motion": "^12.42.0",
+    "on-headers": "^1.1.0",
+    "qrcode": "^1.5.4",
+    "react": "^19.2.0",
+    "react-dom": "^19.2.0",
+    "three": "^0.185.1",
+    "tsx": "^4.20.0",
+    "undici": "^7.16.0",
+    "vite": "^7.3.0",
+    "ws": "^8.18.3"
+  },
+  "devDependencies": {
+    "@types/express": "^5.0.3",
+    "@types/node": "^22.18.0",
+    "@types/on-headers": "^1.0.4",
+    "@types/qrcode": "^1.5.5",
+    "@types/react": "^19.2.0",
+    "@types/react-dom": "^19.2.0",
+    "@types/three": "^0.185.0",
+    "@types/ws": "^8.18.1",
+    "typescript": "^5.9.2",
+    "vitest": "^3.2.4"
+  }
+}
