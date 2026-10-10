@@ -10790,3 +10790,7 @@ button.game-card-store-chip.owned.active:hover {
     min-width: 0;
   }
 }
+
+.connection-test-hint--fail {
+  color: #ef4444;
+}

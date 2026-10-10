@@ -681,9 +681,19 @@ export function SettingsStreamSection({
                   ))}
                 </ul>
               )}
-              {connectionTestReport?.webrtc && !connectionTestReport.webrtc.hasUdp && connectionTestReport.webrtc.status !== "pending" && (
-                <div className="connection-test-hint">{t("settings.connectionTest.webrtcTcpOnly")}</div>
-              )}
+              {connectionTestReport?.webrtc && (() => {
+                const entry = connectionTestReport.webrtc!;
+                if (entry.status === "fail" && entry.candidateTypes.length === 0) {
+                  return <div className="connection-test-hint connection-test-hint--fail">{t("settings.connectionTest.webrtcNoCandidates")}</div>;
+                }
+                if (!entry.hasUdp && entry.candidateTypes.length > 0) {
+                  return <div className="connection-test-hint">{t("settings.connectionTest.webrtcTcpOnly")}</div>;
+                }
+                if (entry.hasUdp && !entry.hasServerReflexive) {
+                  return <div className="connection-test-hint">{t("settings.connectionTest.webrtcStunUnreachable")}</div>;
+                }
+                return null;
+              })()}
               {connectionTestReport?.signaling?.status === "fail" && (
                 <div className="connection-test-hint">{t("settings.connectionTest.originHint")}</div>
               )}

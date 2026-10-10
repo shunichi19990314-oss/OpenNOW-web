@@ -51,6 +51,8 @@ export interface ThroughputTestResult {
 export interface WebRtcTestResult {
   status: ConnectionTestStatus;
   hasUdp: boolean;
+  /** True when at least one server-reflexive (srflx) candidate was gathered. */
+  hasServerReflexive: boolean;
   candidateTypes: string[];
   gatheringMs: number | null;
   error?: string;
@@ -88,10 +90,12 @@ export interface ConnectionTestReport {
 
 const SPEED_TEST_BYTES = 6_000_000;
 const SPEED_TEST_TIMEOUT_MS = 20_000;
-const ICE_GATHERING_TIMEOUT_MS = 5_000;
+const ICE_GATHERING_TIMEOUT_MS = 8_000;
 const SIGNALING_TIMEOUT_MS = 6_000;
 const SIGNALING_STABLE_OPEN_MS = 800;
-const STUN_URL = "stun:stun.l.google.com:19302";
+// Two independent public STUN servers: a network that blocks one (common on
+// school/enterprise filters) should not alone decide the verdict.
+const STUN_URLS = ["stun:stun.l.google.com:19302", "stun:stun.cloudflare.com:3478"];
 
 function latencyStatus(ms: number): ConnectionTestStatus {
   if (ms <= 50) return "pass";
@@ -184,6 +188,7 @@ export function runWebRtcTest(): Promise<WebRtcTestResult> {
     return Promise.resolve({
       status: "unavailable",
       hasUdp: false,
+      hasServerReflexive: false,
       candidateTypes: [],
       gatheringMs: null,
       error: "WebRTC unavailable",
@@ -194,6 +199,7 @@ export function runWebRtcTest(): Promise<WebRtcTestResult> {
     const started = performance.now();
     const candidateTypes = new Set<string>();
     let hasUdp = false;
+    let hasServerReflexive = false;
     let settled = false;
     let pc: RTCPeerConnection | null = null;
 
@@ -207,17 +213,29 @@ export function runWebRtcTest(): Promise<WebRtcTestResult> {
         // Closing an already-closed peer connection must not fail the report.
       }
       const types = [...candidateTypes];
+      // No candidates at all: gathering is broken (fail). UDP present but no
+      // srflx: local UDP works, only the public STUN servers were unreachable
+      // — GeForce NOW uses NVIDIA's own ICE servers, so this is a caution,
+      // not a verdict (warn). TCP-only: restrictive network (warn).
       const status: ConnectionTestStatus = types.length === 0
         ? "fail"
-        : hasUdp
-          ? "pass"
-          : "warn";
-      resolve({ status, hasUdp, candidateTypes: types, gatheringMs: Math.round(performance.now() - started) });
+        : !hasUdp
+          ? "warn"
+          : hasServerReflexive
+            ? "pass"
+            : "warn";
+      resolve({
+        status,
+        hasUdp,
+        hasServerReflexive,
+        candidateTypes: types,
+        gatheringMs: Math.round(performance.now() - started),
+      });
     };
     const timer = window.setTimeout(finish, ICE_GATHERING_TIMEOUT_MS);
 
     try {
-      pc = new RTCPeerConnection({ iceServers: [{ urls: STUN_URL }] });
+      pc = new RTCPeerConnection({ iceServers: [{ urls: STUN_URLS }] });
       pc.onicecandidate = (event) => {
         if (!event.candidate) {
           finish();
@@ -226,6 +244,7 @@ export function runWebRtcTest(): Promise<WebRtcTestResult> {
         const text = event.candidate.candidate;
         const typeMatch = /\btyp\s+(\w+)/.exec(text);
         if (typeMatch?.[1]) candidateTypes.add(typeMatch[1]);
+        if (typeMatch?.[1] === "srflx") hasServerReflexive = true;
         if (/\budp\b/i.test(text)) hasUdp = true;
       };
       pc.onicegatheringstatechange = () => {

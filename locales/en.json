@@ -867,7 +867,9 @@
         "fail": "Failed",
         "unavailable": "N/A",
         "pending": "Waiting"
-      }
+      },
+      "webrtcNoCandidates": "ICE gathering produced no candidates at all. WebRTC may be disabled by policy (managed device) or blocked entirely; GeForce NOW streaming will likely not work on this network.",
+      "webrtcStunUnreachable": "Local UDP works, but neither public STUN server was reachable, so no server-reflexive candidate could be verified. GeForce NOW uses NVIDIA's own ICE servers, so streaming may still work; treat this as informational."
     }
   },
   "navbar": {
