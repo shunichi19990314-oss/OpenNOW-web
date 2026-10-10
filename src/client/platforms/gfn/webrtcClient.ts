@@ -218,8 +218,9 @@ interface ClientOptions {
   onControllerMetaPress?: (event: { controllerId: number; gamepad: Gamepad }) => void;
 }
 
-/** One sample from the on-screen touch gamepad overlay. Sticks are -1..1 with
- *  Y down-positive (browser Gamepad convention); triggers are 0..1. */
+/** One sample from the on-screen touch gamepad overlay. Sticks are -1..1 in
+ *  DOM convention (Y grows downward); triggers are 0..1. sendVirtualGamepadFrame
+ *  converts stick Y to the wire's XInput convention (up positive). */
 export interface VirtualGamepadFrame {
   buttons: number;
   leftTrigger: number;
@@ -3176,9 +3177,12 @@ export class GfnWebRtcClient {
       leftTrigger: normalizeToUint8(clampTrigger(frame.leftTrigger)),
       rightTrigger: normalizeToUint8(clampTrigger(frame.rightTrigger)),
       leftStickX: normalizeToInt16(clampUnit(frame.leftStickX)),
-      leftStickY: normalizeToInt16(clampUnit(frame.leftStickY)),
+      // TouchGamepad frames use the DOM convention (y grows downward); the
+      // wire expects XInput convention (up positive). readGamepadAxes applies
+      // the same inversion for physical pads — mirror it here.
+      leftStickY: normalizeToInt16(-clampUnit(frame.leftStickY)),
       rightStickX: normalizeToInt16(clampUnit(frame.rightStickX)),
-      rightStickY: normalizeToInt16(clampUnit(frame.rightStickY)),
+      rightStickY: normalizeToInt16(-clampUnit(frame.rightStickY)),
       connected: true,
       timestampUs: timestampUs(),
     };

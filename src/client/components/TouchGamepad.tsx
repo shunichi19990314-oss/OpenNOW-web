@@ -148,8 +148,9 @@ export function TouchGamepad({ onFrame, onRelease }: TouchGamepadProps): JSX.Ele
       dx = 0;
       dy = 0;
     }
-    // DOM y grows downward, matching the browser Gamepad axes convention the
-    // physical path forwards unmodified.
+    // Keep the DOM convention here (y grows downward); the WebRTC client
+    // inverts stick Y to the wire's XInput convention (up positive), the same
+    // conversion readGamepadAxes applies to physical pads.
     if (side === "left") {
       frameRef.current.leftStickX = dx;
       frameRef.current.leftStickY = dy;
