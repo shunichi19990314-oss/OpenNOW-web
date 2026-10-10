@@ -215,7 +215,11 @@ export function registerApi(app: Express): void {
     // The visitor's region choice arrives as streamingBaseUrl. Honour it when it is a
     // genuine NVIDIA CloudMatch base; otherwise fall back to the provider default so a
     // tampered value can never redirect the token-bearing launch request.
-    const requestedBase = normalizeCloudMatchBaseUrl(String(input.streamingBaseUrl ?? "").trim());
+    const rawRequestedBase = String(input.streamingBaseUrl ?? "").trim();
+    // Normalize only a non-empty request: normalizeCloudMatchBaseUrl("") would
+    // produce the garbage "https:/" and log a bogus rejection on every launch
+    // that legitimately omits the field.
+    const requestedBase = rawRequestedBase ? normalizeCloudMatchBaseUrl(rawRequestedBase) : "";
     const streamingBaseUrl = isTrustedCloudMatchBase(requestedBase)
       ? requestedBase
       : auth.provider.streamingServiceUrl;

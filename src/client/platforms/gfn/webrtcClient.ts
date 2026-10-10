@@ -3893,6 +3893,12 @@ export class GfnWebRtcClient {
     };
 
     const onTouchStart = (event: TouchEvent): void => {
+      // Only claim touches that land on the video surface itself. Overlays
+      // (sidebar, screenshot modal, exit prompt, toasts) live inside the same
+      // container; their buttons must keep native touch behavior.
+      if (event.target !== videoElement) {
+        return;
+      }
       if (this.isStreamInputBlocked() || !this.inputReady) {
         // Let overlays (sidebar, dialogs) receive native touch behavior.
         return;
@@ -3947,6 +3953,11 @@ export class GfnWebRtcClient {
     };
 
     const onTouchMove = (event: TouchEvent): void => {
+      // Only claim gestures we actually started tracking on the video surface;
+      // touches that began on overlay UI must keep their native scrolling.
+      if (activeTouchId === null && secondTouchId === null) {
+        return;
+      }
       if (this.isStreamInputBlocked() || !this.inputReady) {
         return;
       }
