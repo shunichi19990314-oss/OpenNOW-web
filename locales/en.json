@@ -184,6 +184,10 @@
       "playNow": "Play Now",
       "variant": "{{variant}}",
       "storeCount": "{{count}} stores"
+    },
+    "continuePlaying": {
+      "kicker": "Continue playing",
+      "play": "Play"
     }
   },
   "library": {
@@ -686,7 +690,9 @@
       "screenshot": "Screenshot",
       "recording": "Recording",
       "toggleStreamSidebar": "Toggle stream sidebar",
-      "shortcutHint": "Click a field and press the keys to bind, or paste a shortcut ({{examples}}). Escape cancels focus. Full screen: {{fullscreen}}. Stop: {{stop}}. Mic: {{mic}}. Screenshot: {{screenshot}}. Recording: {{recording}}."
+      "shortcutHint": "Click a field and press the keys to bind, or paste a shortcut ({{examples}}). Escape cancels focus. Full screen: {{fullscreen}}. Stop: {{stop}}. Mic: {{mic}}. Screenshot: {{screenshot}}. Recording: {{recording}}.",
+      "touchGamepad": "Touch gamepad overlay",
+      "touchGamepadHint": "Show on-screen sticks and buttons while streaming on touch devices. Input is sent to the game as a virtual controller."
     },
     "interface": {
       "appearance": "Appearance",

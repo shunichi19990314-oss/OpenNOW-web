@@ -32,7 +32,7 @@ import {
   resolveEntitledStreamProfile,
   SAFE_FALLBACK_STREAM_PROFILE,
 } from "@shared/gfn";
-import { GfnWebRtcClient } from "./platforms/gfn/webrtcClient";
+import { GfnWebRtcClient, type VirtualGamepadFrame } from "./platforms/gfn/webrtcClient";
 import { formatShortcutForDisplay, isShortcutMatch, normalizeShortcut } from "./shortcuts";
 import { dispatchStreamShortcutAction } from "./streamShortcutActions";
 import { useElapsedSeconds } from "./utils/useElapsedSeconds";
@@ -350,6 +350,26 @@ export function App(): JSX.Element {
   const [videoElementHasFrame, setVideoElementHasFrame] = useState(false);
   const [streamRevealComplete, setStreamRevealComplete] = useState(false);
   const clientRef = useRef<GfnWebRtcClient | null>(null);
+
+  // Touch gamepad: only offer the overlay when the device actually has a
+  // coarse pointer, so desktop users never pay for an unused rAF loop.
+  const [touchGamepadAvailable] = useState<boolean>(() => {
+    try {
+      return typeof window !== "undefined"
+        && typeof window.matchMedia === "function"
+        && (window.matchMedia("(pointer: coarse)").matches
+          || window.matchMedia("(any-pointer: coarse)").matches
+          || navigator.maxTouchPoints > 0);
+    } catch {
+      return false;
+    }
+  });
+  const handleVirtualGamepadFrame = useCallback((frame: VirtualGamepadFrame) => {
+    clientRef.current?.sendVirtualGamepadFrame(frame);
+  }, []);
+  const handleVirtualGamepadRelease = useCallback(() => {
+    clientRef.current?.releaseVirtualGamepad();
+  }, []);
   const isStreamingRef = useRef(streamStatus === "streaming");
 
   useEffect(() => {
@@ -3712,6 +3732,9 @@ export function App(): JSX.Element {
           <StreamView
             videoRef={videoRef}
             audioRef={audioRef}
+            touchGamepadEnabled={touchGamepadAvailable && settings.touchGamepadEnabled}
+            onVirtualGamepadFrame={handleVirtualGamepadFrame}
+            onVirtualGamepadRelease={handleVirtualGamepadRelease}
             diagnosticsStore={diagnosticsStore}
             showStats={showStatsOverlay}
             showNativeStats={settings.showNativeStreamerStats}

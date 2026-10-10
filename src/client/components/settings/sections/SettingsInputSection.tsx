@@ -314,6 +314,25 @@ export function SettingsInputSection({ settings, showAll, handleChange }: Settin
           <span className="settings-subtle-hint">{t("settings.input.gyroscopeControlsHint")}</span>
         </div>
 
+        <div className="settings-row settings-row--column">
+          <div className="settings-row-top settings-row-top--compact">
+            <label className="settings-label settings-label--wrap">
+              <span className="settings-label-title">
+                {t("settings.input.touchGamepad")}
+              </span>
+            </label>
+            <label className="settings-toggle">
+              <input
+                type="checkbox"
+                checked={settings.touchGamepadEnabled}
+                onChange={(e) => handleChange("touchGamepadEnabled", e.target.checked)}
+              />
+              <span className="settings-toggle-track" />
+            </label>
+          </div>
+          <span className="settings-subtle-hint">{t("settings.input.touchGamepadHint")}</span>
+        </div>
+
         {isMac && (
           <div className="settings-row settings-row--column">
             <div className="settings-row-top settings-row-top--compact">

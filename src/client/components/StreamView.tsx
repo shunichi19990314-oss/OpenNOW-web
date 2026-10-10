@@ -30,6 +30,8 @@ import {
   VideoFocusOnReady,
 } from "./stream/StreamEmptyStates";
 import { MotionSpinner } from "./MotionSpinner";
+import { TouchGamepad } from "./TouchGamepad";
+import type { VirtualGamepadFrame } from "../platforms/gfn/webrtcClient";
 
 const ANTI_AFK_TOGGLE_ACK_MS = 5000;
 const CONTROLLER_MENU_REPEAT_MS = 180;
@@ -40,6 +42,10 @@ type StreamMenuTab = (typeof STREAM_MENU_TABS)[number];
 interface StreamViewProps {
   videoRef: React.Ref<HTMLVideoElement>;
   audioRef: React.Ref<HTMLAudioElement>;
+  /** Render the on-screen touch gamepad while streaming. */
+  touchGamepadEnabled?: boolean;
+  onVirtualGamepadFrame?: (frame: VirtualGamepadFrame) => void;
+  onVirtualGamepadRelease?: () => void;
   diagnosticsStore: StreamDiagnosticsStore;
   showStats: boolean;
   showNativeStats?: boolean;
@@ -111,6 +117,9 @@ interface StreamViewProps {
 export function StreamView({
   videoRef,
   audioRef,
+  touchGamepadEnabled = false,
+  onVirtualGamepadFrame,
+  onVirtualGamepadRelease,
   diagnosticsStore,
   showStats,
   showNativeStats = false,
@@ -1443,6 +1452,9 @@ export function StreamView({
         }}
       />
       <audio ref={setAudioRef} autoPlay playsInline />
+      {touchGamepadEnabled && streamVideoReady && onVirtualGamepadFrame && onVirtualGamepadRelease && (
+        <TouchGamepad onFrame={onVirtualGamepadFrame} onRelease={onVirtualGamepadRelease} />
+      )}
       <VideoFocusOnReady
         diagnosticsStore={diagnosticsStore}
         isConnecting={isConnecting}

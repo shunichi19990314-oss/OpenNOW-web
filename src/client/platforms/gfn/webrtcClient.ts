@@ -218,6 +218,26 @@ interface ClientOptions {
   onControllerMetaPress?: (event: { controllerId: number; gamepad: Gamepad }) => void;
 }
 
+/** One sample from the on-screen touch gamepad overlay. Sticks are -1..1 with
+ *  Y down-positive (browser Gamepad convention); triggers are 0..1. */
+export interface VirtualGamepadFrame {
+  buttons: number;
+  leftTrigger: number;
+  rightTrigger: number;
+  leftStickX: number;
+  leftStickY: number;
+  rightStickX: number;
+  rightStickY: number;
+}
+
+function clampUnit(value: number): number {
+  return Number.isFinite(value) ? Math.max(-1, Math.min(1, value)) : 0;
+}
+
+function clampTrigger(value: number): number {
+  return Number.isFinite(value) ? Math.max(0, Math.min(1, value)) : 0;
+}
+
 function timestampUs(sourceTimestampMs?: number): bigint {
   return captureTimestampUs(sourceTimestampMs);
 }
@@ -488,6 +508,8 @@ export class GfnWebRtcClient {
   private netPoorStreak = 0;
   private netHealthyStreak = 0;
   private netLastAdjustMs = 0;
+  // On-screen touch gamepad (settings.touchGamepadEnabled).
+  private virtualGamepadSlot: number | null = null;
   private decoderPressureConsecutivePolls = 0;
   private decoderStableConsecutivePolls = 0;
   private decoderRecoveryAttemptCount = 0;
@@ -1824,6 +1846,7 @@ export class GfnWebRtcClient {
     this.lastGamepadSendMs = 0;
     this.reliableDropLogged = false;
     this.gamepadBitmap = 0;
+    this.virtualGamepadSlot = null;
     this.pendingMouseDxFloat = 0;
     this.pendingMouseDyFloat = 0;
     this.pendingMouseAbs = null;
@@ -3135,6 +3158,101 @@ export class GfnWebRtcClient {
     }
 
     return Array.from(text).length;
+  }
+
+  /**
+   * Attach (if needed) and send one virtual touch-gamepad frame. Reuses the
+   * physical gamepad transport: same slot bitmap handling, change detection,
+   * 100 ms keepalive, and partially-reliable channel selection.
+   */
+  public sendVirtualGamepadFrame(frame: VirtualGamepadFrame): boolean {
+    if (!this.inputReady) {
+      return false;
+    }
+    const slot = this.acquireVirtualGamepadSlot();
+    const input: GamepadInput = {
+      controllerId: slot,
+      buttons: frame.buttons & 0xffff,
+      leftTrigger: normalizeToUint8(clampTrigger(frame.leftTrigger)),
+      rightTrigger: normalizeToUint8(clampTrigger(frame.rightTrigger)),
+      leftStickX: normalizeToInt16(clampUnit(frame.leftStickX)),
+      leftStickY: normalizeToInt16(clampUnit(frame.leftStickY)),
+      rightStickX: normalizeToInt16(clampUnit(frame.rightStickX)),
+      rightStickY: normalizeToInt16(clampUnit(frame.rightStickY)),
+      connected: true,
+      timestampUs: timestampUs(),
+    };
+    const nowMs = performance.now();
+    const stateChanged = this.hasGamepadStateChanged(slot, input);
+    const needsKeepalive = !stateChanged
+      && (nowMs - this.lastGamepadSendMs) >= GfnWebRtcClient.GAMEPAD_KEEPALIVE_MS;
+    if (!stateChanged && !needsKeepalive) {
+      return true;
+    }
+    const usePR = this.canSendGamepadPartiallyReliable(slot);
+    const bytes = this.inputEncoder.encodeGamepadState(input, this.gamepadBitmap, usePR);
+    if (usePR) {
+      this.sendGamepad(bytes);
+    } else {
+      this.sendReliable(bytes);
+    }
+    this.lastGamepadSendMs = nowMs;
+    if (stateChanged) {
+      this.previousGamepadStates.set(slot, { ...input });
+    }
+    return true;
+  }
+
+  /** Detach the virtual touch gamepad and notify the server it disconnected. */
+  public releaseVirtualGamepad(): void {
+    const slot = this.virtualGamepadSlot;
+    if (slot === null) {
+      return;
+    }
+    this.gamepadBitmap &= ~((1 << slot) | (1 << (slot + 8)));
+    this.previousGamepadStates.delete(slot);
+    if (this.inputReady) {
+      const disconnectState: GamepadInput = {
+        controllerId: slot,
+        buttons: 0,
+        leftTrigger: 0,
+        rightTrigger: 0,
+        leftStickX: 0,
+        leftStickY: 0,
+        rightStickX: 0,
+        rightStickY: 0,
+        connected: false,
+        timestampUs: timestampUs(),
+      };
+      const usePR = this.canSendGamepadPartiallyReliable(slot);
+      const bytes = this.inputEncoder.encodeGamepadState(disconnectState, this.gamepadBitmap, usePR);
+      if (usePR) {
+        this.sendGamepad(bytes);
+      } else {
+        this.sendReliable(bytes);
+      }
+    }
+    this.virtualGamepadSlot = null;
+    this.log("Virtual touch gamepad detached");
+  }
+
+  /** First controller slot free of physical pads; treated as Xbox-like. */
+  private acquireVirtualGamepadSlot(): number {
+    const current = this.virtualGamepadSlot;
+    if (current !== null && !this.connectedGamepads.has(current)) {
+      return current;
+    }
+    let slot = 0;
+    for (let candidate = 0; candidate < GAMEPAD_MAX_CONTROLLERS; candidate += 1) {
+      if (!this.connectedGamepads.has(candidate)) {
+        slot = candidate;
+        break;
+      }
+    }
+    this.virtualGamepadSlot = slot;
+    this.gamepadBitmap |= (1 << slot) | (1 << (slot + 8));
+    this.log(`Virtual touch gamepad attached at slot ${slot}`);
+    return slot;
   }
 
   private sendGamepad(payload: Uint8Array): void {

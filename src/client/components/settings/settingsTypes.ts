@@ -124,6 +124,10 @@ export const SETTINGS_SCOPE_SEARCH_TERMS: Record<SettingsSearchScopeId, readonly
   game: ["game", "language", "keyboard layout", "store", "launch", "graphics settings", "in-game settings", "persistence"],
   audio: ["audio", "microphone", "mic", "push to talk", "voice activity"],
   input: [
+    "touch gamepad",
+    "virtual controller",
+    "touchscreen",
+    "on-screen controls",
     "input",
     "mouse",
     "keyboard layout",

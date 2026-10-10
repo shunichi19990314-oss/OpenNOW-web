@@ -181,7 +181,11 @@
       "variant": "{{variant}}",
       "storeCount": "{{count}} ストア"
     },
-    "sortAriaLabel": "ゲームを並び替え"
+    "sortAriaLabel": "ゲームを並び替え",
+    "continuePlaying": {
+      "kicker": "プレイを再開",
+      "play": "起動"
+    }
   },
   "library": {
     "title": "私のライブラリ",
@@ -596,7 +600,9 @@
       "steamControllerCompatibilityMode": "Steam コントローラー互換モード",
       "steamControllerCompatibilityModeHint": "macOS のみ。Steam コントローラー向けに Chromium の旧 HID ゲームパッド経路を復元しますが、Xbox コントローラーの互換性が低下する場合があります。アプリ再起動後に適用されます。",
       "nativeCursorOverlay": "ネイティブカーソルオーバーレイ",
-      "nativeCursorOverlayHint": "WebRTC のみ。NVIDIA の cursor_channel を使ってローカルにカーソルをオーバーレイ表示します。オフにするとカーソル描画はサーバー側のストリームに任されます。"
+      "nativeCursorOverlayHint": "WebRTC のみ。NVIDIA の cursor_channel を使ってローカルにカーソルをオーバーレイ表示します。オフにするとカーソル描画はサーバー側のストリームに任されます。",
+      "touchGamepad": "タッチゲームパッド オーバーレイ",
+      "touchGamepadHint": "タッチ端末でのストリーミング中に、画面上のスティックとボタンを表示します。入力は仮想コントローラーとしてゲームに送信されます。"
     },
     "interface": {
       "appearance": "外観",
