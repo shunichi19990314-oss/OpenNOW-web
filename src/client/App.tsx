@@ -61,6 +61,7 @@ import type {
   StreamWarningState,
 } from "./lib/appTypes";
 import { loadStoredCodecResults, saveStoredCodecResults, testCodecSupport, type CodecTestResult } from "./lib/codecDiagnostics";
+import { clampBitrateForConnection, readNavigatorConnection } from "./lib/connectionBitrate";
 import {
   createSyntheticDirectLaunchGame,
   findDirectLaunchTarget,
@@ -176,7 +177,11 @@ export function App(): JSX.Element {
     aspectRatio: "16:9",
     posterSizeScale: 1.05,
     fps: 60,
-    maxBitrateMbps: 75,
+    // 40 Mbps comfortably carries 1080p60 without saturating typical home
+    // Wi-Fi; launch-time clamping (connectionBitrate) adapts further on
+    // slower links. Requesting more than the link carries causes bufferbloat
+    // stutter instead of better quality.
+    maxBitrateMbps: 40,
     recordingBitrateMbps: null,
     streamClientMode: "web",
     nativeStreamerBackend: "gstreamer",
@@ -703,7 +708,9 @@ export function App(): JSX.Element {
     return {
       resolution: streamProfile.resolution,
       fps: streamProfile.fps,
-      maxBitrateMbps: settings.maxBitrateMbps,
+      // Clamp the encoder ceiling to what the visitor's access link can carry;
+      // an oversized request causes bufferbloat stutter, not better quality.
+      maxBitrateMbps: clampBitrateForConnection(settings.maxBitrateMbps, readNavigatorConnection()),
       codec: settings.codec,
       colorQuality: settings.colorQuality,
       keyboardLayout: settings.keyboardLayout,
@@ -2230,7 +2237,7 @@ export function App(): JSX.Element {
               colorQuality: settings.colorQuality,
               resolution: settings.resolution,
               fps: settings.fps,
-              maxBitrateKbps: settings.maxBitrateMbps * 1000,
+              maxBitrateKbps: clampBitrateForConnection(settings.maxBitrateMbps, readNavigatorConnection()) * 1000,
               nativeTransitionDiagnostics: settings.nativeTransitionDiagnostics,
             });
             setLaunchError(null);

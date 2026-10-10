@@ -1425,6 +1425,17 @@ export function StreamView({
           ? { opacity: 1, scale: 1 }
           : { opacity: 0, scale: 1.008 }}
         transition={{ duration: 0.9, ease: [0.22, 1, 0.36, 1] }}
+        onAnimationComplete={() => {
+          // Once the intro fade/scale settles, drop the inline transform and
+          // will-change hints. A persistent transform forces Chromium to
+          // composite the video through a texture instead of the hardware
+          // overlay path, which shows up as frame judder on some GPUs.
+          const video = localVideoRef.current;
+          if (video && streamVideoReady) {
+            video.style.transform = "none";
+            video.style.willChange = "auto";
+          }
+        }}
         onClick={() => {
           if (localVideoRef.current && document.activeElement !== localVideoRef.current) {
             localVideoRef.current.focus({ preventScroll: true });

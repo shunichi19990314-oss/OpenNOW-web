@@ -12,7 +12,9 @@ export const WEB_DEFAULT_SETTINGS: Settings = {
   aspectRatio: "16:9",
   posterSizeScale: 1.05,
   fps: 60,
-  maxBitrateMbps: 75,
+  // 40 Mbps carries 1080p60 comfortably without saturating typical home Wi-Fi.
+  // Launch-time clamping (lib/connectionBitrate) adapts further on slow links.
+  maxBitrateMbps: 40,
   recordingBitrateMbps: null,
   streamClientMode: "web",
   nativeStreamerBackend: "gstreamer",
