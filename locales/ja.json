@@ -15,7 +15,7 @@
       "done": "完了",
       "open": "開く",
       "play": "プレイ",
-      "buy": "Buy",
+      "buy": "購入",
       "refresh": "更新",
       "remove": "削除",
       "reset": "リセット",
@@ -28,7 +28,8 @@
       "showInFolder": "フォルダ内に表示",
       "sort": "並べ替え",
       "stop": "停止",
-      "switch": "スイッチ"
+      "switch": "スイッチ",
+      "markAsOwned": "所有としてマーク"
     },
     "status": {
       "checking": "チェック中",
@@ -42,7 +43,8 @@
       "saved": "保存されました",
       "testing": "テスト中...",
       "unknown": "不明",
-      "upToDate": "最新"
+      "upToDate": "最新",
+      "markingOwned": "所有としてマークしています..."
     },
     "units": {
       "bitrateMbps": "{{value}} Mbps",
@@ -50,7 +52,7 @@
       "gbLeft": "{{value}} GB 残り",
       "gbTotal": "{{value}} GB 合計",
       "gbUsed": "{{value}} GB が使用されています",
-      "hours": "{{value}}h",
+      "hours": "{{value}}時間",
       "hoursLeft": "{{value}}h 残り",
       "hoursUsed": "{{value}}h 使用",
       "durationLeft": "{{value}} 残り",
@@ -74,7 +76,7 @@
       "other": "その他",
       "priority": "優先順位",
       "softwareCpu": "ソフトウェア（CPU）",
-      "ultimate": "Ultimate",
+      "ultimate": "アルティメット",
       "unlimited": "無制限"
     }
   },
@@ -94,7 +96,9 @@
     "actions": {
       "signIn": "サインイン",
       "connecting": "接続中...",
-      "restoringSession": "セッションを復元中..."
+      "restoringSession": "セッションを復元中...",
+      "signInWithQr": "QRコードでサインイン",
+      "cancelQrLogin": "QRログインをキャンセル"
     },
     "accounts": {
       "activeAccount": "アクティブなアカウント",
@@ -128,13 +132,21 @@
       "tokenRefreshFailedContinuing": "Token refresh failed.保存されたセッションを続行します...",
       "missingRefreshTokenContinuing": "保存されたセッションには更新トークンがありません。続きます。",
       "sessionRestored": "セッションが復元されました。",
-      "noSavedSessionFound": "No saved session found.",
+      "noSavedSessionFound": "保存されたセッションが見つかりません。",
       "sessionRestoreFailed": "Session restore failed.再度サインインしてください。"
+    },
+    "qr": {
+      "title": "スキャンしてサインイン",
+      "preparing": "QRログインを準備中",
+      "preparingDescription": "サインインコードを要求しています...",
+      "description": "スマートフォンでスキャンし、サインイン要求を承認してください。OpenNOW は自動的に続行します。",
+      "alt": "ログインQRコード",
+      "expired": "QRログインの有効期限が切れました。新しいQRログインを開始して再試行してください。"
     }
   },
   "navigation": {
     "home": "ストア",
-    "library": "Library",
+    "library": "ライブラリ",
     "settings": "設定"
   },
   "home": {
@@ -148,51 +160,52 @@
       "shownSupported": "{{shown}} 件を表示中 · {{supported}}件対応"
     },
     "empty": {
-      "loadingGames": "Loading games...",
+      "loadingGames": "ゲームを読み込み中...",
       "noGamesFound": "ゲームが見つかりません",
       "tryAdjustingSearch": "検索用語やフィルターを調整してみてください",
       "checkBackLater": "新しい追加情報については、後でもう一度確認してください"
     },
     "controller": {
-      "eyebrow": "CONTROLLER STORE",
-      "title": "Store Theater",
-      "hints": "D-pad browse / A launch / Space select",
-      "featured": "Featured",
-      "emptyTitle": "No Store collections found",
-      "emptyBody": "The cloud storefront returned empty panels. Try again after the catalog service refreshes.",
-      "readyToStream": "Ready to stream",
-      "cloudReady": "Cloud ready",
+      "eyebrow": "コントローラーストア",
+      "title": "ストアシアター",
+      "hints": "十字キーで移動 / Aで起動 / Spaceで選択",
+      "featured": "注目",
+      "emptyTitle": "ストアコレクションが見つかりません",
+      "emptyBody": "クラウドストアフロントが空のパネルを返しました。カタログサービスの更新後に再試行してください。",
+      "readyToStream": "ストリーム準備完了",
+      "cloudReady": "クラウド対応",
       "owned": "所有",
-      "notOwned": "Not owned",
-      "purchaseUnavailable": "Purchase unavailable",
-      "playNow": "Play Now",
+      "notOwned": "未所有",
+      "purchaseUnavailable": "購入できません",
+      "playNow": "今すぐプレイ",
       "variant": "{{variant}}",
-      "storeCount": "{{count}} stores"
-    }
+      "storeCount": "{{count}} ストア"
+    },
+    "sortAriaLabel": "ゲームを並び替え"
   },
   "library": {
     "title": "私のライブラリ",
-    "controllerTitle": "Library",
+    "controllerTitle": "ライブラリ",
     "searchPlaceholder": "ライブラリを検索...",
     "gameCount": "{{count}}個のゲーム",
     "gameCount_plural": "{{count}}個のゲーム",
-    "filter": "Filter",
-    "allStores": "All Stores",
-    "storeFilter": "Store Filter",
-    "chooseStore": "Choose a Store",
-    "storeFilterHint": "Hold Y, use up/down, release Y to apply",
-    "moreInfo": "More Info",
-    "moreOptions": "More Options",
-    "storeNotListed": "Store not listed",
-    "selectedStore": "Selected Store: {{store}}",
-    "loadingGameDetails": "Loading game details...",
-    "developer": "Developer: {{developer}}",
-    "publisher": "Publisher: {{publisher}}",
-    "players": "Players: {{players}}",
-    "controls": "Controls: {{controls}}",
-    "nvidiaTech": "NVIDIA Tech: {{tech}}",
-    "genres": "Genres: {{genres}}",
-    "rating": "Rating: {{rating}}",
+    "filter": "フィルター",
+    "allStores": "すべてのストア",
+    "storeFilter": "ストアフィルター",
+    "chooseStore": "ストアを選択",
+    "storeFilterHint": "Y長押し＋上下キーで選択、Yを離して適用",
+    "moreInfo": "詳細情報",
+    "moreOptions": "その他のオプション",
+    "storeNotListed": "ストア未掲載",
+    "selectedStore": "選択中のストア: {{store}}",
+    "loadingGameDetails": "ゲーム詳細を読み込み中...",
+    "developer": "開発元: {{developer}}",
+    "publisher": "販売元: {{publisher}}",
+    "players": "プレイヤー: {{players}}",
+    "controls": "操作: {{controls}}",
+    "nvidiaTech": "NVIDIA テクノロジー: {{tech}}",
+    "genres": "ジャンル: {{genres}}",
+    "rating": "評価: {{rating}}",
     "lastPlayed": {
       "never": "未プレイ",
       "justNow": "たった今",
@@ -206,7 +219,30 @@
       "libraryEmpty": "あなたのライブラリは空です",
       "ownedGamesAppearHere": "あなたが所有するゲームがここに表示されます。カタログを参照してゲームを見つけます。",
       "noGamesFound": "ゲームが見つかりません",
-      "noGamesMatch": "「{{query}}」に一致するゲームはありません"
+      "noGamesMatch": "「{{query}}」に一致するゲームはありません",
+      "noFilteredGames": "フィルターに一致するゲームはありません",
+      "tryAdjustingFilters": "フィルターを解除するか、検索条件を変更してみてください。"
+    },
+    "filteredGameCount": "全{{total}}件中{{shown}}件のゲーム",
+    "filters": "フィルター",
+    "sortAriaLabel": "ライブラリを並び替え",
+    "activeFilters": "有効なフィルター",
+    "clearFilters": "クリア",
+    "removeFilter": "{{filter}}フィルターを解除",
+    "filterGroups": {
+      "playType": "プレイタイプ",
+      "platform": "プラットフォーム",
+      "controls": "操作",
+      "activity": "プレイ状況"
+    },
+    "filterOptions": {
+      "installToPlay": "インストールしてプレイ",
+      "cloudLaunch": "クラウド起動",
+      "keyboardMouse": "キーボードとマウス",
+      "controller": "コントローラー",
+      "touch": "タッチ",
+      "played": "プレイ済み",
+      "neverPlayed": "未プレイ"
     }
   },
   "gameCard": {
@@ -214,62 +250,91 @@
     "playGame": "{{title}}をプレイする",
     "store": "{{store}} ストア",
     "owned": "所有",
-    "available": "利用可能"
+    "available": "利用可能",
+    "status": {
+      "maintenance": "メンテナンス中",
+      "updating": "更新中",
+      "unavailable": "利用不可"
+    }
   },
   "streamLoading": {
     "labels": {
       "launchError": "起動エラー",
       "nowLoading": "読み込み中",
-      "adQueue": "広告キュー"
+      "adQueue": "広告キュー",
+      "launchProgress": "ゲーム起動の進行状況"
     },
     "steps": {
       "queue": "キュー",
       "setup": "セットアップ",
-      "ready": "準備完了"
+      "ready": "準備完了",
+      "connect": "接続"
     },
     "status": {
       "gameLaunchFailed": "ゲームの起動に失敗しました",
       "queuePaused": "セッションキューが一時停止されました",
       "positionInQueue": "キュー内のポジション #{{position}}",
-      "waitingInQueue": "Waiting in queue...",
+      "waitingInQueue": "キューで待機中...",
       "settingUpRig": "ゲーム機器をセットアップしています...",
-      "startingStream": "Starting stream...",
-      "connectingToServer": "Connecting to server...",
-      "settingUpStream": "Setting up stream...",
+      "startingStream": "ストリームを開始中...",
+      "connectingToServer": "サーバーに接続中...",
+      "settingUpStream": "ストリームをセットアップ中...",
       "loading": "読み込み中..."
     },
     "ads": {
       "resumeToStayInQueue": "キューに留まるように広告を再開します。",
-      "availableForProgression": "{{count}} ad available for queue progression.",
-      "availableForProgression_plural": "{{count}} ads available for queue progression.",
-      "playbackRequired": "Ad playback is required while your session is queued.",
-      "freeTierQueueAdsBegin": "Free-tier queue ads begin as soon as you enter queue.",
+      "availableForProgression": "キュー進行に使える広告が{{count}}件あります。",
+      "availableForProgression_plural": "キュー進行に使える広告が{{count}}件あります。",
+      "playbackRequired": "キュー待機中は広告の再生が必要です。",
+      "freeTierQueueAdsBegin": "フリーティアのキュー広告はキューに入った直後に始まります。",
       "advertisementInProgress": "広告掲載中",
-      "mediaWillAppear": "Ad media will appear here as soon as it is available.",
-      "advertisement": "Advertisement",
+      "mediaWillAppear": "広告メディアが利用可能になり次第、ここに表示されます。",
+      "advertisement": "広告",
       "titledAdvertisement": "{{title}} 広告"
     },
     "actions": {
-      "cancelLoading": "Cancel loading"
+      "cancelLoading": "読み込みをキャンセル"
+    },
+    "detail": {
+      "queueMoving": "キューが進行中です。あなたの順位は{{position}}番目で確保されています。",
+      "findingCapacity": "このセッションに最適な空きクラウドリグを探しています。",
+      "rigReserved": "ゲームリグを確保しました。セッション構成を適用しています。",
+      "servicesStarting": "ゲームサービスを開始し、リモートディスプレイを準備しています。",
+      "mediaHandshake": "低遅延の映像・入力チャンネルをネゴシエートしています。"
+    },
+    "cozy": {
+      "queue": "そのままお待ちください。順位を保持し、準備ができ次第ゲームをおつなぎします。",
+      "setup": "クラウドリグを確保し、プレイの準備を整えています。",
+      "starting": "クラウドリグでゲームを起動しています。",
+      "connecting": "ゲームの準備ができました。最初のフレームを待っています。",
+      "next": "続いて"
+    },
+    "telemetry": {
+      "queuePosition": "キュー順位",
+      "calculating": "計算中",
+      "cleared": "解消済み",
+      "elapsed": "経過時間",
+      "session": "セッション",
+      "protected": "確保済み"
     }
   },
   "queue": {
     "servers": {
-      "allServers": "All Servers",
+      "allServers": "すべてのサーバー",
       "close": "閉じる",
       "cancel": "キャンセル",
-      "wait": "{{duration}} wait"
+      "wait": "待ち時間 {{duration}}"
     }
   },
   "session": {
-    "active": "Active Session",
+    "active": "アクティブセッション",
     "current": "現在",
-    "control": "Session Control",
-    "elapsed": "Elapsed",
-    "endSession": "End session",
-    "exitStream": "Exit Stream?",
-    "exitConfirmation": "Exit stream confirmation",
-    "cancelExit": "Cancel exit",
+    "control": "セッションコントロール",
+    "elapsed": "経過時間",
+    "endSession": "セッション終了",
+    "exitStream": "ストリームを終了しますか?",
+    "exitConfirmation": "ストリーム終了の確認",
+    "cancelExit": "終了をキャンセル",
     "resume": "再開",
     "resumeActiveCloudSession": "アクティブなクラウドセッションを再開する",
     "resumeActiveCloudSessionTitle": "アクティブなクラウドセッションを再開する: {{title}}",
@@ -310,10 +375,21 @@
       "jitterBuffer": "JB = ジッターバッファ遅延",
       "packetLoss": "パケットロスの割合",
       "packetLossValue": "{{value}}% の損失",
-      "timeRemainingShort": "Left",
+      "timeRemainingShort": "残り",
       "inputQueuePressure": "入力キューのプレッシャー (バッファリングされたバイトと遅延フラッシュ)",
       "inputChannelState": "部分的に信頼できる入力チャネルの状態とキューに入れられたバイト数",
-      "mouseFlushCadence": "マウスのフラッシュ ケイデンスとパケット レート"
+      "mouseFlushCadence": "マウスのフラッシュ ケイデンスとパケット レート",
+      "overlayLabel": "ストリーム統計",
+      "expand": "詳細統計を表示",
+      "collapse": "詳細統計を非表示",
+      "live": "ライブ",
+      "sync": "同期",
+      "rtt": "RTT",
+      "bitrateShort": "ビット",
+      "bitratePerformance": "ネゴシエートされた目標値に対する実際の受信ビットレート",
+      "showAdvanced": "高度な診断",
+      "hideAdvanced": "高度な診断を非表示",
+      "waitingForVideo": "ゲーム映像を待機中…"
     },
     "controls": {
       "antiAfkEnabled": "Anti-AFKが有効になっています",
@@ -361,15 +437,22 @@
       "focusAndPress": "フォーカスしてキーの組み合わせを押してバインドします",
       "examples": "例: F3、Ctrl+Shift+Q、Ctrl+Shift+K",
       "stats": "統計"
+    },
+    "sessionStarted": {
+      "kicker": "準備完了",
+      "title": "セッション開始"
+    },
+    "connectedBadge": {
+      "title": "接続済み"
     }
   },
   "sidebar": {
     "title": "サイドバー",
     "closeSettings": "設定を閉じる",
-    "sessionTimeRemaining": "Session Time Left",
-    "sessionTimeRemainingTitle": "Session time remaining",
-    "showSessionTimeRemainingInStatsOverlay": "Show session time remaining in stats overlay",
-    "statsOverlay": "Stats overlay"
+    "sessionTimeRemaining": "セッション残り時間",
+    "sessionTimeRemainingTitle": "セッション残り時間",
+    "showSessionTimeRemainingInStatsOverlay": "統計オーバーレイにセッション残り時間を表示",
+    "statsOverlay": "統計オーバーレイ"
   },
   "settings": {
     "title": "設定",
@@ -384,7 +467,8 @@
       "input": "入力",
       "interface": "インターフェース",
       "about": "このアプリについて",
-      "thanks": "謝辞"
+      "thanks": "謝辞",
+      "account": "アカウント"
     },
     "region": {
       "title": "地域",
@@ -412,7 +496,25 @@
       "sessionProxy": "セッションプロキシ",
       "sessionProxyHint": "Nvidia セッションの作成とキューのポーリングにのみ使用されます。ストリーミング/シグナリング トラフィックはプロキシされません。 Zortos は、GitHub スポンサー/サポーターにプロキシを提供します。",
       "experimentalL4SRequest": "実験的な L4S リクエスト",
-      "experimentalL4SRequestHint": "新しく作成されたセッションで GeForce NOW L4S ストリーミング機能をリクエストします。これ自体ではブラウザの WebRTC の動作は変更されず、サービスまたはネットワーク パスによって無視される場合があります。"
+      "experimentalL4SRequestHint": "新しく作成されたセッションで GeForce NOW L4S ストリーミング機能をリクエストします。これ自体ではブラウザの WebRTC の動作は変更されず、サービスまたはネットワーク パスによって無視される場合があります。",
+      "recordingBitrate": "録画ビットレート",
+      "recordingBitrateHint": "ローカル録画の映像ビットレートを制御します。オートはブラウザーが自動選択します。",
+      "customBitrate": "カスタム",
+      "zortosCommunityProxy": {
+        "useButton": "Zortos コミュニティプロキシを使用",
+        "enabledBadge": "Zortos コミュニティプロキシ使用中",
+        "enablePromptKicker": "コミュニティサービス",
+        "enablePromptTitle": "Zortos コミュニティプロキシを使用しますか?",
+        "enablePromptBody": "このセッションプロキシは、OpenNOW ユーザーが GeForce NOW に接続できるよう Zortos 氏がボランティアで提供しているものです。任意であり共用のため、レート制限や一時的な利用不可が発生する場合があります。",
+        "enablePromptCostHint": "このプロキシの運用には継続的なサーバー費用がかかります。役に立った場合は、GitHub Sponsors で Zortos 氏の支援をご検討ください。",
+        "enablePromptDonate": "GitHub Sponsors で寄付する",
+        "enablePromptContinue": "続行",
+        "enablePromptEsc": "キャンセル",
+        "provisioning": "有効化中...",
+        "provisionFailed": "現在 Zortos コミュニティプロキシを有効化できません。後で再試行するか、手動でプロキシを設定してください。"
+      },
+      "launchInConsoleMode": "コンソールモード (TV / Big Picture)",
+      "launchInConsoleModeHint": "GeForce NOW の TV モードのように、コントローラーモードを有効にして OpenNOW をフルスクリーンで起動します。コンソールモードまたはコントローラーモードが有効な間、セッションはゲームパッド対応(ビッグピクチャ)での起動を NVIDIA に要求します。"
     },
     "codecDiagnostics": {
       "advanced": "詳細 - コーデック診断",
@@ -424,7 +526,8 @@
       "notInWebrtc": "WebRTC にはありません",
       "decode": "デコード",
       "encode": "エンコード",
-      "profiles": "プロフィール:"
+      "profiles": "プロフィール:",
+      "linuxHardwareHint": "Linux AppImage の診断は Chromium の WebRTC/MediaCapabilities レポートを使用します。ハードウェアデコードは Chromium のビルドと各ディストリビューションの GPU/ビデオスタックに依存します。x64 システムでは VA-API/NVIDIA VA-API ドライバーが必要な場合があり、ARM の V4L2 サポートは Chromium/Electron がそのデコーダーを公開しているかに依存します。"
     },
     "colorQuality": {
       "mostCompatible": "最も互換性のある",
@@ -439,7 +542,9 @@
       "inGameLanguageHint": "ゲーム内メニュー、字幕、オーディオの言語 (サポートされている場合)",
       "keyboardLayout": "キーボードのレイアウト",
       "preferredStore": "優先ストア",
-      "launchBehavior": "起動動作"
+      "launchBehavior": "起動動作",
+      "persistInGameSettings": "ゲーム内グラフィック設定を保存",
+      "persistInGameSettingsHint": "対応ゲームでストリーム内に変更したグラフィックオプションを保持できます。NVIDIA のゲーム内設定永続化に対応すると宣言しているゲームにのみ送信されます。"
     },
     "audio": {
       "title": "オーディオ",
@@ -485,7 +590,13 @@
       "screenshot": "スクリーンショット",
       "recording": "録音",
       "toggleStreamSidebar": "ストリームサイドバーの切り替え",
-      "shortcutHint": "フィールドをクリックしてキーを押してバインドするか、ショートカット ({{examples}}) を貼り付けます。エスケープするとフォーカスが解除されます。フールスクリーン: {{fullscreen}}。停止: {{stop}}。マイク：{{mic}}。スクリーンショット: {{screenshot}}。録画: {{recording}}。"
+      "shortcutHint": "フィールドをクリックしてキーを押してバインドするか、ショートカット ({{examples}}) を貼り付けます。エスケープするとフォーカスが解除されます。フールスクリーン: {{fullscreen}}。停止: {{stop}}。マイク：{{mic}}。スクリーンショット: {{screenshot}}。録画: {{recording}}。",
+      "gyroscopeControls": "ジャイロスコープ操作",
+      "gyroscopeControlsHint": "入力バックエンドが対応している場合、コントローラーのモーションセンサーをジャイロエイミング用に公開します。",
+      "steamControllerCompatibilityMode": "Steam コントローラー互換モード",
+      "steamControllerCompatibilityModeHint": "macOS のみ。Steam コントローラー向けに Chromium の旧 HID ゲームパッド経路を復元しますが、Xbox コントローラーの互換性が低下する場合があります。アプリ再起動後に適用されます。",
+      "nativeCursorOverlay": "ネイティブカーソルオーバーレイ",
+      "nativeCursorOverlayHint": "WebRTC のみ。NVIDIA の cursor_channel を使ってローカルにカーソルをオーバーレイ表示します。オフにするとカーソル描画はサーバー側のストリームに任されます。"
     },
     "interface": {
       "appearance": "外観",
@@ -508,16 +619,16 @@
       "showAntiAfkIndicatorHint": "ストリーミング中に Anti-AFK が有効になっている間は、ANTI-AFK ON バッジを表示します。",
       "autoFullScreen": "自動フルスクリーン",
       "autoFullScreenHint": "セッションへの接続または開始時に自動的にフルスクリーンを入力します。",
-      "controllerMode": "Controller Mode",
-      "controllerModeHint": "Use a large-screen console-style shell with controller button hints and a horizontal library layout.",
+      "controllerMode": "コントローラーモード",
+      "controllerModeHint": "大画面向けのコンソール風シェル(コントローラーボタンヒント＋横向きライブラリレイアウト)を使用します。",
       "escapeExitsFullscreen": "エスケープを押してフルスクリーンを終了",
       "escapeExitsFullscreenHint": "有効にすると、Escapeキーを押すとフルスクリーン終了します。無効にすると(デフォルト)、マウスがポインターロックされている間、Escapeはゲームに転送されます。",
       "discordRichPresence": "Discord のリッチなプレゼンス",
       "discordRichPresenceHint": "Discord アクティビティとしてストリーミングしているゲームを、経過時間を含めて表示します。",
       "posterSize": "ポスターサイズ",
-      "posterSizeHint": "Adjusts game posters in real time across the library.",
-      "showSessionTimeRemainingInStatsOverlay": "Session Time in Stats Overlay",
-      "showSessionTimeRemainingInStatsOverlayHint": "The session countdown appears in the in-stream sidebar by default. Enable this to also show it in the stats overlay.",
+      "posterSizeHint": "ライブラリ全体のゲームポスターをリアルタイムに調整します。",
+      "showSessionTimeRemainingInStatsOverlay": "統計オーバーレイのセッション時間",
+      "showSessionTimeRemainingInStatsOverlayHint": "セッションのカウントダウンはデフォルトでストリーム内サイドバーに表示されます。有効にすると統計オーバーレイにも表示されます。",
       "sessionElapsedCounter": "セッション経過カウンター",
       "sessionElapsedCounterHint": "ストリーミング中のライブ セッション経過カウンターを有効または無効にします。",
       "sessionTimerReappear": "セッションタイマーが再表示される",
@@ -526,7 +637,14 @@
       "sessionTimerVisibleTimeHint": "セッション タイマーが表示されるたびに表示される期間。",
       "sessionTimerDisabledHint": "セッション経過カウンターを無効にすると、ライブ経過タイマーのレンダリングがまったく停止されます。残りの再生時間インジケーターは変更されません。",
       "off": "オフ",
-      "everyMinutes": "{{count}} 分ごと"
+      "everyMinutes": "{{count}} 分ごと",
+      "theme": "テーマ",
+      "themeHint": "ライト、ダーク、またはシステムに合わせたテーマを選択します。",
+      "themeAuto": "システム自動",
+      "themeLight": "ライト",
+      "themeDark": "ダーク",
+      "translucentUI": "半透明 UI",
+      "translucentUIHint": "グラスモーフィズムと半透明オーバーレイを有効にします。"
     },
     "about": {
       "applicationUpdates": "アプリケーションのアップデート",
@@ -557,7 +675,14 @@
         "updateAvailable": "アップデートが利用可能です",
         "downloading": "ダウンロード中",
         "readyToInstall": "インストールの準備ができました"
-      }
+      },
+      "updateChannel": "更新チャンネル",
+      "updateChannelHint": "通常のリリースは Stable、開発ブランチの最新ビルドを先行試行するには Nightly を選択します。",
+      "updateChannelStable": "Stable (既定)",
+      "updateChannelNightly": "Nightly",
+      "updateChannelNightlyHint": "Nightly ビルドは安定性が低い場合があります。チャンネルを切り替えると直ちに更新の確認を行います。",
+      "whatsNew": "新着情報",
+      "whatsNewHint": "OpenNOW の現在のバージョンのリリースノートを表示します。"
     },
     "nativeStreamer": {
       "title": "ネイティブストリーマー",
@@ -574,8 +699,8 @@
       "enablePromptEsc": "キャンセル",
       "reportOnGithubIssues": "GitHub の問題に関するレポート",
       "reportOnDiscord": "Discordに関するレポート",
-      "showNativeStreamerStats": "Show Native Streamer Stats",
-      "showNativeStreamerStatsHint": "Display the native streamer's own diagnostics overlay during native sessions.",
+      "showNativeStreamerStats": "ネイティブストリーマー統計を表示",
+      "showNativeStreamerStatsHint": "ネイティブセッション中にネイティブストリーマー独自の診断オーバーレイを表示します。",
       "streamerStatus": "ストリーマーステータス",
       "checkNativeStreamer": "ネイティブストリーマーを確認する",
       "gstreamerReady": "GStreamer 対応",
@@ -594,7 +719,17 @@
       "framePacing": "フレームペーシング",
       "lowestLatency": "最小のレイテンシ",
       "smoothGsync": "スムーズな G シンク",
-      "framePacingHint": "レイテンシーが最も低いと、G-Sync ペーシングが回避され、マウスの感触が最適になります。スムーズ G-Sync はティアリングを軽減できますが、レンダリングがモニターのリフレッシュ レートに制限される可能性があります。"
+      "framePacingHint": "レイテンシーが最も低いと、G-Sync ペーシングが回避され、マウスの感触が最適になります。スムーズ G-Sync はティアリングを軽減できますが、レンダリングがモニターのリフレッシュ レートに制限される可能性があります。",
+      "renderMode": "レンダーモード",
+      "renderModeInternal": "内蔵 (1ウィンドウ)",
+      "renderModeExternal": "外部 (フローティング)",
+      "renderModeHint": "内蔵(デフォルト)はネイティブ映像を OpenNOW ウィンドウ内に埋め込みます。外部はテスト/フォールバック用のフローティング GStreamer ウィンドウを維持します。変更は次のネイティブストリーマープロセスから適用されます。",
+      "renderModeInternalOnlyHint": "このプラットフォームは内蔵(1ウィンドウ)のみ使用します。キーボード、マウス、コントローラー入力は Electron 側で受け取り IPC で転送されます。外部フローティングモードは Windows 専用です。",
+      "transportMode": "トランスポートモード",
+      "transportModeWebrtc": "WebRTC (既定)",
+      "transportModeNvst": "NVST (実験的)",
+      "transportModeHint": "WebRTC がサポート対象の経路です。NVST(実験的)は従来の RTSPS + UDP 映像(Moonlight 仮説のスキャフォールド)を使用し、キーボード/マウス/コントローラーは WebRTC SCTP データチャンネルのままです。最初のライブセッションでは SRTP/pcap の検証が必要になる場合があります。",
+      "transportModeWindowsOnlyHint": "NVST トランスポートは現時点で Windows 専用です。このプラットフォームは常に WebRTC を使用します。"
     },
     "thanks": {
       "title": "OpenNOW の成長にご協力いただきありがとうございます",
@@ -609,7 +744,97 @@
       "loadingContributors": "GitHub から貢献者を読み込んでいます...",
       "loadingSupporters": "GitHub スポンサーからサポーターを読み込み中...",
       "noContributors": "現在、投稿者を表示できませんでした。",
-      "noSupporters": "現在、サポーターを表示できませんでした。"
+      "noSupporters": "現在、サポーターを表示できませんでした。",
+      "privateSponsor": "プライベートスポンサー",
+      "projectSponsor": "プロジェクトスポンサー",
+      "githubSponsors": "GitHub Sponsors"
+    },
+    "persistentStorage": {
+      "title": "永続ストレージ",
+      "resetTitle": "ストレージのリセット",
+      "description": "永続クラウドストレージは、ダウンロードしたゲームと対応ゲームデータを今後のセッションのために保存します。",
+      "detected": "検出済み",
+      "usage": "{{total}}中{{used}}使用",
+      "usedOutOf": "{{total}}のうち使用中",
+      "meterLabel": "永続ストレージの使用量",
+      "usedLegend": "使用中 ({{value}})",
+      "availableLegend": "空き ({{value}})",
+      "usedLegendUnavailable": "使用量は取得できません",
+      "availableLegendUnavailable": "空き容量は取得できません",
+      "usageUnavailable": "永続ストレージは有効ですが、使用量を取得できません。",
+      "notDetected": "このアカウントで永続ストレージアドオンが見つかりませんでした。",
+      "region": "地域: {{region}}",
+      "remaining": "空き {{value}}",
+      "regionUnavailable": "地域を取得できません",
+      "locationTitle": "ストレージの場所",
+      "currentLocationOption": "{{region}} (現在)",
+      "currentLocationUnavailable": "現在の場所",
+      "resetWillKeepLocation": "リセット後も現在のストレージの場所は維持されます: {{region}}",
+      "resetWillMoveLocation": "リセットするとストレージの場所も{{region}}に変更されます。",
+      "locationsLoading": "ストレージの場所を読み込み中...",
+      "locationsFailed": "ストレージの場所を読み込めませんでした。",
+      "recommended": "おすすめ",
+      "unavailable": "利用不可",
+      "resetHint": "リセットとストレージの場所の変更は、ブラウザで NVIDIA Storage Manager が処理します。",
+      "resetConfirm": "{{region}}の永続ストレージをリセットしますか? NVIDIA クラウドストレージからインストール済みゲームと永続データがすべて削除されます。この操作は元に戻せません。",
+      "openManager": "NVIDIA を開く",
+      "openManagerFailed": "NVIDIA Storage Manager を開けませんでした。",
+      "resetStorage": "ストレージをリセット",
+      "resetting": "リセット中...",
+      "resetSuccess": "永続ストレージのリセットが完了しました。",
+      "resetRequiresBrowserHint": "現在の場所: {{region}}。リセットと場所の変更は NVIDIA Storage Manager で開きます。",
+      "resetRequiresBrowser": "このリセットには NVIDIA のウェブアカウントセッションが必要です。リセットや場所の変更は NVIDIA Storage Manager で完了してください。",
+      "resetFailed": "永続ストレージをリセットできませんでした。もう一度お試しください。"
+    },
+    "accountConnections": {
+      "title": "接続済みゲームアカウント",
+      "description": "対応するストアアカウントを連携すると、プロバイダー必須のゲームが解放され、所有ライブラリが OpenNOW に同期されます。",
+      "refresh": "更新",
+      "loading": "接続済みゲームアカウントを読み込み中...",
+      "empty": "このアカウントで対応するゲームアカウントプロバイダーは返されませんでした。",
+      "signInRequired": "接続済みゲームアカウントを管理するには先にサインインしてください。",
+      "loadFailed": "接続済みゲームアカウントを読み込めませんでした。",
+      "actionFailed": "ゲームアカウントの操作に失敗しました。もう一度お試しください。",
+      "unlinkConfirm": "{{provider}}を GeForce NOW から解除しますか? 再接続するまで、そのアカウントから同期されたライブラリ項目が表示されなくなる場合があります。",
+      "linkSuccess": "{{provider}}を接続しました。",
+      "unlinkSuccess": "{{provider}}を解除しました。",
+      "resyncSuccess": "{{provider}}のライブラリ同期を開始しました。",
+      "statusExpired": "期限切れ",
+      "statusSyncError": "同期エラー",
+      "statusConnected": "接続済み",
+      "statusNotConnected": "未接続",
+      "connect": "接続",
+      "reconnect": "再接続",
+      "unlink": "解除",
+      "connecting": "接続中...",
+      "unlinking": "解除中...",
+      "sync": "同期",
+      "syncing": "同期中...",
+      "resync": "再同期",
+      "resyncing": "再同期中...",
+      "connectedAccount": "接続済みアカウント",
+      "notConnectedDescription": "ゲームが必要とする場合に、このプロバイダーを GeForce NOW に接続します。",
+      "syncOnlyDescription": "アカウント連携(SSO)なしで、このプロバイダーの対応ライブラリゲームを同期します。",
+      "ssoSupported": "アカウント連携",
+      "syncSupported": "ライブラリ同期",
+      "requiredForSomeGames": "一部のゲームで必要",
+      "syncSummary": "{{date}}時点で{{count}}件のゲームを同期済み",
+      "syncSummary_plural": "{{date}}時点で{{count}}件のゲームを同期済み",
+      "syncState": "同期状態: {{state}}",
+      "syncUnknown": "不明",
+      "recently": "最近"
+    },
+    "videoFilters": {
+      "title": "ビデオフィルター",
+      "hint": "デコード後のストリームに適用される GPU ポストプロセスシェーダー(シャープ化、カラーグレーディング、フィルムグレイン)です。ストリーム中のサイドバーからもライブで調整できます。",
+      "nativeUnavailable": "ネイティブストリーミングがアプリウィンドウ外で映像を描画している間、ビデオフィルターは適用されません。",
+      "sharpen": "シャープ化",
+      "saturation": "彩度",
+      "contrast": "コントラスト",
+      "brightness": "明るさ",
+      "vibrance": "ビブランス",
+      "filmGrain": "フィルムグレイン",
+      "reset": "デフォルトに戻す"
     }
   },
   "navbar": {
@@ -657,9 +882,9 @@
     "launchFailedTitle": "起動に失敗しました",
     "duplicateSessionTitle": "重複セッションが検出されました",
     "duplicateSessionDescription": "あなたのアカウントでは別のセッションがすでに実行されています。最初にそれを閉じるか、タイムアウトになるまで待ってから、再度起動します。",
-    "insufficientPlayabilityTitle": "Membership Upgrade Required",
-    "insufficientPlayabilityDescription": "Your current GeForce NOW membership is not high enough to play this game. Upgrade to a higher tier and try again.",
-    "insufficientPlayabilityTierDescription": "This game requires {{tier}} on GeForce NOW. Upgrade your membership to play it.",
+    "insufficientPlayabilityTitle": "メンバーシップのアップグレードが必要です",
+    "insufficientPlayabilityDescription": "現在の GeForce NOW メンバーシップではこのゲームをプレイできません。上位ティアにアップグレードして再試行してください。",
+    "insufficientPlayabilityTierDescription": "このゲームには GeForce NOW の{{tier}}が必要です。メンバーシップをアップグレードするとプレイできます。",
     "loginFailed": "ログインに失敗しました",
     "switchAccountFailed": "アカウントの切り替えに失敗しました",
     "nativeStreamerStoppedTitle": "ネイティブストリーマーが停止しました",
@@ -670,6 +895,31 @@
     "sessionResumeFailedDescription": "実行中のセッションへの接続が失われ、再開に失敗しました。",
     "queueAdPlayTimeout": "広告再生タイムアウト",
     "queueAdVideoStuck": "広告ビデオが停止します",
-    "queueAdUrlLoad": "URLの読み込みエラー"
+    "queueAdUrlLoad": "URLの読み込みエラー",
+    "directLaunchNotFoundTitle": "ダイレクト起動に失敗しました",
+    "directLaunchNotFoundDescription": "「{{value}}」に一致するゲームが見つかりませんでした。LaunchBox エントリを厳密に指定するには --launch-app-id を使用してください。",
+    "userStorageUnavailableTitle": "永続ストレージを利用できません",
+    "userStorageUnavailableDescription": "このアカウントまたはストレージの場所では永続ストレージを利用できないと NVIDIA が報告しました。設定 → アカウント → 永続ストレージを開き、NVIDIA Storage Manager でリセットまたはストレージの場所の変更を行ってください。それでも失敗する場合は、NVIDIA のサーバー状態を確認してください。",
+    "userStorageUnavailableAction": "ストレージ設定を開く",
+    "markOwnedFailed": "ゲームを所有としてマークできませんでした。",
+    "markOwnedFailedWithReason": "ゲームを所有としてマークできませんでした: {{reason}}",
+    "markOwnedMissingVariant": "所有としてマークする前にストアバリアントを選択してください。",
+    "markOwnedSignInRequired": "ゲームを所有としてマークするには先にサインインしてください。"
+  },
+  "common": {
+    "loading": "読み込み中..."
+  },
+  "games": {
+    "markOwned": {
+      "success": "{{title}}を所有としてマークしました。"
+    }
+  },
+  "releaseHighlights": {
+    "kicker": "新着情報",
+    "title": "OpenNOW {{version}}",
+    "gotIt": "了解",
+    "viewOnGitHub": "GitHub で完全なリリースを表示",
+    "unavailable": "現在リリースノートを読み込めません。",
+    "settingsLink": "新着情報"
   }
 }
