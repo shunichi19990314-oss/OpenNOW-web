@@ -6,6 +6,7 @@ import { resolveLaunchAppId, resolveStoreUrl } from "./gfn/gameAppMapper";
 import { fetchLibraryGamesUncached, markGameOwned } from "./gfn/libraryGames";
 import { fetchPublicGamesUncached } from "./gfn/publicGames";
 import { claimSession, createSession, getActiveSessions, pollSession, reportSessionAd, stopSession } from "./gfn/cloudmatch";
+import { isTrustedCloudMatchBase, normalizeCloudMatchBaseUrl } from "./gfn/cloudmatchTransport";
 import { fetchSubscription } from "./gfn/subscription";
 import { getLoginProviders } from "./webAuth";
 import { getSession } from "./sessionStore";
@@ -158,12 +159,22 @@ export function registerApi(app: Express): void {
     );
     if (!appId) throw Object.assign(new Error("This game does not expose a launchable GFN app ID."), { statusCode: 400 });
 
-    const input = request.body as Omit<SessionCreateRequest, "token" | "appId" | "streamingBaseUrl">;
+    const input = request.body as Omit<SessionCreateRequest, "token" | "appId">;
+    // The visitor's region choice arrives as streamingBaseUrl. Honour it when it is a
+    // genuine NVIDIA CloudMatch base; otherwise fall back to the provider default so a
+    // tampered value can never redirect the token-bearing launch request.
+    const requestedBase = normalizeCloudMatchBaseUrl(String(input.streamingBaseUrl ?? "").trim());
+    const streamingBaseUrl = isTrustedCloudMatchBase(requestedBase)
+      ? requestedBase
+      : auth.provider.streamingServiceUrl;
+    if (requestedBase && streamingBaseUrl !== requestedBase) {
+      console.warn(`[API] Ignoring untrusted streamingBaseUrl override: ${requestedBase}`);
+    }
     const session = await createSession({
       ...input,
       appId,
       token: auth.tokens.idToken ?? auth.tokens.accessToken,
-      streamingBaseUrl: auth.provider.streamingServiceUrl,
+      streamingBaseUrl,
       internalTitle: String(input.internalTitle || appId),
       settings: { ...input.settings, clientMode: "web", transportMode: "webrtc" },
     });

@@ -119,6 +119,24 @@ export function isDefaultStreamingServiceBase(baseUrl: string): boolean {
   }
 }
 
+/**
+ * The web client picks its launch region by sending one of the region bases
+ * published by /v2/serverInfo (or a PrintedWaste queue-zone base) as
+ * streamingBaseUrl. Only accept HTTPS NVIDIA CloudMatch hosts so session
+ * tokens are never relayed to an arbitrary origin chosen by the browser.
+ */
+export function isTrustedCloudMatchBase(value: string | null | undefined): boolean {
+  if (!value || !value.trim()) {
+    return false;
+  }
+  try {
+    const parsed = new URL(value.trim());
+    return parsed.protocol === "https:" && parsed.hostname.toLowerCase().endsWith(".nvidiagrid.net");
+  } catch {
+    return false;
+  }
+}
+
 export async function resolveCreateSessionBase(
   base: string,
   token: string,
