@@ -139,7 +139,10 @@ function isNvidiaProvider(provider: LoginProvider | null | undefined): boolean {
 }
 
 const SESSION_READY_POLL_INTERVAL_MS = 2000;
-const SESSION_AD_POLL_INTERVAL_MS = 30000;
+// Ad-supported (free-tier) queue polling. Was 30 s, which left the queue
+// position visibly frozen for most of a typical queue; 5 s keeps position and
+// ad-state fresh while still being lighter than the 2 s standard cadence.
+const SESSION_AD_POLL_INTERVAL_MS = 5000;
 const PLAYTIME_RESYNC_INTERVAL_MS = 5 * 60 * 1000;
 const FREE_TIER_30_MIN_WARNING_SECONDS = 30 * 60;
 const FREE_TIER_15_MIN_WARNING_SECONDS = 15 * 60;
@@ -2805,7 +2808,9 @@ export function App(): JSX.Element {
         latestSession = mergedSession;
 
         setSession(mergedSession);
-        setQueuePosition(mergedSession.queuePosition);
+        // A poll that omits queuePosition must not flash the UI back to
+        // "calculating"; keep the last known position until the queue clears.
+        setQueuePosition((previous) => mergedSession.queuePosition ?? previous);
 
         // Check if queue just cleared so the loading UI can transition to setup mode.
         isInQueueMode = isSessionInQueue(mergedSession);
