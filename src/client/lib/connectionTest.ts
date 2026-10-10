@@ -56,6 +56,13 @@ export interface WebRtcTestResult {
   candidateTypes: string[];
   gatheringMs: number | null;
   error?: string;
+  /** Present when gathering produced zero candidates; pinpoints the layer that failed. */
+  debug?: {
+    mLines: number;
+    gatheringState: string;
+    candidateEvents: number;
+    error: string | null;
+  };
 }
 
 export interface SignalingTestResult {
@@ -200,13 +207,23 @@ export function runWebRtcTest(): Promise<WebRtcTestResult> {
     const candidateTypes = new Set<string>();
     let hasUdp = false;
     let hasServerReflexive = false;
+    let candidateEvents = 0;
+    let offerMLines = 0;
+    let setupError: string | null = null;
     let settled = false;
     let pc: RTCPeerConnection | null = null;
+    let channel: RTCDataChannel | null = null;
 
     const finish = (): void => {
       if (settled) return;
       settled = true;
       window.clearTimeout(timer);
+      const gatheringState = pc?.iceGatheringState ?? "closed";
+      try {
+        channel?.close();
+      } catch {
+        // Channel already closed; irrelevant to the verdict.
+      }
       try {
         pc?.close();
       } catch {
@@ -224,13 +241,14 @@ export function runWebRtcTest(): Promise<WebRtcTestResult> {
           : hasServerReflexive
             ? "pass"
             : "warn";
-      resolve({
-        status,
-        hasUdp,
-        hasServerReflexive,
-        candidateTypes: types,
-        gatheringMs: Math.round(performance.now() - started),
-      });
+      const gatheringMs = Math.round(performance.now() - started);
+      if (types.length === 0) {
+        const debug = { mLines: offerMLines, gatheringState, candidateEvents, error: setupError };
+        console.warn("[ConnectionTest] ICE gathering produced no candidates:", debug);
+        resolve({ status, hasUdp, hasServerReflexive, candidateTypes: types, gatheringMs, debug });
+        return;
+      }
+      resolve({ status, hasUdp, hasServerReflexive, candidateTypes: types, gatheringMs });
     };
     const timer = window.setTimeout(finish, ICE_GATHERING_TIMEOUT_MS);
 
@@ -241,6 +259,7 @@ export function runWebRtcTest(): Promise<WebRtcTestResult> {
           finish();
           return;
         }
+        candidateEvents += 1;
         const text = event.candidate.candidate;
         const typeMatch = /\btyp\s+(\w+)/.exec(text);
         if (typeMatch?.[1]) candidateTypes.add(typeMatch[1]);
@@ -250,12 +269,24 @@ export function runWebRtcTest(): Promise<WebRtcTestResult> {
       pc.onicegatheringstatechange = () => {
         if (pc?.iceGatheringState === "complete") finish();
       };
-      const channel = pc.createDataChannel("connection-test");
-      channel.close();
+      // Keep the data channel open while gathering: closing the only channel
+      // before createOffer can yield an offer without any m= section, which
+      // gathers zero candidates and would fake a "WebRTC blocked" verdict.
+      channel = pc.createDataChannel("connection-test");
+      // Guarantee a media m-section (and mirror the shape of the real GFN
+      // video stream) even if the SCTP section were omitted by the browser.
+      pc.addTransceiver("video", { direction: "recvonly" });
       pc.createOffer()
-        .then((offer) => pc?.setLocalDescription(offer))
-        .catch(() => finish());
-    } catch {
+        .then((offer) => {
+          offerMLines = (offer.sdp?.match(/^m=/gm) ?? []).length;
+          return pc?.setLocalDescription(offer);
+        })
+        .catch((error: unknown) => {
+          setupError = String(error);
+          finish();
+        });
+    } catch (error) {
+      setupError = String(error);
       finish();
     }
   });

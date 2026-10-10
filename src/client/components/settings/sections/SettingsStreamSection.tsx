@@ -684,7 +684,15 @@ export function SettingsStreamSection({
               {connectionTestReport?.webrtc && (() => {
                 const entry = connectionTestReport.webrtc!;
                 if (entry.status === "fail" && entry.candidateTypes.length === 0) {
-                  return <div className="connection-test-hint connection-test-hint--fail">{t("settings.connectionTest.webrtcNoCandidates")}</div>;
+                  const debug = entry.debug;
+                  const debugText = debug
+                    ? `state=${debug.gatheringState}, m-lines=${debug.mLines}, events=${debug.candidateEvents}${debug.error ? `, err=${debug.error}` : ""}`
+                    : "n/a";
+                  return (
+                    <div className="connection-test-hint connection-test-hint--fail">
+                      {t("settings.connectionTest.webrtcNoCandidates", { debug: debugText })}
+                    </div>
+                  );
                 }
                 if (!entry.hasUdp && entry.candidateTypes.length > 0) {
                   return <div className="connection-test-hint">{t("settings.connectionTest.webrtcTcpOnly")}</div>;
