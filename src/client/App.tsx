@@ -62,6 +62,7 @@ import type {
 } from "./lib/appTypes";
 import { loadStoredCodecResults, saveStoredCodecResults, testCodecSupport, type CodecTestResult } from "./lib/codecDiagnostics";
 import { clampBitrateForConnection, readNavigatorConnection } from "./lib/connectionBitrate";
+import { ensureNotificationPermission, notifyQueueFailed, notifyStreamReady } from "./lib/queueNotifier";
 import { DEVICE_STREAM_DEFAULTS } from "./webDefaults";
 import {
   createSyntheticDirectLaunchGame,
@@ -237,6 +238,9 @@ export function App(): JSX.Element {
     enableL4S: false,
     enableCloudGsync: false,
     discordRichPresence: false,
+    queueNotifications: true,
+    adaptiveBitrate: true,
+    touchGamepadEnabled: false,
     autoCheckForUpdates: true,
     updateChannel: "stable",
     lastSeenReleaseHighlightsVersion: "",
@@ -269,6 +273,10 @@ export function App(): JSX.Element {
   const [nativeInputBridgeReady, setNativeInputBridgeReady] = useState(false);
   const [exitPrompt, setExitPrompt] = useState<ExitPromptState>({ open: false, gameTitle: t("app.labels.game") });
   const [streamingGame, setStreamingGame] = useState<GameInfo | null>(null);
+  // Queue notifications: remember whether the current launch actually waited
+  // in queue, so instant starts do not chime, and notify each launchError once.
+  const wasQueuedRef = useRef(false);
+  const notifiedLaunchErrorRef = useRef<LaunchErrorState | null>(null);
   const [streamingStore, setStreamingStore] = useState<string | null>(null);
   const [queuePosition, setQueuePosition] = useState<number | undefined>();
   const [navbarActiveSession, setNavbarActiveSession] = useState<ActiveSessionInfo | null>(null);
@@ -970,6 +978,32 @@ export function App(): JSX.Element {
     streamStatusRef.current = streamStatus;
   }, [streamStatus]);
 
+  // Mark that the current launch spent time in queue so the ready chime only
+  // fires for launches that actually waited (or while the tab is hidden).
+  useEffect(() => {
+    if (typeof queuePosition === "number" && queuePosition > 0) {
+      wasQueuedRef.current = true;
+    }
+  }, [queuePosition]);
+
+  // Notify once per distinct launch error while the tab is in the background.
+  useEffect(() => {
+    if (!launchError) {
+      notifiedLaunchErrorRef.current = null;
+      return;
+    }
+    if (notifiedLaunchErrorRef.current === launchError) {
+      return;
+    }
+    notifiedLaunchErrorRef.current = launchError;
+    if (settings.queueNotifications && document.visibilityState === "hidden") {
+      notifyQueueFailed(
+        t("notifications.failedTitle"),
+        launchError.title || t("notifications.failedBody"),
+      );
+    }
+  }, [launchError, settings.queueNotifications, t]);
+
   // Broadcast minimal session/loading state for UI listeners.
   useEffect(() => {
     const detail = {
@@ -1479,13 +1513,21 @@ export function App(): JSX.Element {
         snapshot.framesDecoded > 0 || snapshot.framesReceived > 0 || snapshot.renderFps > 0;
       if (hasLiveFrames) {
         setSessionStartedAtMs(Date.now());
+        if (settings.queueNotifications && (wasQueuedRef.current || document.visibilityState === "hidden")) {
+          const title = streamingGame?.title ?? null;
+          notifyStreamReady(
+            t("notifications.readyTitle"),
+            title ? t("notifications.readyBody", { title }) : t("notifications.readyBodyGeneric"),
+          );
+        }
+        wasQueuedRef.current = false;
       }
     };
 
     evaluate();
     const unsubscribe = diagnosticsStore.subscribe(evaluate);
     return unsubscribe;
-  }, [sessionStartedAtMs, streamStatus]);
+  }, [sessionStartedAtMs, settings.queueNotifications, streamingGame, streamStatus, t]);
 
   useEffect(() => {
     if (freeTierSessionRemainingSeconds === null) {
@@ -2469,6 +2511,13 @@ export function App(): JSX.Element {
   const handlePlayGame = useCallback(async (game: GameInfo, options?: { bypassGuards?: boolean; streamingBaseUrl?: string; variantId?: string }) => {
     if (!selectedProvider) return;
 
+    // Request notification permission inside the Play click gesture so the
+    // browser accepts it; harmless no-op when already granted/denied.
+    wasQueuedRef.current = false;
+    if (settings.queueNotifications) {
+      void ensureNotificationPermission();
+    }
+
     console.log("handlePlayGame entry", {
       title: game.title,
       launchInFlight: launchInFlightRef.current,
@@ -2780,6 +2829,7 @@ export function App(): JSX.Element {
     resolveSubscriptionInfoForLaunch,
     selectedProvider,
     settings.enablePersistingInGameSettings,
+    settings.queueNotifications,
     streamStatus,
     t,
     variantByGameId,

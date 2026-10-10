@@ -126,6 +126,16 @@ export interface Settings {
   nativeTransitionDiagnostics?: NativeTransitionDiagnostics;
   /** Show the currently streaming game as Discord Rich Presence activity */
   discordRichPresence: boolean;
+  /**
+   * Browser-notification layer for queue events: chime plus a system
+   * notification when a queued rig becomes ready or the queue fails while the
+   * tab is hidden. Web only; the desktop client uses Discord RPC instead.
+   */
+  queueNotifications: boolean;
+  /** Adapt stream bitrate at runtime from measured RTT and packet loss. */
+  adaptiveBitrate: boolean;
+  /** Show an on-screen touch gamepad overlay while streaming on touch devices. */
+  touchGamepadEnabled: boolean;
   /** Automatically check GitHub Releases for app updates in the background */
   autoCheckForUpdates: boolean;
   /** Release channel used for application updates */

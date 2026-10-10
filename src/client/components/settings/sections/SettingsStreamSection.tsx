@@ -647,6 +647,36 @@ export function SettingsStreamSection({
             </div>
             </div>
 
+            <div className="settings-row">
+              <label className="settings-label">
+                {t("settings.queueNotifications")}
+                <span className="settings-hint">{t("settings.queueNotificationsHint")}</span>
+              </label>
+              <label className="settings-toggle">
+                <input
+                  type="checkbox"
+                  checked={settings.queueNotifications}
+                  onChange={(e) => handleChange("queueNotifications", e.target.checked)}
+                />
+                <span className="settings-toggle-track" />
+              </label>
+            </div>
+
+            <div className="settings-row">
+              <label className="settings-label">
+                {t("settings.adaptiveBitrate")}
+                <span className="settings-hint">{t("settings.adaptiveBitrateHint")}</span>
+              </label>
+              <label className="settings-toggle">
+                <input
+                  type="checkbox"
+                  checked={settings.adaptiveBitrate}
+                  onChange={(e) => handleChange("adaptiveBitrate", e.target.checked)}
+                />
+                <span className="settings-toggle-track" />
+              </label>
+            </div>
+
             <div className="settings-row settings-row--column settings-row--connection-test">
               <label className="settings-label settings-label--with-icon">
                 <Gauge size={15} className="settings-label-icon" />

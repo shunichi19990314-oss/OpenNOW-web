@@ -60,6 +60,13 @@ export const SETTINGS_SCOPE_SEARCH_TERMS: Record<SettingsSearchScopeId, readonly
   "stream-region": [
     "stream",
     "region",
+    "notification",
+    "queue notification",
+    "sound",
+    "chime",
+    "adaptive bitrate",
+    "auto quality",
+    "bitrate",
     "latency",
     "ping",
     "server",

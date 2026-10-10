@@ -870,7 +870,11 @@
       },
       "webrtcNoCandidates": "Not a single ICE candidate was gathered, not even a local host candidate, which needs no network access at all. This points to the browser or device, not the network: WebRTC is typically disabled by an enterprise policy, a privacy extension, or a browser flag. GeForce NOW streaming needs WebRTC, so launching a game will most likely fail to connect on this device until that is lifted. Diagnostics: {{debug}}",
       "webrtcStunUnreachable": "Local UDP works, but neither public STUN server was reachable, so no server-reflexive candidate could be verified. GeForce NOW uses NVIDIA's own ICE servers, so streaming may still work; treat this as informational."
-    }
+    },
+    "queueNotifications": "Queue notifications",
+    "queueNotificationsHint": "Play a chime and show a system notification when your queued rig is ready or the queue fails while this tab is in the background.",
+    "adaptiveBitrate": "Adaptive bitrate",
+    "adaptiveBitrateHint": "Automatically lower the stream bitrate when RTT or packet loss spikes, and raise it again once the connection recovers."
   },
   "navbar": {
     "subscriptionDetails": "Subscription details",
@@ -953,5 +957,12 @@
     "viewOnGitHub": "View full release on GitHub",
     "unavailable": "Release notes couldn't be loaded right now.",
     "settingsLink": "What's new"
+  },
+  "notifications": {
+    "readyTitle": "Your game is ready",
+    "readyBody": "{{title}} is now streaming. Return to the tab to play.",
+    "readyBodyGeneric": "Your session is now streaming. Return to the tab to play.",
+    "failedTitle": "Queue failed",
+    "failedBody": "The game session could not be started."
   }
 }
