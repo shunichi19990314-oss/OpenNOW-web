@@ -1,10 +1,11 @@
-import { Search, LayoutGrid, ArrowUpDown, Filter, ChevronDown, Gamepad2, Menu } from "lucide-react";
+import { Search, LayoutGrid, ArrowUpDown, Filter, ChevronDown, Gamepad2, Menu, Play } from "lucide-react";
 import { memo, useEffect, useMemo, useRef, useState } from "react";
 import type { JSX } from "react";
 import { AnimatePresence, m } from "motion/react";
 import { isOwnedLibraryStatus } from "@shared/gfn";
 import type { CatalogFilterGroup, CatalogSortOption, GameInfo, GamePanelResult, GameVariant } from "@shared/gfn";
 import { getStoreDisplayName, getStoreIconComponent } from "./GameCard";
+import { formatCatalogLastPlayed } from "../utils/lastPlayedFormat";
 import { GameCardListItem, useCatalogCardActionsRef } from "./GameCardListItem";
 import { appendImageType, appendUnique, gameMatchesActiveSession } from "../lib/controllerCatalogUi";
 import { useTranslation } from "../i18n";
@@ -693,8 +694,48 @@ export const HomePage = memo(function HomePage({
           ? t("home.count.shownSupported", { shown: games.length, supported: supportedCount })
           : t("home.count.shown", { shown: games.length });
 
+  // "Continue playing" hero: most recently played owned game, hidden while
+  // searching so results stay the focus.
+  const continueGame = useMemo(() => {
+    if (searchQuery.trim()) return null;
+    let best: GameInfo | null = null;
+    let bestTime = 0;
+    for (const game of games) {
+      if (!game.lastPlayed) continue;
+      const owned = game.isInLibrary === true
+        || (game.variants ?? []).some((variant) => isOwnedLibraryStatus(variant.libraryStatus));
+      if (!owned) continue;
+      const time = new Date(game.lastPlayed).getTime();
+      if (Number.isFinite(time) && time > bestTime) {
+        bestTime = time;
+        best = game;
+      }
+    }
+    return best;
+  }, [games, searchQuery]);
+
   return (
     <div className="home-page">
+      {continueGame && (
+        <div className="home-continue-card">
+          {continueGame.imageUrl ? (
+            <img className="home-continue-art" src={continueGame.imageUrl} alt="" loading="lazy" />
+          ) : null}
+          <div className="home-continue-info">
+            <span className="home-continue-kicker">{t("home.continuePlaying.kicker")}</span>
+            <span className="home-continue-title">{continueGame.title}</span>
+            <span className="home-continue-meta">{formatCatalogLastPlayed(t, continueGame.lastPlayed)}</span>
+          </div>
+          <button
+            type="button"
+            className="home-continue-play"
+            onClick={() => onPlayGame(continueGame)}
+          >
+            <Play size={16} />
+            {t("home.continuePlaying.play")}
+          </button>
+        </div>
+      )}
       <header className="home-toolbar">
         <div className="home-search">
           <Search className="home-search-icon" size={16} />

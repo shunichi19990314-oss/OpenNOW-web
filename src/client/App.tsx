@@ -986,6 +986,25 @@ export function App(): JSX.Element {
     }
   }, [queuePosition]);
 
+  // Deep link: /?game=<id> selects that game and opens the store page so a
+  // shared link lands directly on the game details.
+  useEffect(() => {
+    try {
+      const params = new URLSearchParams(window.location.search);
+      const gameId = params.get("game");
+      if (!gameId) {
+        return;
+      }
+      params.delete("game");
+      const rest = params.toString();
+      window.history.replaceState(null, "", rest ? `${window.location.pathname}?${rest}` : window.location.pathname);
+      setSelectedGameId(gameId);
+      setCurrentPage("home");
+    } catch {
+      // Malformed history state; ignore the deep link.
+    }
+  }, []);
+
   // Notify once per distinct launch error while the tab is in the background.
   useEffect(() => {
     if (!launchError) {
