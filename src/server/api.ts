@@ -17,10 +17,62 @@ function asyncRoute(handler: (request: Request, response: Response) => Promise<v
   };
 }
 
+const SPEED_TEST_MIN_BYTES = 256 * 1024;
+const SPEED_TEST_MAX_BYTES = 24 * 1024 * 1024;
+const SPEED_TEST_DEFAULT_BYTES = 8 * 1024 * 1024;
+const SPEED_TEST_CHUNK_BYTES = 64 * 1024;
+
+function resolveSpeedTestByteCount(raw: unknown): number {
+  const parsed = Number.parseInt(typeof raw === "string" ? raw : "", 10);
+  if (!Number.isFinite(parsed)) {
+    return SPEED_TEST_DEFAULT_BYTES;
+  }
+  return Math.min(SPEED_TEST_MAX_BYTES, Math.max(SPEED_TEST_MIN_BYTES, parsed));
+}
+
 export function registerApi(app: Express): void {
   app.get("/api/health", (_request, response) => {
     response.json({ ok: true, runtime: "web", streamer: "webrtc" });
   });
+
+  /**
+   * Download throughput probe used by the pre-launch connection test. Sends a
+   * fixed-size incompressible body so the browser measures real transfer rate
+   * rather than compression speed. Signed-in visitors only: the response is
+   * metered egress, and an open endpoint would be an amplification target.
+   */
+  app.get("/api/speedtest", asyncRoute(async (request, response) => {
+    await getSession(request, response).requireAuth();
+
+    const total = resolveSpeedTestByteCount(request.query.bytes);
+    // Repeating a fixed 64 KiB pattern keeps allocations flat while defeating
+    // transfer-encoding compression.
+    const chunk = Buffer.allocUnsafe(SPEED_TEST_CHUNK_BYTES);
+    for (let offset = 0; offset < chunk.length; offset += 1) {
+      chunk[offset] = 0x20 + ((offset * 31 + 7) % 95);
+    }
+
+    response.setHeader("Content-Type", "application/octet-stream");
+    response.setHeader("Content-Length", String(total));
+    response.setHeader("Cache-Control", "no-store");
+    response.setHeader("X-Robots-Tag", "noindex");
+
+    let remaining = total;
+    while (remaining > 0 && !response.writableEnded && !response.destroyed) {
+      const slice = remaining >= chunk.length ? chunk : chunk.subarray(0, remaining);
+      remaining -= slice.length;
+      if (!response.write(slice)) {
+        await new Promise<void>((resolve) => {
+          response.once("drain", resolve);
+          response.once("close", resolve);
+        });
+      }
+    }
+    if (request.aborted || response.destroyed) {
+      return;
+    }
+    response.end();
+  }));
 
   app.get("/api/providers", asyncRoute(async (_request, response) => {
     response.json(await getLoginProviders());

@@ -835,6 +835,36 @@
       "vibrance": "ビブランス",
       "filmGrain": "フィルムグレイン",
       "reset": "デフォルトに戻す"
+    },
+    "connectionTest": {
+      "title": "接続テスト",
+      "description": "ゲーム起動前に地域レイテンシ、回線速度、WebRTC、シグナリング、コーデック対応を確認します。",
+      "run": "テストを実行",
+      "running": "テスト中...",
+      "latency": "地域レイテンシ",
+      "latencyValue": "{{ms}} ms ({{region}})",
+      "throughput": "ダウンロード速度",
+      "throughputValue": "{{mbps}} Mbps",
+      "webrtc": "WebRTC 候補",
+      "webrtcValue": "UDP 利用可 ({{types}})",
+      "webrtcTcpOnly": "UDP 候補が見つかりません。UDP をブロックするネットワークでは TCP フォールバックとなり、カクつきや接続失敗の原因になります。",
+      "signaling": "シグナリングサーバー",
+      "signalingValue": "{{ms}} ms で接続",
+      "codec": "ビデオコーデック",
+      "supported": "対応",
+      "hardware": "対応 (HW)",
+      "notSupported": "非対応",
+      "recommendation": "この回線のおすすめ: {{resolution}} / {{bitrate}} Mbps",
+      "applyRecommendation": "適用",
+      "authRequired": "このチェックにはサインインが必要です",
+      "originHint": "シグナリング WebSocket に接続できません。ページが正常に表示されている場合は、OPENNOW_ORIGIN が公開ドメインと完全一致しているか確認してください。",
+      "status": {
+        "pass": "合格",
+        "warn": "警告",
+        "fail": "失敗",
+        "unavailable": "取得不可",
+        "pending": "待機中"
+      }
     }
   },
   "navbar": {

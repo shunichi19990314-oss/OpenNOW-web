@@ -838,6 +838,36 @@
       "loadingSupporters": "Loading supporters from GitHub Sponsors...",
       "noContributors": "No contributors could be shown right now.",
       "noSupporters": "No supporters could be shown right now."
+    },
+    "connectionTest": {
+      "title": "Connection Test",
+      "description": "Check region latency, download speed, WebRTC, signaling, and codec support before launching a game.",
+      "run": "Run test",
+      "running": "Testing...",
+      "latency": "Region latency",
+      "latencyValue": "{{ms}} ms ({{region}})",
+      "throughput": "Download speed",
+      "throughputValue": "{{mbps}} Mbps",
+      "webrtc": "WebRTC candidates",
+      "webrtcValue": "UDP OK ({{types}})",
+      "webrtcTcpOnly": "No UDP candidates found. On networks that block UDP, streams fall back to TCP and may stutter or fail to connect.",
+      "signaling": "Signaling server",
+      "signalingValue": "Connected in {{ms}} ms",
+      "codec": "Video codecs",
+      "supported": "OK",
+      "hardware": "OK (HW)",
+      "notSupported": "NG",
+      "recommendation": "Recommended for this connection: {{resolution}} @ {{bitrate}} Mbps",
+      "applyRecommendation": "Apply",
+      "authRequired": "Sign in to run this check",
+      "originHint": "Cannot reach the signaling WebSocket. If pages load normally, verify that OPENNOW_ORIGIN exactly matches the public domain.",
+      "status": {
+        "pass": "Pass",
+        "warn": "Warning",
+        "fail": "Failed",
+        "unavailable": "N/A",
+        "pending": "Waiting"
+      }
     }
   },
   "navbar": {

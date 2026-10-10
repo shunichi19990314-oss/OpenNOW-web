@@ -19,6 +19,7 @@ import {
 } from "@shared/gfn";
 import { isZortosCommunityProxyUrl, ZORTOS_GITHUB_SPONSORS_URL } from "@shared/communityProxy";
 import { getCodecDecodeBadgeState, shouldShowLinuxHardwareCodecHint, type CodecTestResult } from "../../../lib/codecDiagnostics";
+import { runConnectionTest, type ConnectionTestReport, type ConnectionTestStatus } from "../../../lib/connectionTest";
 import { useTranslation } from "../../../i18n";
 import {
   clearStoredRegionPingResults,
@@ -84,6 +85,8 @@ export function SettingsStreamSection({
   const initialPingResults = useMemo(() => loadStoredRegionPingResults(), []);
   const [pingResults, setPingResults] = useState<Map<string, number | null>>(initialPingResults ?? new Map());
   const [isPinging, setIsPinging] = useState(false);
+  const [connectionTestRunning, setConnectionTestRunning] = useState(false);
+  const [connectionTestReport, setConnectionTestReport] = useState<ConnectionTestReport | null>(null);
   const [bestRegionUrl, setBestRegionUrl] = useState<string | null>(() => {
     if (!initialPingResults) return null;
     let bestUrl: string | null = null;
@@ -143,6 +146,92 @@ export function SettingsStreamSection({
       setIsPinging(false);
     }
   }, [regions]);
+
+  const handleRunConnectionTest = useCallback(async () => {
+    if (connectionTestRunning) return;
+    setConnectionTestRunning(true);
+    setConnectionTestReport(null);
+    try {
+      const report = await runConnectionTest({
+        regions,
+        selectedRegionUrl: settings.region.trim() || null,
+        onProgress: (partial) => setConnectionTestReport({ ...partial }),
+      });
+      setConnectionTestReport(report);
+    } catch (error) {
+      console.error("Connection test failed:", error);
+    } finally {
+      setConnectionTestRunning(false);
+    }
+  }, [connectionTestRunning, regions, settings.region]);
+
+  const handleApplyConnectionTestRecommendation = useCallback(() => {
+    const recommendation = connectionTestReport?.recommendation;
+    if (!recommendation) return;
+    handleChange("resolution", recommendation.resolution as Settings["resolution"]);
+    handleChange("maxBitrateMbps", recommendation.maxBitrateMbps);
+  }, [connectionTestReport, handleChange]);
+
+  const connectionTestStatusLabel = useCallback((status: ConnectionTestStatus | null | undefined): string => (
+    t(`settings.connectionTest.status.${status ?? "pending"}`)
+  ), [t]);
+
+  const connectionTestRows = useMemo(() => {
+    const report = connectionTestReport;
+    const notRun = t("settings.connectionTest.status.pending");
+
+    const latencyValue = (() => {
+      const entry = report?.latency;
+      if (!entry) return notRun;
+      if (entry.ms !== null) {
+        return t("settings.connectionTest.latencyValue", {
+          ms: Math.round(entry.ms),
+          region: entry.regionName ?? "",
+        });
+      }
+      return entry.requiresAuth ? t("settings.connectionTest.authRequired") : "—";
+    })();
+
+    const throughputValue = (() => {
+      const entry = report?.throughput;
+      if (!entry) return notRun;
+      if (entry.mbps !== null) return t("settings.connectionTest.throughputValue", { mbps: entry.mbps.toFixed(1) });
+      return entry.requiresAuth ? t("settings.connectionTest.authRequired") : "—";
+    })();
+
+    const webrtcValue = (() => {
+      const entry = report?.webrtc;
+      if (!entry) return notRun;
+      const types = entry.candidateTypes.join(", ");
+      if (entry.hasUdp) return t("settings.connectionTest.webrtcValue", { types: types || "—" });
+      return types ? `TCP only (${types})` : "—";
+    })();
+
+    const signalingValue = (() => {
+      const entry = report?.signaling;
+      if (!entry) return notRun;
+      if (entry.openMs !== null) return t("settings.connectionTest.signalingValue", { ms: entry.openMs });
+      return entry.requiresAuth ? t("settings.connectionTest.authRequired") : "—";
+    })();
+
+    const codecValue = (() => {
+      const entry = report?.codec;
+      if (!entry) return notRun;
+      const label = (supported: boolean, hardware = false): string => {
+        if (!supported) return t("settings.connectionTest.notSupported");
+        return hardware ? t("settings.connectionTest.hardware") : t("settings.connectionTest.supported");
+      };
+      return `H264 ${label(entry.h264, entry.h264Hardware)} · HEVC ${label(entry.hevc)} · AV1 ${label(entry.av1)}`;
+    })();
+
+    return [
+      { key: "latency", name: t("settings.connectionTest.latency"), value: latencyValue, status: report?.latency?.status ?? null },
+      { key: "throughput", name: t("settings.connectionTest.throughput"), value: throughputValue, status: report?.throughput?.status ?? null },
+      { key: "webrtc", name: t("settings.connectionTest.webrtc"), value: webrtcValue, status: report?.webrtc?.status ?? null },
+      { key: "signaling", name: t("settings.connectionTest.signaling"), value: signalingValue, status: report?.signaling?.status ?? null },
+      { key: "codec", name: t("settings.connectionTest.codec"), value: codecValue, status: report?.codec?.status ?? null },
+    ];
+  }, [connectionTestReport, t]);
 
   useEffect(() => {
     if (regions.length > 0 && pingResults.size > 0) {
@@ -556,6 +645,66 @@ export function SettingsStreamSection({
         </div>
       )}
             </div>
+            </div>
+
+            <div className="settings-row settings-row--column settings-row--connection-test">
+              <label className="settings-label settings-label--with-icon">
+                <Gauge size={15} className="settings-label-icon" />
+                {t("settings.connectionTest.title")}
+              </label>
+              <div className="settings-hint">{t("settings.connectionTest.description")}</div>
+              <div className="connection-test-controls">
+                <button
+                  type="button"
+                  className="codec-test-btn"
+                  disabled={connectionTestRunning}
+                  onClick={() => { void handleRunConnectionTest(); }}
+                >
+                  {connectionTestRunning ? (
+                    <>
+                      <MotionSpinner size={16} className="settings-loading-icon" />
+                      {t("settings.connectionTest.running")}
+                    </>
+                  ) : (
+                    t("settings.connectionTest.run")
+                  )}
+                </button>
+              </div>
+              {(connectionTestReport || connectionTestRunning) && (
+                <ul className="connection-test-results">
+                  {connectionTestRows.map((row) => (
+                    <li key={row.key} className={`connection-test-result connection-test-result--${row.status ?? "pending"}`}>
+                      <span className="connection-test-name">{row.name}</span>
+                      <span className="connection-test-value">{row.value}</span>
+                      <span className="connection-test-status">{connectionTestStatusLabel(row.status)}</span>
+                    </li>
+                  ))}
+                </ul>
+              )}
+              {connectionTestReport?.webrtc && !connectionTestReport.webrtc.hasUdp && connectionTestReport.webrtc.status !== "pending" && (
+                <div className="connection-test-hint">{t("settings.connectionTest.webrtcTcpOnly")}</div>
+              )}
+              {connectionTestReport?.signaling?.status === "fail" && (
+                <div className="connection-test-hint">{t("settings.connectionTest.originHint")}</div>
+              )}
+              {connectionTestReport?.recommendation && (
+                <div className="connection-test-recommendation">
+                  <span>
+                    {t("settings.connectionTest.recommendation", {
+                      resolution: connectionTestReport.recommendation.resolution,
+                      bitrate: connectionTestReport.recommendation.maxBitrateMbps,
+                    })}
+                  </span>
+                  <button
+                    type="button"
+                    className="codec-test-btn"
+                    disabled={connectionTestRunning}
+                    onClick={handleApplyConnectionTestRecommendation}
+                  >
+                    {t("settings.connectionTest.applyRecommendation")}
+                  </button>
+                </div>
+              )}
             </div>
       </div>
                   </section>
