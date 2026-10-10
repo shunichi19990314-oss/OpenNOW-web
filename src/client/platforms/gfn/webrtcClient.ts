@@ -22,6 +22,8 @@ import {
   mapKeyboardEvent,
   modifierFlags,
   toMouseButton,
+  MOUSE_LEFT,
+  MOUSE_RIGHT,
   mapGamepadButtons,
   readGamepadAxes,
   normalizeToInt16,
@@ -3737,6 +3739,295 @@ export class GfnWebRtcClient {
       this.sendReliableSingleInput(payload);
     };
 
+    // ---- Touchscreen input --------------------------------------------------
+    // Emulate a mouse for touch visitors. One finger drives the cursor and the
+    // left button: while the overlay cursor is visible the finger pins absolute
+    // positions (input type 5, same as local-cursor mouse mode); hidden-cursor
+    // games fall back to relative deltas. A second finger cancels the left
+    // press, holds the right button, and turns vertical drags into wheel
+    // scrolls. Pointer lock never engages on touch-only devices, so these
+    // paths intentionally bypass the isPointerLockActive() gate used by mouse
+    // button/wheel events.
+    const TOUCH_WHEEL_UNITS_PER_PX = 3;
+    let activeTouchId: number | null = null;
+    let secondTouchId: number | null = null;
+    let lastTouchClientX = 0;
+    let lastTouchClientY = 0;
+    let touchLeftPressed = false;
+    let touchRightPressed = false;
+    let touchWheelRemainder = 0;
+
+    const findTouchById = (list: TouchList, identifier: number): Touch | null => {
+      for (let index = 0; index < list.length; index += 1) {
+        const candidate = list[index];
+        if (candidate && candidate.identifier === identifier) {
+          return candidate;
+        }
+      }
+      return null;
+    };
+
+    const sendTouchMouseButton = (button: number, down: boolean, sourceTimestampMs: number): void => {
+      if (!this.inputReady) {
+        return;
+      }
+      const payload = down
+        ? this.inputEncoder.encodeMouseButtonDown({ button, timestampUs: timestampUs(sourceTimestampMs) })
+        : this.inputEncoder.encodeMouseButtonUp({ button, timestampUs: timestampUs(sourceTimestampMs) });
+      // Mouse buttons always travel on the reliable channel, matching onMouseDown/onMouseUp.
+      this.sendReliableSingleInput(payload);
+    };
+
+    const releaseTouchButtons = (sourceTimestampMs: number): void => {
+      if (touchLeftPressed) {
+        touchLeftPressed = false;
+        sendTouchMouseButton(MOUSE_LEFT, false, sourceTimestampMs);
+      }
+      if (touchRightPressed) {
+        touchRightPressed = false;
+        sendTouchMouseButton(MOUSE_RIGHT, false, sourceTimestampMs);
+      }
+    };
+
+    const queueTouchAbsolute = (clientX: number, clientY: number, sourceTimestampMs: number): boolean => {
+      if (this.cursorOverlay) {
+        if (!this.cursorOverlay.isCursorVisible()) {
+          // Hidden-cursor (raw-input) games: relative deltas only, matching
+          // the desktop local-cursor semantics.
+          return false;
+        }
+        this.cursorOverlay.setClientPosition(clientX, clientY);
+        const abs = this.cursorOverlay.getAbsolutePosition();
+        if (abs) {
+          return queueTouchAbsolutePacket(abs, sourceTimestampMs);
+        }
+        return false;
+      }
+      // Overlay disabled: map the finger through the letterboxed video content
+      // rect so taps still land where the visitor touched (the server renders
+      // its own cursor inside the stream).
+      const rect = videoElement.getBoundingClientRect();
+      const videoWidth = videoElement.videoWidth;
+      const videoHeight = videoElement.videoHeight;
+      if (rect.width <= 0 || rect.height <= 0 || videoWidth <= 0 || videoHeight <= 0) {
+        return false;
+      }
+      const scale = Math.min(rect.width / videoWidth, rect.height / videoHeight);
+      const contentWidth = videoWidth * scale;
+      const contentHeight = videoHeight * scale;
+      const originX = rect.left + (rect.width - contentWidth) / 2;
+      const originY = rect.top + (rect.height - contentHeight) / 2;
+      const abs = {
+        x: Math.max(0, Math.min(contentWidth, clientX - originX)),
+        y: Math.max(0, Math.min(contentHeight, clientY - originY)),
+        width: contentWidth,
+        height: contentHeight,
+      };
+      return queueTouchAbsolutePacket(abs, sourceTimestampMs);
+    };
+
+    const queueTouchAbsolutePacket = (
+      abs: { x: number; y: number; width: number; height: number },
+      sourceTimestampMs: number,
+    ): boolean => {
+      const hadBatch = hasPendingMouseMovement();
+      // A fresh absolute pin supersedes any queued relative deltas, mirroring
+      // the visible-cursor branch of queueMouseMovement.
+      this.pendingMouseDxFloat = 0;
+      this.pendingMouseDyFloat = 0;
+      this.pendingMouseAbs = abs;
+      if (this.pendingMouseTimestampUs === null) {
+        this.pendingMouseTimestampUs = timestampUs(sourceTimestampMs);
+      }
+      this.mouseCoalescedBatchEntries += 1;
+      if (!hadBatch && hasPendingMouseMovement()) {
+        afterPointerMovement();
+      }
+      return true;
+    };
+
+    const queueTouchRelative = (dx: number, dy: number, sourceTimestampMs: number): void => {
+      if (!Number.isFinite(dx) || !Number.isFinite(dy) || (dx === 0 && dy === 0)) {
+        return;
+      }
+      const hadBatch = hasPendingMouseMovement();
+      // Raw client-pixel deltas: flushMouse() scales them into server pixels.
+      // Touch bypasses the mouse delta filter/sensitivity/acceleration so the
+      // cursor tracks the finger 1:1.
+      this.pendingMouseDxFloat += dx;
+      this.pendingMouseDyFloat += dy;
+      if (this.pendingMouseTimestampUs === null) {
+        this.pendingMouseTimestampUs = timestampUs(sourceTimestampMs);
+      }
+      this.mouseCoalescedBatchEntries += 1;
+      if (!hadBatch && hasPendingMouseMovement()) {
+        afterPointerMovement();
+      }
+    };
+
+    const moveTouchCursor = (clientX: number, clientY: number, sourceTimestampMs: number): void => {
+      const dx = clientX - lastTouchClientX;
+      const dy = clientY - lastTouchClientY;
+      lastTouchClientX = clientX;
+      lastTouchClientY = clientY;
+      if (!queueTouchAbsolute(clientX, clientY, sourceTimestampMs)) {
+        queueTouchRelative(dx, dy, sourceTimestampMs);
+      }
+    };
+
+    const sendTouchWheel = (dyPx: number, sourceTimestampMs: number): void => {
+      if (!this.inputReady || !Number.isFinite(dyPx) || dyPx === 0) {
+        return;
+      }
+      touchWheelRemainder += -dyPx * TOUCH_WHEEL_UNITS_PER_PX;
+      const delta = Math.trunc(touchWheelRemainder);
+      if (delta === 0) {
+        return;
+      }
+      touchWheelRemainder -= delta;
+      const payload = this.inputEncoder.encodeMouseWheel({
+        delta: Math.max(-32768, Math.min(32767, delta)),
+        timestampUs: timestampUs(sourceTimestampMs),
+      });
+      this.sendReliableSingleInput(payload);
+    };
+
+    const onTouchStart = (event: TouchEvent): void => {
+      if (this.isStreamInputBlocked() || !this.inputReady) {
+        // Let overlays (sidebar, dialogs) receive native touch behavior.
+        return;
+      }
+      // Suppress scrolling, pinch-zoom, and the synthetic mouse events/click
+      // that would otherwise request pointer lock.
+      event.preventDefault();
+
+      if (event.touches.length >= 2 && activeTouchId !== null) {
+        const second = Array.from(event.touches).find((touch) => touch.identifier !== activeTouchId);
+        if (second && secondTouchId === null) {
+          secondTouchId = second.identifier;
+          // Two-finger gesture: cancel the left press, hold right button.
+          if (touchLeftPressed) {
+            touchLeftPressed = false;
+            sendTouchMouseButton(MOUSE_LEFT, false, event.timeStamp);
+          }
+          if (!touchRightPressed) {
+            touchRightPressed = true;
+            sendTouchMouseButton(MOUSE_RIGHT, true, event.timeStamp);
+          }
+          touchWheelRemainder = 0;
+          const [a, b] = Array.from(event.touches);
+          if (a && b) {
+            lastTouchClientX = (a.clientX + b.clientX) / 2;
+            lastTouchClientY = (a.clientY + b.clientY) / 2;
+          }
+        }
+        return;
+      }
+
+      if (event.touches.length === 1) {
+        const touch = event.touches[0];
+        if (!touch) {
+          return;
+        }
+        activeTouchId = touch.identifier;
+        lastTouchClientX = touch.clientX;
+        lastTouchClientY = touch.clientY;
+        // Pin the cursor under the finger first, on the ordered reliable
+        // channel, so the click lands where the visitor touched.
+        const hadBatch = hasPendingMouseMovement();
+        queueTouchAbsolute(touch.clientX, touch.clientY, event.timeStamp);
+        if (hadBatch || hasPendingMouseMovement()) {
+          flushMouse(true);
+        }
+        if (!touchLeftPressed) {
+          touchLeftPressed = true;
+          sendTouchMouseButton(MOUSE_LEFT, true, event.timeStamp);
+        }
+      }
+    };
+
+    const onTouchMove = (event: TouchEvent): void => {
+      if (this.isStreamInputBlocked() || !this.inputReady) {
+        return;
+      }
+      event.preventDefault();
+
+      if (secondTouchId !== null && event.touches.length >= 2) {
+        const [a, b] = Array.from(event.touches);
+        if (a && b) {
+          const midY = (a.clientY + b.clientY) / 2;
+          const dy = midY - lastTouchClientY;
+          lastTouchClientX = (a.clientX + b.clientX) / 2;
+          lastTouchClientY = midY;
+          sendTouchWheel(dy, event.timeStamp);
+        }
+        return;
+      }
+
+      if (activeTouchId === null) {
+        return;
+      }
+      const touch = findTouchById(event.touches, activeTouchId);
+      if (!touch) {
+        return;
+      }
+      moveTouchCursor(touch.clientX, touch.clientY, event.timeStamp);
+    };
+
+    const onTouchEnd = (event: TouchEvent): void => {
+      const ended = Array.from(event.changedTouches);
+      // Only claim the gesture (and suppress its synthetic mouse events) when
+      // we actually tracked one of the lifted fingers.
+      const tracked = ended.some(
+        (touch) => touch.identifier === activeTouchId || touch.identifier === secondTouchId,
+      );
+      if (tracked) {
+        event.preventDefault();
+      }
+
+      if (secondTouchId !== null && ended.some((touch) => touch.identifier === secondTouchId)) {
+        secondTouchId = null;
+        releaseTouchButtons(event.timeStamp);
+        touchWheelRemainder = 0;
+        // A remaining finger keeps tracking the cursor but does not re-press
+        // the left button; lifting it fully ends the gesture.
+        if (event.touches.length === 1) {
+          const remaining = event.touches[0];
+          if (remaining) {
+            activeTouchId = remaining.identifier;
+            lastTouchClientX = remaining.clientX;
+            lastTouchClientY = remaining.clientY;
+          }
+        } else if (event.touches.length === 0) {
+          activeTouchId = null;
+        }
+        return;
+      }
+
+      if (activeTouchId !== null && ended.some((touch) => touch.identifier === activeTouchId)) {
+        activeTouchId = null;
+        releaseTouchButtons(event.timeStamp);
+      }
+      if (event.touches.length === 0) {
+        activeTouchId = null;
+        secondTouchId = null;
+        touchWheelRemainder = 0;
+        releaseTouchButtons(event.timeStamp);
+        // Deliver any final coalesced movement on the ordered channel.
+        flushMouse(true);
+      }
+    };
+
+    const onTouchCancel = (event: TouchEvent): void => {
+      if (activeTouchId !== null || secondTouchId !== null) {
+        event.preventDefault();
+      }
+      activeTouchId = null;
+      secondTouchId = null;
+      touchWheelRemainder = 0;
+      releaseTouchButtons(event.timeStamp);
+    };
+
     const onClick = () => {
       focusPointerLockTarget();
       void this.requestPointerLockWithOptionalFullscreen(pointerLockTarget, this.shouldAutoFullscreen()).catch(
@@ -3962,6 +4253,16 @@ export class GfnWebRtcClient {
       passive: false,
       capture: buttonCapture,
     } as AddEventListenerOptions);
+    // Touch listeners live on the stream surface itself with passive:false so
+    // preventDefault() suppresses scrolling, pinch-zoom, double-tap zoom, and
+    // the synthetic mouse events/click browsers emit after touch gestures.
+    const originalTouchAction = pointerLockTarget.style.touchAction;
+    pointerLockTarget.style.touchAction = "none";
+    const touchListenerOptions: AddEventListenerOptions = { passive: false };
+    pointerLockTarget.addEventListener("touchstart", onTouchStart, touchListenerOptions);
+    pointerLockTarget.addEventListener("touchmove", onTouchMove, touchListenerOptions);
+    pointerLockTarget.addEventListener("touchend", onTouchEnd, touchListenerOptions);
+    pointerLockTarget.addEventListener("touchcancel", onTouchCancel, touchListenerOptions);
     pointerLockTarget.addEventListener("mouseenter", onPointerLockTargetMouseEnter);
     pointerLockTarget.addEventListener("mouseleave", onPointerLockTargetMouseLeave);
     // Detect when the mouse enters the application window (from outside the
@@ -4094,6 +4395,13 @@ export class GfnWebRtcClient {
     });
     this.inputCleanup.push(() => pointerLockTarget.removeEventListener("mouseenter", onPointerLockTargetMouseEnter));
     this.inputCleanup.push(() => pointerLockTarget.removeEventListener("mouseleave", onPointerLockTargetMouseLeave));
+    this.inputCleanup.push(() => {
+      pointerLockTarget.removeEventListener("touchstart", onTouchStart);
+      pointerLockTarget.removeEventListener("touchmove", onTouchMove);
+      pointerLockTarget.removeEventListener("touchend", onTouchEnd);
+      pointerLockTarget.removeEventListener("touchcancel", onTouchCancel);
+      pointerLockTarget.style.touchAction = originalTouchAction;
+    });
     if (typeof PointerEvent !== "undefined") {
       this.inputCleanup.push(() => document.removeEventListener("pointerover", onDocumentPointerEnterWindow, true));
       this.inputCleanup.push(() => document.removeEventListener("pointermove", onFirstMouseMoveIntoWindow as EventListener, true));
