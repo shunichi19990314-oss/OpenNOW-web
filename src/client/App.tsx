@@ -62,6 +62,7 @@ import type {
 } from "./lib/appTypes";
 import { loadStoredCodecResults, saveStoredCodecResults, testCodecSupport, type CodecTestResult } from "./lib/codecDiagnostics";
 import { clampBitrateForConnection, readNavigatorConnection } from "./lib/connectionBitrate";
+import { DEVICE_STREAM_DEFAULTS } from "./webDefaults";
 import {
   createSyntheticDirectLaunchGame,
   findDirectLaunchTarget,
@@ -173,15 +174,13 @@ export function App(): JSX.Element {
 
   // Settings State
   const [settings, setSettings] = useState<Settings>({
-    resolution: "1920x1080",
+    resolution: DEVICE_STREAM_DEFAULTS.resolution,
     aspectRatio: "16:9",
     posterSizeScale: 1.05,
     fps: 60,
-    // 40 Mbps comfortably carries 1080p60 without saturating typical home
-    // Wi-Fi; launch-time clamping (connectionBitrate) adapts further on
-    // slower links. Requesting more than the link carries causes bufferbloat
-    // stutter instead of better quality.
-    maxBitrateMbps: 40,
+    // Device-adaptive default (webDefaults.chooseStreamDefaultsForDevice);
+    // launch-time clamping (connectionBitrate) adapts further on slow links.
+    maxBitrateMbps: DEVICE_STREAM_DEFAULTS.maxBitrateMbps,
     recordingBitrateMbps: null,
     streamClientMode: "web",
     nativeStreamerBackend: "gstreamer",
