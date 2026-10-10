@@ -47,6 +47,8 @@ export function defaultDiagnostics(): StreamDiagnostics {
     decoderPressureActive: false,
     decoderRecoveryAttempts: 0,
     decoderRecoveryAction: "none",
+    adaptiveBitrateActive: false,
+    adaptiveBitrateAction: "none",
     nativeRequestedFps: undefined,
     nativeCapsFramerate: undefined,
     nativeQueueMode: undefined,

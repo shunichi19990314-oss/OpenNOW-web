@@ -194,6 +194,8 @@ interface ClientOptions {
   microphoneDeviceId?: string;
   /** Use the WebRTC cursor_channel overlay; false leaves cursor rendering to the stream/server. */
   nativeCursorOverlay?: boolean;
+  /** Adapt the bitrate ceiling at runtime from measured RTT and packet loss (default true). */
+  adaptiveBitrate?: boolean;
   /** Mouse sensitivity multiplier (1.0 = default) */
   mouseSensitivity?: number;
   /** Software acceleration strength percentage (1-150) */
@@ -481,6 +483,11 @@ export class GfnWebRtcClient {
 
   // Decoder pressure detection + recovery state.
   private decoderPressureActive = false;
+  // Network-driven adaptive bitrate state (settings.adaptiveBitrate).
+  private adaptiveBitrateEnabled = true;
+  private netPoorStreak = 0;
+  private netHealthyStreak = 0;
+  private netLastAdjustMs = 0;
   private decoderPressureConsecutivePolls = 0;
   private decoderStableConsecutivePolls = 0;
   private decoderRecoveryAttemptCount = 0;
@@ -550,6 +557,8 @@ export class GfnWebRtcClient {
     decoderPressureActive: false,
     decoderRecoveryAttempts: 0,
     decoderRecoveryAction: "none",
+    adaptiveBitrateActive: false,
+    adaptiveBitrateAction: "none",
     nativeRequestedFps: undefined,
     nativeCapsFramerate: undefined,
     nativeQueueMode: undefined,
@@ -574,6 +583,7 @@ export class GfnWebRtcClient {
     this.autoFullScreenEnabled = options.autoFullScreen !== false;
     this.clipboardPasteEnabled = Boolean(options.clipboardPaste);
     this.clipboardMaxBytes = Math.max(0, Math.trunc(options.clipboardMaxBytes ?? DEFAULT_CLIPBOARD_MAX_BYTES));
+    this.adaptiveBitrateEnabled = options.adaptiveBitrate !== false;
 
     // Configure video element for lowest latency playback
     this.configureVideoElementForLowLatency(options.videoElement);
@@ -937,6 +947,9 @@ export class GfnWebRtcClient {
     this.lastDecoderKeyframeRequestAtMs = 0;
     this.negotiatedMaxBitrateKbps = 0;
     this.currentBitrateCeilingKbps = 0;
+    this.netPoorStreak = 0;
+    this.netHealthyStreak = 0;
+    this.netLastAdjustMs = 0;
     this.receiverLatencyTargets.video = null;
     this.receiverLatencyTargets.audio = null;
     this.activeReceivers = [];
@@ -1006,6 +1019,8 @@ export class GfnWebRtcClient {
       decoderPressureActive: false,
       decoderRecoveryAttempts: 0,
       decoderRecoveryAction: "none",
+      adaptiveBitrateActive: false,
+      adaptiveBitrateAction: "none",
       nativeRequestedFps: undefined,
       nativeCapsFramerate: undefined,
       nativeQueueMode: undefined,
@@ -1268,6 +1283,99 @@ export class GfnWebRtcClient {
     return false;
   }
 
+  /** Enable/disable the network-driven adaptive bitrate loop at runtime. */
+  public setAdaptiveBitrateEnabled(value: boolean): void {
+    const enabled = Boolean(value);
+    if (this.adaptiveBitrateEnabled === enabled) {
+      return;
+    }
+    this.adaptiveBitrateEnabled = enabled;
+    this.netPoorStreak = 0;
+    this.netHealthyStreak = 0;
+    this.log(`Adaptive bitrate ${enabled ? "enabled" : "disabled"}`);
+    if (!enabled) {
+      // Hand the ceiling back to the negotiated maximum when switching off.
+      const ceiling = this.negotiatedMaxBitrateKbps;
+      const current = this.currentBitrateCeilingKbps;
+      if (ceiling > 0 && current > 0 && current < ceiling && !this.decoderPressureActive) {
+        void this.setMaxBitrateKbps(ceiling).then(() => {
+          this.currentBitrateCeilingKbps = ceiling;
+          this.diagnostics.adaptiveBitrateActive = false;
+          this.diagnostics.adaptiveBitrateAction = "disabled-restored";
+        });
+      }
+    }
+  }
+
+  /**
+   * Network-driven adaptive bitrate. The stats poll (500 ms) already computes
+   * interval packet loss and active-pair RTT; step the encoder ceiling down
+   * while the link is congested and back up toward the negotiated maximum
+   * once it stays healthy, with hysteresis and cooldowns so the loop cannot
+   * oscillate. Decoder-pressure recovery owns the ceiling while active.
+   */
+  private async maybeAdaptBitrateForNetwork(): Promise<void> {
+    if (!this.adaptiveBitrateEnabled || !this.inputReady) {
+      return;
+    }
+    if (this.decoderPressureActive) {
+      this.netPoorStreak = 0;
+      this.netHealthyStreak = 0;
+      return;
+    }
+    const negotiated = this.negotiatedMaxBitrateKbps;
+    if (negotiated <= 0) {
+      return;
+    }
+    const current = this.currentBitrateCeilingKbps > 0 ? this.currentBitrateCeilingKbps : negotiated;
+    const rttMs = this.diagnostics.rttMs;
+    const lossPercent = this.diagnostics.packetLossPercent;
+    const nowMs = performance.now();
+
+    const poor = rttMs > 150 || lossPercent > 5;
+    const healthy = rttMs > 0 && rttMs < 80 && lossPercent < 1;
+    if (poor) {
+      this.netPoorStreak += 1;
+      this.netHealthyStreak = 0;
+    } else if (healthy) {
+      this.netHealthyStreak += 1;
+      this.netPoorStreak = 0;
+    } else {
+      this.netPoorStreak = Math.max(0, this.netPoorStreak - 1);
+      this.netHealthyStreak = 0;
+    }
+
+    if (this.netPoorStreak >= 4 && nowMs - this.netLastAdjustMs >= 8_000) {
+      const next = Math.max(2_000, Math.floor(current * 0.7));
+      if (next < current) {
+        await this.setMaxBitrateKbps(next);
+        this.currentBitrateCeilingKbps = next;
+        this.netLastAdjustMs = nowMs;
+        this.netPoorStreak = 0;
+        this.diagnostics.adaptiveBitrateActive = true;
+        this.diagnostics.adaptiveBitrateAction = `network-down:${next}`;
+        this.log(
+          `Adaptive bitrate: congestion (rtt=${rttMs}ms loss=${lossPercent.toFixed(1)}%) stepped ceiling ${current} -> ${next} kbps`,
+        );
+      }
+    } else if (
+      this.netHealthyStreak >= 24
+      && nowMs - this.netLastAdjustMs >= 20_000
+      && current < negotiated
+    ) {
+      const next = Math.min(negotiated, Math.ceil(current * 1.25));
+      if (next > current) {
+        await this.setMaxBitrateKbps(next);
+        this.currentBitrateCeilingKbps = next;
+        this.netLastAdjustMs = nowMs;
+        this.netHealthyStreak = 0;
+        this.diagnostics.adaptiveBitrateActive = next < negotiated;
+        this.diagnostics.adaptiveBitrateAction = `network-up:${next}`;
+        this.log(`Adaptive bitrate: link healthy, stepped ceiling ${current} -> ${next} kbps`);
+      }
+    }
+  }
+
   private async reduceBitrateForDecoderRecovery(): Promise<boolean> {
     if (!this.pc || !this.pc.localDescription) {
       return false;
@@ -1518,6 +1626,8 @@ export class GfnWebRtcClient {
       const rtt = Number(activePair.currentRoundTripTime);
       this.diagnostics.rttMs = Math.round(rtt * 1000 * 10) / 10;
     }
+
+    await this.maybeAdaptBitrateForNetwork();
 
     const reliableBufferedAmount = this.reliableInputChannel?.bufferedAmount ?? 0;
     const partiallyReliableBufferedAmount = this.partiallyReliableInputChannel?.bufferedAmount ?? 0;

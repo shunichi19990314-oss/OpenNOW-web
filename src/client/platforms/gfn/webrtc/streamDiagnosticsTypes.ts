@@ -61,6 +61,10 @@ export interface StreamDiagnostics {
   decoderPressureActive: boolean;
   decoderRecoveryAttempts: number;
   decoderRecoveryAction: string;
+  /** True while the network-driven adaptive bitrate loop has lowered the ceiling below the negotiated max. */
+  adaptiveBitrateActive: boolean;
+  /** Last adaptive action, e.g. "network-down:14000". */
+  adaptiveBitrateAction: string;
   nativeRequestedFps?: number;
   nativeCapsFramerate?: string;
   nativeQueueMode?: NativeQueueMode;

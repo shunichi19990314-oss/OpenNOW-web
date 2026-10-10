@@ -1632,6 +1632,13 @@ export function App(): JSX.Element {
         // ignore
       }
     }
+    if (key === "adaptiveBitrate") {
+      try {
+        clientRef.current?.setAdaptiveBitrateEnabled(value as boolean);
+      } catch {
+        // ignore
+      }
+    }
     if (key === "maxBitrateMbps") {
       try {
         void (clientRef.current as any)?.setMaxBitrateKbps?.((value as number) * 1000);
@@ -2110,6 +2117,7 @@ export function App(): JSX.Element {
         microphoneMode: settings.microphoneMode,
         microphoneDeviceId: settings.microphoneDeviceId || undefined,
         nativeCursorOverlay: settings.nativeCursorOverlay,
+        adaptiveBitrate: settings.adaptiveBitrate,
         mouseSensitivity: settings.mouseSensitivity,
         mouseAcceleration: settings.mouseAcceleration,
         keyboardLayout: settings.keyboardLayout,
