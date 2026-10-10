@@ -4107,7 +4107,11 @@ export class GfnWebRtcClient {
       if (!this.inputReady || !Number.isFinite(dyPx) || dyPx === 0) {
         return;
       }
-      touchWheelRemainder += -dyPx * TOUCH_WHEEL_UNITS_PER_PX;
+      // Touch uses content-follows-finger semantics: dragging two fingers
+      // down pulls the page down (scroll toward the top), which on the wire
+      // is a positive delta — the same direction the mouse path produces for
+      // a wheel-up event (delta = -deltaY). Do not negate dyPx here.
+      touchWheelRemainder += dyPx * TOUCH_WHEEL_UNITS_PER_PX;
       const delta = Math.trunc(touchWheelRemainder);
       if (delta === 0) {
         return;
