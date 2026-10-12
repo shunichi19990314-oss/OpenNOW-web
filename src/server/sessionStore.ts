@@ -98,26 +98,44 @@ function loadCookieSession(request: Pick<IncomingMessage, "headers">): WebAuthSe
 
 function persistCookieSession(response: Response, session: WebAuthSession): void {
   if (!session.isDirty()) return;
-  const encrypted = encryptedCookieValue(session.toSnapshot());
-  const chunks = encrypted.match(new RegExp(`.{1,${COOKIE_CHUNK_SIZE}}`, "g")) ?? [];
-  if (chunks.length > MAX_COOKIE_CHUNKS) {
-    throw new Error("Encrypted OpenNOW session exceeds the safe browser cookie limit.");
-  }
+  // Never throw from this path: it runs inside onHeaders while the response is
+  // already being flushed, so an exception would break the request instead of
+  // degrading gracefully.
+  try {
+    const chunkPattern = new RegExp(`.{1,${COOKIE_CHUNK_SIZE}}`, "g");
+    let chunks = encryptedCookieValue(session.toSnapshot()).match(chunkPattern) ?? [];
+    if (chunks.length > MAX_COOKIE_CHUNKS) {
+      // Oversized snapshot (large tokens / accumulated state): shed volatile
+      // collections and try once more before giving up.
+      session.reduceVolatileState();
+      chunks = encryptedCookieValue(session.toSnapshot()).match(chunkPattern) ?? [];
+    }
+    if (chunks.length > MAX_COOKIE_CHUNKS) {
+      // Keep the browser's existing cookies rather than writing a truncated
+      // (undecryptable) snapshot that would force a logout.
+      console.error(
+        `[Session] Encrypted snapshot still exceeds ${MAX_COOKIE_CHUNKS} cookie chunks after trimming; skipping persistence.`,
+      );
+      return;
+    }
 
-  const options = {
-    httpOnly: true,
-    sameSite: "strict" as const,
-    secure: process.env.NODE_ENV === "production",
-    maxAge: COOKIE_MAX_AGE_MS,
-    path: COOKIE_PATH,
-  };
-  for (let index = 0; index < MAX_COOKIE_CHUNKS; index += 1) {
-    const name = `${COOKIE_PREFIX}${index}`;
-    const chunk = chunks[index];
-    if (chunk) response.cookie(name, chunk, options);
-    else response.clearCookie(name, options);
+    const options = {
+      httpOnly: true,
+      sameSite: "strict" as const,
+      secure: process.env.NODE_ENV === "production",
+      maxAge: COOKIE_MAX_AGE_MS,
+      path: COOKIE_PATH,
+    };
+    for (let index = 0; index < MAX_COOKIE_CHUNKS; index += 1) {
+      const name = `${COOKIE_PREFIX}${index}`;
+      const chunk = chunks[index];
+      if (chunk) response.cookie(name, chunk, options);
+      else response.clearCookie(name, options);
+    }
+    session.markPersisted();
+  } catch (error) {
+    console.error("[Session] Failed to persist session cookie:", error);
   }
-  session.markPersisted();
 }
 
 export const cookieSessionMiddleware: RequestHandler = (

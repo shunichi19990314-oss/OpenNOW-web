@@ -1,4 +1,4 @@
-import { randomBytes } from "node:crypto";
+import { createHash, randomBytes } from "node:crypto";
 
 import type { AuthSession, AuthTokens, LoginProvider } from "@shared/gfn";
 import { buildGfnLcarsHeaders, GFN_USER_AGENT } from "./gfn/clientHeaders";
@@ -16,6 +16,59 @@ interface DeviceAttempt {
   provider: LoginProvider;
   deviceCode: string;
   expiresAt: number;
+}
+
+// Single-flight + short reuse window for token refresh. A page reload fires
+// several authorized requests concurrently; independent refreshes against a
+// rotating-refresh-token endpoint consume each other's tokens and can leave
+// the browser holding an already-invalidated refresh token — a self-inflicted
+// logout on the next reload. Concurrent callers sharing the same refresh
+// token now await one NVIDIA call and reuse its result briefly.
+// (Per-process only; a single Railway replica covers the common case.)
+interface RefreshCacheEntry {
+  tokens: AuthTokens;
+  atMs: number;
+}
+const refreshInFlight = new Map<string, Promise<AuthTokens>>();
+const refreshRecentlyCompleted = new Map<string, RefreshCacheEntry>();
+const REFRESH_REUSE_WINDOW_MS = 30_000;
+
+function refreshTokenKey(refreshToken: string): string {
+  return createHash("sha256").update(refreshToken).digest("hex").slice(0, 32);
+}
+
+async function refreshAuthTokensShared(
+  refreshToken: string,
+  authClientId: string | undefined,
+): Promise<AuthTokens> {
+  const key = refreshTokenKey(refreshToken);
+  const now = Date.now();
+
+  const recent = refreshRecentlyCompleted.get(key);
+  if (recent && now - recent.atMs <= REFRESH_REUSE_WINDOW_MS) {
+    return recent.tokens;
+  }
+  const inFlight = refreshInFlight.get(key);
+  if (inFlight) {
+    return inFlight;
+  }
+
+  const promise = (async (): Promise<AuthTokens> => {
+    try {
+      const tokens = await refreshAuthTokens(refreshToken, authClientId as string);
+      for (const [cachedKey, entry] of refreshRecentlyCompleted) {
+        if (now - entry.atMs > REFRESH_REUSE_WINDOW_MS * 4) {
+          refreshRecentlyCompleted.delete(cachedKey);
+        }
+      }
+      refreshRecentlyCompleted.set(key, { tokens, atMs: Date.now() });
+      return tokens;
+    } finally {
+      refreshInFlight.delete(key);
+    }
+  })();
+  refreshInFlight.set(key, promise);
+  return promise;
 }
 
 export interface WebAuthSessionSnapshot {
@@ -98,10 +151,16 @@ export async function getLoginProviders(): Promise<LoginProvider[]> {
 }
 
 export class WebAuthSession {
+  /** FIFO bound so the encrypted cookie snapshot cannot grow without limit. */
+  private static readonly MAX_ACTIVE_SESSION_IDS = 16;
+
   private auth: AuthSession | null = null;
   private readonly attempts = new Map<string, DeviceAttempt>();
   private readonly activeSessionIds = new Set<string>();
-  private dirty = true;
+  // Fresh sessions start clean: an empty snapshot carries no state worth
+  // persisting, and writing one would clobber a valid auth cookie whenever a
+  // single request transiently failed to read/decrypt the incoming cookies.
+  private dirty = false;
 
   static fromSnapshot(snapshot: WebAuthSessionSnapshot): WebAuthSession {
     const session = new WebAuthSession();
@@ -119,12 +178,29 @@ export class WebAuthSession {
   }
 
   toSnapshot(): WebAuthSessionSnapshot {
+    const now = Date.now();
+    const attempts = [...this.attempts.entries()].filter(([, attempt]) => attempt?.expiresAt > now);
+    const activeSessionIds = [...this.activeSessionIds].slice(-WebAuthSession.MAX_ACTIVE_SESSION_IDS);
     return {
       version: 1,
       auth: this.auth,
-      attempts: [...this.attempts.entries()],
-      activeSessionIds: [...this.activeSessionIds],
+      attempts,
+      activeSessionIds,
     };
+  }
+
+  /**
+   * Emergency size reduction for cookie persistence: drops QR attempts and
+   * keeps only the most recent stream ids. Called when the encrypted snapshot
+   * would exceed the cookie chunk budget.
+   */
+  reduceVolatileState(): void {
+    this.attempts.clear();
+    const keep = [...this.activeSessionIds].slice(-4);
+    this.activeSessionIds.clear();
+    for (const sessionId of keep) {
+      this.activeSessionIds.add(sessionId);
+    }
   }
 
   isDirty(): boolean {
@@ -137,6 +213,14 @@ export class WebAuthSession {
 
   addActiveSession(sessionId: string): void {
     if (!this.activeSessionIds.has(sessionId)) {
+      // Bound growth: abandoned sessions (tab closed without stop) would
+      // otherwise accumulate for the cookie's 30-day lifetime and push the
+      // encrypted snapshot toward the chunk/header limits.
+      while (this.activeSessionIds.size >= WebAuthSession.MAX_ACTIVE_SESSION_IDS) {
+        const oldest = this.activeSessionIds.values().next().value;
+        if (oldest === undefined) break;
+        this.activeSessionIds.delete(oldest);
+      }
       this.activeSessionIds.add(sessionId);
       this.dirty = true;
     }
@@ -258,7 +342,7 @@ export class WebAuthSession {
         throw Object.assign(new Error("Your NVIDIA session expired. Sign in again."), { statusCode: 401 });
       }
       const previous = this.auth.tokens;
-      const refreshed = await refreshAuthTokens(refreshToken, previous.authClientId!);
+      const refreshed = await refreshAuthTokensShared(refreshToken, previous.authClientId);
       this.auth.tokens = {
         ...previous,
         ...refreshed,

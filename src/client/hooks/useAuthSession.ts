@@ -21,6 +21,26 @@ function sleep(ms: number): Promise<void> {
   return new Promise((resolve) => window.setTimeout(resolve, ms));
 }
 
+/**
+ * Retry a bootstrap task with linear backoff. Only transport/server errors
+ * reach here (a valid "not signed in" answer resolves normally), so retrying
+ * cannot resurrect an intentionally logged-out state.
+ */
+async function withBootRetry<T>(task: () => Promise<T>, attempts = 4, baseDelayMs = 1500): Promise<T> {
+  let lastError: unknown;
+  for (let attempt = 1; attempt <= attempts; attempt += 1) {
+    try {
+      return await task();
+    } catch (error) {
+      lastError = error;
+      if (attempt < attempts) {
+        await sleep(baseDelayMs * attempt);
+      }
+    }
+  }
+  throw lastError;
+}
+
 export interface UseAuthSessionInput {
   t: TranslateFunction;
   loadSessionRuntimeData: (
@@ -135,10 +155,16 @@ export function useAuthSession({
         onBootstrapSettings(loadedSettings, loadedSessionProxyUrl);
 
         setStartupStatusMessage(t("auth.status.restoringSavedSession"));
-        const [providerList, sessionResult] = await Promise.all([
-          window.openNow.getLoginProviders(),
-          window.openNow.getAuthSession(),
-        ]);
+        // Retry the boot fetches before concluding there is no session: a
+        // Railway redeploy, cold boot, or transient network error otherwise
+        // drops visitors to the login screen even though their session cookie
+        // is perfectly valid.
+        const [providerList, sessionResult] = await withBootRetry(() =>
+          Promise.all([
+            window.openNow.getLoginProviders(),
+            window.openNow.getAuthSession(),
+          ]),
+        );
         const accounts = await window.openNow.getSavedAccounts();
         const persistedSession = sessionResult.session;
 
