@@ -11044,3 +11044,185 @@ button.game-card-store-chip.owned.active:hover {
   .tg-face-btn--b { top: 42px; left: 84px; }
   .tg-face-btn--a { top: 84px; left: 42px; }
 }
+
+/* ============================================================
+   UI Polish Layer
+   Visual refinements + usability upgrades built entirely on the
+   existing design tokens, so every theme and accent preset keeps
+   working. Kept as one coherent block for easy review/rollback.
+   ============================================================ */
+
+/* --- 1. Global rendering & interaction quality --------------- */
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+}
+
+::selection {
+  background: var(--accent-glow);
+  color: var(--ink);
+}
+
+/* Consistent accent focus ring for keyboard navigation */
+:focus-visible {
+  outline: 2px solid color-mix(in srgb, var(--accent) 70%, transparent);
+  outline-offset: 2px;
+}
+
+/* Numeric readouts (timers, queue position, pings, stats) stop
+   jittering sideways while they count */
+.sload-fact strong,
+.sv-session-clock,
+.sv-stats-chip,
+.library-last-played,
+.region-ping-value,
+.connection-test-value,
+.connection-test-status {
+  font-variant-numeric: tabular-nums;
+}
+
+/* --- 2. Elevation & surface depth ----------------------------- */
+.game-card {
+  transition: border-color var(--t-normal), box-shadow var(--t-normal), transform var(--t-normal);
+}
+
+.game-card:hover {
+  transform: translate3d(0, -3px, 0);
+  box-shadow: var(--shadow-md), 0 0 0 1px color-mix(in srgb, var(--accent) 12%, transparent);
+}
+
+.game-card:active {
+  transform: translate3d(0, -1px, 0) scale(0.995);
+  transition-duration: 80ms;
+}
+
+/* Layered shadow + hairline top light on floating surfaces */
+.login-card,
+.settings-modal,
+.navbar-modal,
+.sv-shot-modal-card,
+.sv-exit-card,
+.queue-server-select-modal {
+  box-shadow: var(--shadow-lg), inset 0 1px 0 rgba(255, 255, 255, 0.045);
+}
+
+[data-theme="light"] .login-card,
+[data-theme="light"] .settings-modal,
+[data-theme="light"] .navbar-modal,
+[data-theme="light"] .sv-shot-modal-card,
+[data-theme="light"] .sv-exit-card {
+  box-shadow: var(--shadow-lg), inset 0 1px 0 rgba(255, 255, 255, 0.65);
+}
+
+/* --- 3. Buttons & controls ------------------------------------ */
+.home-continue-play,
+.codec-test-btn {
+  transition: transform var(--t-fast), box-shadow var(--t-normal), filter var(--t-fast),
+    background-color var(--t-fast), border-color var(--t-fast), color var(--t-fast);
+}
+
+.home-continue-play:hover {
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-sm), 0 0 18px var(--accent-glow);
+}
+
+.home-continue-play:active {
+  transform: translateY(0) scale(0.98);
+}
+
+.codec-test-btn:hover {
+  border-color: color-mix(in srgb, var(--accent) 40%, var(--panel-border-solid));
+  color: var(--ink);
+}
+
+.codec-test-btn:active:not(:disabled) {
+  transform: scale(0.98);
+}
+
+/* Active navbar tab: subtle accent glow instead of a hard underline */
+.navbar-link.active {
+  text-shadow: 0 0 18px var(--accent-glow);
+}
+
+/* Search input: soft accent ring on focus */
+.home-search-input:focus {
+  box-shadow: 0 0 0 3px var(--accent-surface);
+}
+
+/* QR panel: gentle accent halo (kept outside the code area so
+   scannability is untouched) */
+.login-qr-code {
+  box-shadow: 0 0 0 1px var(--panel-border), 0 0 36px var(--accent-glow);
+}
+
+/* --- 4. Scrollbars: slimmer, rounded, accent on hover ---------- */
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  border-radius: var(--r-full);
+  background: color-mix(in srgb, var(--ink) 14%, transparent);
+  border: 2px solid transparent;
+  background-clip: content-box;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: color-mix(in srgb, var(--accent) 45%, transparent);
+  background-clip: content-box;
+}
+
+/* --- 5. Touch usability (11.6" touchscreen Chromebooks etc.) --- */
+@media (pointer: coarse) {
+  .navbar-link {
+    min-height: 42px;
+    display: inline-flex;
+    align-items: center;
+  }
+
+  .region-dropdown-item,
+  .settings-dropdown-item {
+    min-height: 44px;
+  }
+
+  .codec-test-btn,
+  .home-continue-play,
+  .sv-exit-btn,
+  .settings-export-logs-btn,
+  .settings-storage-manager-btn,
+  .settings-storage-reset-btn {
+    min-height: 44px;
+  }
+
+  .home-search-input {
+    min-height: 44px;
+  }
+
+  /* Slightly larger toggle targets without shifting layout */
+  .settings-toggle {
+    transform: scale(1.08);
+    transform-origin: right center;
+  }
+}
+
+/* --- 6. Motion sensitivity ------------------------------------- */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
