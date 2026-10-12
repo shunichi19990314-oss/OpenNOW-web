@@ -1,4 +1,4 @@
-import { Search, LayoutGrid, ArrowUpDown, Filter, ChevronDown, Gamepad2, Menu, Play } from "lucide-react";
+import { Search, LayoutGrid, ArrowUpDown, Filter, ChevronDown, Gamepad2, Menu, Play, X } from "lucide-react";
 import { memo, useEffect, useMemo, useRef, useState } from "react";
 import type { JSX } from "react";
 import { AnimatePresence, m } from "motion/react";
@@ -714,9 +714,48 @@ export const HomePage = memo(function HomePage({
     return best;
   }, [games, searchQuery]);
 
+  // Featured hero carousel: the resume slot leads, then de-duped featured
+  // games. Only shown while browsing (no search/filter) so results stay the
+  // focus; falls back to the compact continue card when there is no hero.
+  const heroSlides = useMemo(() => {
+    const slides: Array<{ game: GameInfo; isResume: boolean }> = [];
+    if (continueGame) {
+      slides.push({ game: continueGame, isResume: true });
+    }
+    for (const game of storeHeroGames) {
+      if (slides.length >= 6) break;
+      if (slides.some((entry) => entry.game.id === game.id)) continue;
+      slides.push({ game, isResume: false });
+    }
+    return slides;
+  }, [continueGame, storeHeroGames]);
+
+  const browsingCatalog = searchQuery.trim().length === 0 && selectedFilterIds.length === 0;
+  const showHero = browsingCatalog && heroSlides.length > 0;
+  const [heroIndex, setHeroIndex] = useState(0);
+  const [heroPaused, setHeroPaused] = useState(false);
+  const safeHeroIndex = showHero ? heroIndex % heroSlides.length : 0;
+
+  useEffect(() => {
+    if (!showHero || heroPaused || heroSlides.length < 2) {
+      return undefined;
+    }
+    const timer = window.setInterval(() => {
+      setHeroIndex((current) => (current + 1) % heroSlides.length);
+    }, 8000);
+    return () => window.clearInterval(timer);
+  }, [showHero, heroPaused, heroSlides.length]);
+
+  // Curated collections as horizontally scrollable rows (same extraction as
+  // the controller theater), capped so the page stays scannable.
+  const homeRows = useMemo(
+    () => (browsingCatalog ? controllerSections.slice(0, 4) : []),
+    [browsingCatalog, controllerSections],
+  );
+
   return (
     <div className="home-page">
-      {continueGame && (
+      {continueGame && !showHero && (
         <div className="home-continue-card">
           {continueGame.imageUrl ? (
             <img className="home-continue-art" src={continueGame.imageUrl} alt="" loading="lazy" />
@@ -746,6 +785,16 @@ export const HomePage = memo(function HomePage({
             value={searchQuery}
             onChange={(e) => onSearchChange(e.target.value)}
           />
+          {searchQuery && (
+            <button
+              type="button"
+              className="home-search-clear"
+              onClick={() => onSearchChange("")}
+              aria-label={t("home.search.clear")}
+            >
+              <X size={14} />
+            </button>
+          )}
         </div>
 
         {visibleFilterGroups.length > 0 && (
@@ -802,10 +851,126 @@ export const HomePage = memo(function HomePage({
       </header>
 
       <div className="home-grid-area">
+        {showHero && (() => {
+          const slide = heroSlides[safeHeroIndex];
+          if (!slide) return null;
+          const heroImage = getControllerStoreImageCandidates(slide.game, true)[0] ?? slide.game.imageUrl;
+          const heroLogo = getControllerStoreLogoUrl(slide.game);
+          const heroStore = getPrimaryStoreName(slide.game, selectedVariantByGameId[slide.game.id]);
+          return (
+            <section
+              className="home-hero"
+              aria-roledescription="carousel"
+              aria-label={t("home.hero.carouselLabel")}
+              onMouseEnter={() => setHeroPaused(true)}
+              onMouseLeave={() => setHeroPaused(false)}
+            >
+              <AnimatePresence initial={false}>
+                <m.div
+                  key={slide.game.id}
+                  className="home-hero-slide"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  transition={{ duration: 0.45, ease: "easeOut" }}
+                >
+                  {heroImage && (
+                    <img className="home-hero-bg" src={heroImage} alt="" draggable={false} />
+                  )}
+                  <div className="home-hero-scrim" />
+                  <div className="home-hero-content">
+                    {slide.isResume && (
+                      <span className="home-hero-kicker">{t("home.continuePlaying.kicker")}</span>
+                    )}
+                    {heroLogo ? (
+                      <img className="home-hero-logo" src={heroLogo} alt={slide.game.title} draggable={false} />
+                    ) : (
+                      <h1 className="home-hero-title">{slide.game.title}</h1>
+                    )}
+                    <div className="home-hero-meta">
+                      <span className="home-hero-chip">{getPrimaryGenre(slide.game)}</span>
+                      <span className="home-hero-chip">{heroStore}</span>
+                      {slide.isResume && slide.game.lastPlayed && (
+                        <span className="home-hero-chip">{formatCatalogLastPlayed(t, slide.game.lastPlayed)}</span>
+                      )}
+                    </div>
+                    <div className="home-hero-actions">
+                      <button
+                        type="button"
+                        className="home-hero-play"
+                        onClick={() => onPlayGame(slide.game)}
+                      >
+                        <Play size={17} />
+                        {slide.isResume ? t("home.hero.resume") : t("home.hero.play")}
+                      </button>
+                      <button
+                        type="button"
+                        className="home-hero-details"
+                        onClick={() => onSelectGame(slide.game.id)}
+                      >
+                        {t("home.hero.details")}
+                      </button>
+                    </div>
+                  </div>
+                </m.div>
+              </AnimatePresence>
+              {heroSlides.length > 1 && (
+                <div className="home-hero-dots" role="tablist" aria-label={t("home.hero.carouselLabel")}>
+                  {heroSlides.map((entry, index) => (
+                    <button
+                      key={entry.game.id}
+                      type="button"
+                      role="tab"
+                      aria-selected={index === safeHeroIndex}
+                      aria-label={t("home.hero.dotLabel", { index: index + 1 })}
+                      className={`home-hero-dot ${index === safeHeroIndex ? "active" : ""}`}
+                      onClick={() => setHeroIndex(index)}
+                    />
+                  ))}
+                </div>
+              )}
+            </section>
+          );
+        })()}
+
+        {homeRows.map((section) => (
+          <section key={section.id} className="home-row">
+            <h2 className="home-section-title">
+              <span className="home-section-bar" aria-hidden="true" />
+              {section.title}
+            </h2>
+            <div className="home-row-scroller">
+              {section.games.slice(0, 18).map((game) => (
+                <div key={game.id} className="home-row-item">
+                  <GameCardListItem
+                    game={game}
+                    isSelected={game.id === selectedGameId}
+                    selectedVariantId={selectedVariantByGameId[game.id]}
+                    actionsRef={catalogActionsRef}
+                  />
+                </div>
+              ))}
+            </div>
+          </section>
+        ))}
+
+        {!showInitialLoading && hasGames && (
+          <div className="home-section-head">
+            <h2 className="home-section-title">
+              <span className="home-section-bar" aria-hidden="true" />
+              {t("home.allGames")}
+            </h2>
+          </div>
+        )}
+
         {showInitialLoading ? (
-          <div className="home-empty-state">
-            <MotionSpinner className="home-spinner" size={36} label={t("common.loading")} />
-            <p>{t("home.empty.loadingGames")}</p>
+          <div className="game-grid" aria-busy="true" aria-label={t("common.loading")}>
+            {Array.from({ length: 12 }, (_, index) => (
+              <div key={index} className="home-skeleton-card">
+                <div className="home-skeleton-poster" />
+                <div className="home-skeleton-line" />
+              </div>
+            ))}
           </div>
         ) : !hasGames ? (
           <div className="home-empty-state">

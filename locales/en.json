@@ -188,6 +188,17 @@
     "continuePlaying": {
       "kicker": "Continue playing",
       "play": "Play"
+    },
+    "hero": {
+      "play": "Play",
+      "resume": "Resume",
+      "details": "Details",
+      "carouselLabel": "Featured games",
+      "dotLabel": "Show slide {{index}}"
+    },
+    "allGames": "All Games",
+    "search": {
+      "clear": "Clear search"
     }
   },
   "library": {

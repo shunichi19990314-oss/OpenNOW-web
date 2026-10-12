@@ -185,6 +185,17 @@
     "continuePlaying": {
       "kicker": "プレイを再開",
       "play": "起動"
+    },
+    "hero": {
+      "play": "プレイ",
+      "resume": "再開",
+      "details": "詳細",
+      "carouselLabel": "注目のゲーム",
+      "dotLabel": "スライド{{index}}を表示"
+    },
+    "allGames": "すべてのゲーム",
+    "search": {
+      "clear": "検索をクリア"
     }
   },
   "library": {
