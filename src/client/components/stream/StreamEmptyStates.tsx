@@ -89,6 +89,7 @@ export function SidebarMicMutedBadge({
   diagnosticsStore: StreamDiagnosticsStore;
   micTrack?: MediaStreamTrack | null;
 }): JSX.Element | null {
+  const { t } = useTranslation();
   const micEnabled = useStreamDiagnosticsSelector(
     diagnosticsStore,
     (stats) => stats.micEnabled ?? false,
@@ -98,7 +99,7 @@ export function SidebarMicMutedBadge({
     return null;
   }
 
-  return <span className="settings-value-badge">Muted</span>;
+  return <span className="settings-value-badge">{t("stream.mutedBadge")}</span>;
 }
 
 export function VideoFocusOnReady({

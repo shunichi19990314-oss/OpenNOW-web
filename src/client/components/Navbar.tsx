@@ -335,7 +335,7 @@ export function Navbar({
               onClick={onResumeSession}
               disabled={isResumingSession || isTerminatingSession || !activeSession.serverIp}
             >
-              {isResumingSession ? <MotionSpinner size={14} label="Resuming session" /> : <PlayCircle size={14} />}
+              {isResumingSession ? <MotionSpinner size={14} label={t("accessibility.resumingSession")} /> : <PlayCircle size={14} />}
               <span className="navbar-session-resume-text">{t("app.actions.resume")}</span>
               {activeSessionTitle && <span className="navbar-session-resume-game">{activeSessionTitle}</span>}
             </button>
@@ -350,7 +350,7 @@ export function Navbar({
               onClick={onTerminateSession}
               disabled={isResumingSession || isTerminatingSession}
             >
-              {isTerminatingSession ? <MotionSpinner size={14} label="Ending session" /> : <Square size={12} />}
+              {isTerminatingSession ? <MotionSpinner size={14} label={t("accessibility.endingSession")} /> : <Square size={12} />}
               <span className="navbar-session-terminate-text">{t("session.terminate")}</span>
             </button>
           </div>

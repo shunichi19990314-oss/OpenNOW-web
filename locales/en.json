@@ -403,7 +403,21 @@
       "timeRemainingShort": "Left",
       "inputQueuePressure": "Input queue pressure (buffered bytes and delayed flush)",
       "inputChannelState": "Partially reliable input channel state and queued bytes",
-      "mouseFlushCadence": "Mouse flush cadence and packet rate"
+      "mouseFlushCadence": "Mouse flush cadence and packet rate",
+      "targetBitrate": "Target {{mbps}} Mbps",
+      "nativeRenderer": "Native renderer",
+      "drop": "Drop",
+      "loss": "Loss",
+      "nativeDropHint": "Native renderer dropped frame percentage",
+      "lagSourceLine": "Lag source {{reason}} · {{detail}}",
+      "lagReasons": {
+        "network": "Network",
+        "decode": "Decode",
+        "input": "Input",
+        "render": "Render",
+        "stable": "Stable",
+        "unknown": "Unknown"
+      }
     },
     "controls": {
       "antiAfkEnabled": "Anti-AFK is enabled",
@@ -451,7 +465,19 @@
       "focusAndPress": "Focus and press the key combination to bind",
       "examples": "Examples: F3, Ctrl+Shift+Q, Ctrl+Shift+K",
       "stats": "Stats"
-    }
+    },
+    "exitBody": "Your current cloud gaming session will be closed.",
+    "kbdConfirm": "confirm",
+    "kbdCancel": "cancel",
+    "enterFullscreen": "Enter fullscreen",
+    "exitFullscreen": "Exit fullscreen",
+    "mouseLock": "Mouse lock",
+    "fullScreenShort": "Full screen",
+    "controllerMenu": "Controller menu",
+    "muteMic": "Mute microphone",
+    "unmuteMic": "Unmute microphone",
+    "mutedBadge": "Muted",
+    "adBreak": "Ad Break"
   },
   "sidebar": {
     "title": "Sidebar",
@@ -459,7 +485,59 @@
     "sessionTimeRemaining": "Session Time Left",
     "sessionTimeRemainingTitle": "Session time remaining",
     "showSessionTimeRemainingInStatsOverlay": "Show session time remaining in stats overlay",
-    "statsOverlay": "Stats overlay"
+    "statsOverlay": "Stats overlay",
+    "quickMenu": "Quick menu",
+    "quickMenuPages": "Quick menu pages",
+    "tabSession": "Session",
+    "tabControls": "Controls",
+    "tabMedia": "Media",
+    "tabKeys": "Keys",
+    "currentStreamSession": "Current stream session",
+    "nowStreaming": "Now streaming",
+    "sessionTime": "Session time",
+    "totalPlaytimeLeft": "Total playtime left",
+    "sessionControls": "Session controls",
+    "manageActiveStream": "Manage the active stream.",
+    "releaseMouse": "Release mouse",
+    "captureMouse": "Capture mouse",
+    "toggleMic": "Toggle mic",
+    "showTimeInStats": "Show time in stats",
+    "showTimeInStatsHint": "Keep session time visible in the performance overlay.",
+    "mouseSensitivity": "Mouse sensitivity",
+    "mouseAcceleration": "Mouse accelerator",
+    "filtersNativeUnavailable": "Video filters are unavailable while the native streamer renders the video.",
+    "enableVideoFilters": "Enable video filters",
+    "reset": "Reset",
+    "audio": "Audio",
+    "configureMicrophone": "Configure microphone handling.",
+    "sendLevel": "Send level",
+    "gallery": "Gallery",
+    "screenshots": "Screenshots",
+    "recordings": "Recordings",
+    "scrollGalleryLeft": "Scroll gallery left",
+    "scrollGalleryRight": "Scroll gallery right",
+    "scrollRecordingsLeft": "Scroll recordings left",
+    "scrollRecordingsRight": "Scroll recordings right",
+    "showInFolder": "Show in folder",
+    "deleteRecording": "Delete recording",
+    "delete": "Delete",
+    "editScreenshotKeybind": "Edit screenshot keybind here",
+    "screenshotShortcut": "Screenshot shortcut",
+    "recordingShortcut": "Recording shortcut",
+    "keybindFocusHint": "Focus and press the key combination to bind",
+    "closeScreenshotPreview": "Close screenshot preview",
+    "screenshot": "Screenshot",
+    "save": "Save",
+    "vibranceHint": "Boosts muted colors without oversaturating.",
+    "sharpenHint": "Contrast-adaptive sharpening. Counters stream compression blur.",
+    "micModes": {
+      "disabled": "Disabled",
+      "disabledDesc": "No microphone input",
+      "pushToTalk": "Push-to-Talk",
+      "pushToTalkDesc": "Hold a key to talk",
+      "voiceActivity": "Voice Activity",
+      "voiceActivityDesc": "Always listen"
+    }
   },
   "settings": {
     "title": "Settings",
@@ -875,12 +953,14 @@
         "pending": "Waiting"
       },
       "webrtcNoCandidates": "Not a single ICE candidate was gathered, not even a local host candidate, which needs no network access at all. This points to the browser or device, not the network: WebRTC is typically disabled by an enterprise policy, a privacy extension, or a browser flag. GeForce NOW streaming needs WebRTC, so launching a game will most likely fail to connect on this device until that is lifted. Diagnostics: {{debug}}",
-      "webrtcStunUnreachable": "Local UDP works, but neither public STUN server was reachable, so no server-reflexive candidate could be verified. GeForce NOW uses NVIDIA's own ICE servers, so streaming may still work; treat this as informational."
+      "webrtcStunUnreachable": "Local UDP works, but neither public STUN server was reachable, so no server-reflexive candidate could be verified. GeForce NOW uses NVIDIA's own ICE servers, so streaming may still work; treat this as informational.",
+      "webrtcTcpOnlyValue": "TCP only ({{types}})"
     },
     "queueNotifications": "Queue notifications",
     "queueNotificationsHint": "Play a chime and show a system notification when your queued rig is ready or the queue fails while this tab is in the background.",
     "adaptiveBitrate": "Adaptive bitrate",
-    "adaptiveBitrateHint": "Automatically lower the stream bitrate when RTT or packet loss spikes, and raise it again once the connection recovers."
+    "adaptiveBitrateHint": "Automatically lower the stream bitrate when RTT or packet loss spikes, and raise it again once the connection recovers.",
+    "advanced": "Advanced"
   },
   "navbar": {
     "subscriptionDetails": "Subscription details",
@@ -970,5 +1050,64 @@
     "readyBodyGeneric": "Your session is now streaming. Return to the tab to play.",
     "failedTitle": "Queue failed",
     "failedBody": "The game session could not be started."
+  },
+  "queueModal": {
+    "title": "Select Server",
+    "subtitle": "{{title}} · Free tier server queue",
+    "close": "Close",
+    "fetching": "Fetching live queue data…",
+    "recommended": "Recommended",
+    "autoSelected": "⚡ Auto Selected",
+    "autoSubPinging": "Lowest queue · pinging…",
+    "autoSubBalance": "Best ping + queue balance",
+    "autoSubQueue": "Lowest queue position",
+    "closest": "📍 Closest Server",
+    "closestSubMeasuring": "Measuring latency…",
+    "closestSub": "Lowest latency to you",
+    "closestSubUnavailable": "Ping unavailable",
+    "allServers": "All Servers",
+    "noServerData": "No server data available.",
+    "poweredBy": "Powered by",
+    "cancel": "Cancel",
+    "pingingServers": "Pinging servers…",
+    "queueChip": "Queue: {{count}}",
+    "waitChip": "{{duration}} wait",
+    "loadingServers": "Loading servers",
+    "noPingData": "No ping data available",
+    "regions": {
+      "US": "North America",
+      "EU": "Europe",
+      "JP": "Japan",
+      "KR": "South Korea",
+      "CA": "Canada",
+      "THAI": "Southeast Asia",
+      "MY": "Malaysia"
+    }
+  },
+  "accessibility": {
+    "loading": "Loading",
+    "testingRegions": "Testing regions",
+    "refreshingAccounts": "Refreshing accounts",
+    "resumingSession": "Resuming session",
+    "endingSession": "Ending session"
+  },
+  "ads": {
+    "preview": {
+      "playing": "Playing",
+      "paused": "Paused",
+      "pausedMsg": "Ad paused before completion.",
+      "resume": "Resume",
+      "stalled": "Stalled",
+      "stalledMsg": "Playback stopped progressing.",
+      "retry": "Retry",
+      "blocked": "Autoplay blocked",
+      "blockedMsg": "Browser blocked automatic playback.",
+      "start": "Start",
+      "timeout": "Timed out",
+      "timeoutMsg": "Ad did not start in time.",
+      "error": "Playback error",
+      "errorMsg": "Media failed to load.",
+      "titleAdvertisement": "{{title}} advertisement"
+    }
   }
 }

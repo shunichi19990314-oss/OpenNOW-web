@@ -434,7 +434,7 @@ export function SettingsAccountSection({
             void loadGameAccounts();
           }}
         >
-          {gameAccountsLoading ? <MotionSpinner size={15} label="Refreshing accounts" /> : <RefreshCcw size={15} />}
+          {gameAccountsLoading ? <MotionSpinner size={15} label={t("accessibility.refreshingAccounts")} /> : <RefreshCcw size={15} />}
           {t("settings.accountConnections.refresh")}
         </button>
       </div>

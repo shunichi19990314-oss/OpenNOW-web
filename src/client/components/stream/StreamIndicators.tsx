@@ -5,6 +5,7 @@ import type { StreamDiagnosticsStore } from "../../utils/streamDiagnosticsStore"
 import { useStreamDiagnosticsSelector } from "../../utils/streamDiagnosticsStore";
 import type { MicState } from "../../platforms/gfn/microphoneManager";
 import { formatElapsed } from "../../utils/timeFormat";
+import { useTranslation } from "../../i18n";
 
 type MicBadgeState = {
   connectedGamepads: number;
@@ -42,6 +43,7 @@ export function MicrophoneIndicator({
     }),
     isMicBadgeStateEqual,
   );
+  const { t } = useTranslation();
   const hasMicrophone = micState === "started" || micState === "stopped";
   const showMicIndicator = hasMicrophone && !isConnecting && !hideStreamButtons;
 
@@ -55,8 +57,8 @@ export function MicrophoneIndicator({
       className={`sv-mic${connectedGamepads > 0 || showAntiAfkIndicator ? " sv-mic--stacked" : ""}`}
       onClick={onToggleMicrophone}
       data-enabled={micEnabled}
-      title={micEnabled ? "Mute microphone" : "Unmute microphone"}
-      aria-label={micEnabled ? "Mute microphone" : "Unmute microphone"}
+      title={micEnabled ? t("stream.muteMic") : t("stream.unmuteMic")}
+      aria-label={micEnabled ? t("stream.muteMic") : t("stream.unmuteMic")}
       aria-pressed={micEnabled}
     >
       {micEnabled ? <Mic size={18} /> : <MicOff size={18} />}

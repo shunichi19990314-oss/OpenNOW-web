@@ -1,6 +1,8 @@
 import { Sparkles } from "lucide-react";
 import type { JSX } from "react";
 
+import { useTranslation } from "../i18n";
+
 interface QueueAdFallbackCardProps {
   title: string;
   message: string;
@@ -9,6 +11,7 @@ interface QueueAdFallbackCardProps {
 }
 
 export function QueueAdFallbackCard({ title, message, imageUrl, compact = false }: QueueAdFallbackCardProps): JSX.Element {
+  const { t } = useTranslation();
   return (
     <div className={`queue-ad-fallback${compact ? " queue-ad-fallback--compact" : ""}`}>
       <div className="queue-ad-fallback-bg">
@@ -20,7 +23,7 @@ export function QueueAdFallbackCard({ title, message, imageUrl, compact = false 
       <div className="queue-ad-fallback-content">
         <div className="queue-ad-fallback-badge">
           <Sparkles size={14} />
-          <span>Ad Break</span>
+          <span>{t("stream.adBreak")}</span>
         </div>
 
         <div className="queue-ad-fallback-copy">

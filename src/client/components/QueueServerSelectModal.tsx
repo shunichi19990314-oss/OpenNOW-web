@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useTranslation } from "../i18n";
 import type { JSX } from "react";
 import { m } from "motion/react";
 import type { GameInfo, PrintedWasteQueueData, PrintedWasteZone } from "@shared/gfn";
@@ -46,14 +47,14 @@ function getQueueColor(q: number): string {
   return "#ef4444";
 }
 
-const REGION_META: Record<string, { label: string; flag: string }> = {
-  US:   { label: "North America",  flag: "🇺🇸" },
-  EU:   { label: "Europe",         flag: "🇪🇺" },
-  JP:   { label: "Japan",          flag: "🇯🇵" },
-  KR:   { label: "South Korea",    flag: "🇰🇷" },
-  CA:   { label: "Canada",         flag: "🇨🇦" },
-  THAI: { label: "Southeast Asia", flag: "🇹🇭" },
-  MY:   { label: "Malaysia",       flag: "🇲🇾" },
+const REGION_META: Record<string, { labelKey: string; flag: string }> = {
+  US:   { labelKey: "queueModal.regions.US",   flag: "🇺🇸" },
+  EU:   { labelKey: "queueModal.regions.EU",   flag: "🇪🇺" },
+  JP:   { labelKey: "queueModal.regions.JP",   flag: "🇯🇵" },
+  KR:   { labelKey: "queueModal.regions.KR",   flag: "🇰🇷" },
+  CA:   { labelKey: "queueModal.regions.CA",   flag: "🇨🇦" },
+  THAI: { labelKey: "queueModal.regions.THAI", flag: "🇹🇭" },
+  MY:   { labelKey: "queueModal.regions.MY",   flag: "🇲🇾" },
 };
 const REGION_ORDER = ["US", "CA", "EU", "JP", "KR", "THAI", "MY"];
 const QUEUE_REFRESH_INTERVAL_MS = 2 * 60 * 1000;
@@ -81,6 +82,7 @@ interface Props {
 }
 
 export function QueueServerSelectModal({ game, initialQueueData = null, onConfirm, onCancel }: Props): JSX.Element {
+  const { t } = useTranslation();
   const [queueData,  setQueueData]  = useState<PrintedWasteQueueData | null>(initialQueueData);
   const [queueLoading, setQueueLoading] = useState(initialQueueData === null);
   const [fetchError, setFetchError] = useState<string | null>(null);
@@ -363,13 +365,13 @@ export function QueueServerSelectModal({ game, initialQueueData = null, onConfir
           <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 12 }}>
             <div>
               <h2 id="queue-server-select-title" style={{ margin: 0, fontSize: 18, fontWeight: 700, color: "var(--ink)" }}>
-                Select Server
+                {t("queueModal.title")}
               </h2>
               <p style={{ margin: "3px 0 0", fontSize: 13, color: "var(--ink-muted)" }}>
-                {game.title} · Free tier server queue
+                {t("queueModal.subtitle", { title: game.title })}
               </p>
             </div>
-            <button onClick={onCancel} style={closeBtn} aria-label="Close">✕</button>
+            <button onClick={onCancel} style={closeBtn} aria-label={t("queueModal.close")}>✕</button>
           </div>
           <div style={{ height: 1, background: "var(--panel-border)", margin: "16px 0 0" }} />
         </div>
@@ -382,7 +384,7 @@ export function QueueServerSelectModal({ game, initialQueueData = null, onConfir
             <CenteredNote>
               <Spinner />
               <span style={{ marginTop: 10, display: "block", fontSize: 14, color: "var(--ink-muted)" }}>
-                Fetching live queue data…
+                {t("queueModal.fetching")}
               </span>
             </CenteredNote>
           )}
@@ -405,18 +407,18 @@ export function QueueServerSelectModal({ game, initialQueueData = null, onConfir
             <>
               {/* Recommended — always two cards side by side */}
               <div style={{ marginBottom: 20 }}>
-                <SectionLabel>Recommended</SectionLabel>
+                <SectionLabel>{t("queueModal.recommended")}</SectionLabel>
                 <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
 
                   {/* Auto Selected */}
                   <RecommendCard
-                    label="⚡ Auto Selected"
+                    label={t("queueModal.autoSelected")}
                     sublabel={
                       isPinging
-                        ? "Lowest queue · pinging…"
+                        ? t("queueModal.autoSubPinging")
                         : zonePings
-                        ? "Best ping + queue balance"
-                        : "Lowest queue position"
+                        ? t("queueModal.autoSubBalance")
+                        : t("queueModal.autoSubQueue")
                     }
                     zone={autoZone}
                     selected={selected === "auto"}
@@ -426,13 +428,13 @@ export function QueueServerSelectModal({ game, initialQueueData = null, onConfir
 
                   {/* Closest Server — always visible; shows spinner while pinging */}
                   <RecommendCard
-                    label="📍 Closest Server"
+                    label={t("queueModal.closest")}
                     sublabel={
                       isPinging
-                        ? "Measuring latency…"
+                        ? t("queueModal.closestSubMeasuring")
                         : closestZone
-                        ? "Lowest latency to you"
-                        : "Ping unavailable"
+                        ? t("queueModal.closestSub")
+                        : t("queueModal.closestSubUnavailable")
                     }
                     zone={closestZone}
                     selected={selected === "closest"}
@@ -446,16 +448,16 @@ export function QueueServerSelectModal({ game, initialQueueData = null, onConfir
 
               {/* All servers */}
               <div>
-                <SectionLabel>All Servers</SectionLabel>
+                <SectionLabel>{t("queueModal.allServers")}</SectionLabel>
                 {regionOrder.map((region) => {
                   const regionZones = groupedZones[region] ?? [];
-                  const meta = REGION_META[region] ?? { label: region, flag: "🌐" };
+                  const meta = REGION_META[region] ?? { labelKey: "", flag: "🌐" };
                   return (
                     <div key={region} style={{ marginBottom: 14 }}>
                       <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 6 }}>
                         <span style={{ fontSize: 15 }}>{meta.flag}</span>
                         <span style={{ fontSize: 12, fontWeight: 600, color: "var(--ink-muted)", letterSpacing: "0.03em" }}>
-                          {meta.label}
+                          {meta.labelKey ? t(meta.labelKey) : region}
                         </span>
                       </div>
                       <div style={{ display: "flex", flexDirection: "column", gap: 3 }}>
@@ -480,7 +482,7 @@ export function QueueServerSelectModal({ game, initialQueueData = null, onConfir
 
           {!isLoading && !fetchError && zones.length === 0 && (
             <CenteredNote>
-              <span style={{ fontSize: 13, color: "var(--ink-muted)" }}>No server data available.</span>
+              <span style={{ fontSize: 13, color: "var(--ink-muted)" }}>{t("queueModal.noServerData")}</span>
             </CenteredNote>
           )}
         </div>
@@ -495,7 +497,7 @@ export function QueueServerSelectModal({ game, initialQueueData = null, onConfir
             onMouseEnter={(e) => { (e.currentTarget as HTMLAnchorElement).style.color = "var(--ink-soft)"; }}
             onMouseLeave={(e) => { (e.currentTarget as HTMLAnchorElement).style.color = "var(--ink-dim)"; }}
           >
-            Powered by <strong style={{ color: "inherit" }}>PrintedWaste</strong>
+            {t("queueModal.poweredBy")} <strong style={{ color: "inherit" }}>PrintedWaste</strong>
           </a>
           <div style={{ display: "flex", gap: 10 }}>
             <button
@@ -513,7 +515,7 @@ export function QueueServerSelectModal({ game, initialQueueData = null, onConfir
                 btn.style.border = ghostBtn.border as string;
                 btn.style.color = ghostBtn.color as string;
               }}
-            >Cancel</button>
+            >{t("queueModal.cancel")}</button>
             <button
               onClick={handleConfirm}
               style={launchBtn}
@@ -563,8 +565,9 @@ interface RecommendCardProps {
 }
 
 function RecommendCard({ label, sublabel, zone, selected, accent, pinging, disabled, onClick }: RecommendCardProps): JSX.Element {
+  const { t } = useTranslation();
   const [hovered, setHovered] = useState(false);
-  const regionMeta = zone ? (REGION_META[zone.pwRegion] ?? { label: zone.pwRegion, flag: "🌐" }) : null;
+  const regionMeta = zone ? (REGION_META[zone.pwRegion] ?? { labelKey: "", flag: "🌐" }) : null;
 
   const isInteractive = !disabled && !pinging;
 
@@ -605,7 +608,7 @@ function RecommendCard({ label, sublabel, zone, selected, accent, pinging, disab
       {pinging ? (
         <>
           <div style={{ fontSize: 14, fontWeight: 600, color: "var(--ink-muted)", marginBottom: 8 }}>—</div>
-          <div style={{ fontSize: 11, color: "var(--ink-dim)" }}>Pinging servers…</div>
+          <div style={{ fontSize: 11, color: "var(--ink-dim)" }}>{t("queueModal.pingingServers")}</div>
         </>
       ) : zone ? (
         <>
@@ -614,12 +617,12 @@ function RecommendCard({ label, sublabel, zone, selected, accent, pinging, disab
           </div>
           <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
             {zone.pingMs !== null && <Chip color={getPingColor(zone.pingMs)}>{zone.pingMs}ms</Chip>}
-            <Chip color={getQueueColor(zone.queuePosition)}>Queue: {zone.queuePosition}</Chip>
-            {zone.etaMs !== undefined && <Chip color="#6b7280">{formatWait(zone.etaMs)} wait</Chip>}
+            <Chip color={getQueueColor(zone.queuePosition)}>{t("queueModal.queueChip", { count: zone.queuePosition })}</Chip>
+            {zone.etaMs !== undefined && <Chip color="#6b7280">{t("queueModal.waitChip", { duration: formatWait(zone.etaMs) })}</Chip>}
           </div>
         </>
       ) : (
-        <div style={{ fontSize: 12, color: "var(--ink-dim)" }}>No ping data available</div>
+        <div style={{ fontSize: 12, color: "var(--ink-dim)" }}>{t("queueModal.noPingData")}</div>
       )}
     </button>
   );
@@ -726,12 +729,13 @@ function Chip({ color, children }: { color: string; children: React.ReactNode })
 }
 
 function Spinner(): JSX.Element {
+  const { t } = useTranslation();
   return (
       <m.div
         animate={{ rotate: 360 }}
         transition={spinnerTransition}
         role="status"
-        aria-label="Loading servers"
+        aria-label={t("queueModal.loadingServers")}
         style={{
         display: "inline-block",
         width: 26,

@@ -282,11 +282,11 @@ export function StreamView({
 
   const microphoneModes = useMemo(
     () => [
-      { value: "disabled" as MicrophoneMode, label: "Disabled", description: "No microphone input" },
-      { value: "push-to-talk" as MicrophoneMode, label: "Push-to-Talk", description: "Hold a key to talk" },
-      { value: "voice-activity" as MicrophoneMode, label: "Voice Activity", description: "Always listen" },
+      { value: "disabled" as MicrophoneMode, label: t("sidebar.micModes.disabled"), description: t("sidebar.micModes.disabledDesc") },
+      { value: "push-to-talk" as MicrophoneMode, label: t("sidebar.micModes.pushToTalk"), description: t("sidebar.micModes.pushToTalkDesc") },
+      { value: "voice-activity" as MicrophoneMode, label: t("sidebar.micModes.voiceActivity"), description: t("sidebar.micModes.voiceActivityDesc") },
     ],
-    []
+    [t]
   );
 
   const handleFullscreenToggle = useCallback(() => {
@@ -1490,7 +1490,7 @@ export function StreamView({
         {showSideBar && (
           <SideBar
             key="quick-menu-sidebar"
-            title="Quick menu"
+            title={t("sidebar.quickMenu")}
             className="sv-sidebar"
             elementRef={sidebarRef}
             onClose={() => setShowSideBar(false)}
@@ -1507,12 +1507,12 @@ export function StreamView({
                   onClick={handleSidebarExitSession}
                 >
                   <LogOut size={16} />
-                  <span>End session</span>
+                  <span>{t("session.endSession")}</span>
                 </button>
               </>
             )}
           >
-            <div className="sidebar-tabs" role="tablist" aria-label="Quick menu pages">
+            <div className="sidebar-tabs" role="tablist" aria-label={t("sidebar.quickMenuPages")}>
               <button
                 type="button"
                 role="tab"
@@ -1521,7 +1521,7 @@ export function StreamView({
                 onClick={() => setActiveSidebarTab("session")}
               >
                 <Gauge size={16} />
-                <span>Session</span>
+                <span>{t("sidebar.tabSession")}</span>
               </button>
               <button
                 type="button"
@@ -1531,7 +1531,7 @@ export function StreamView({
                 onClick={() => setActiveSidebarTab("controls")}
               >
                 <SlidersHorizontal size={16} />
-                <span>Controls</span>
+                <span>{t("sidebar.tabControls")}</span>
               </button>
               <button
                 type="button"
@@ -1541,7 +1541,7 @@ export function StreamView({
                 onClick={() => setActiveSidebarTab("media")}
               >
                 <Images size={16} />
-                <span>Media</span>
+                <span>{t("sidebar.tabMedia")}</span>
               </button>
               <button
                 type="button"
@@ -1551,15 +1551,15 @@ export function StreamView({
                 onClick={() => setActiveSidebarTab("shortcuts")}
               >
                 <Keyboard size={16} />
-                <span>Keys</span>
+                <span>{t("sidebar.tabKeys")}</span>
               </button>
             </div>
 
             {activeSidebarTab === "session" && (
               <div className="sidebar-page sidebar-page--session" role="tabpanel">
-                <section className="sidebar-session-card" aria-label="Current stream session">
+                <section className="sidebar-session-card" aria-label={t("sidebar.currentStreamSession")}>
                   <div className="sidebar-session-card-head">
-                    <span className="sidebar-session-kicker">Now streaming</span>
+                    <span className="sidebar-session-kicker">{t("sidebar.nowStreaming")}</span>
                     <strong className="sidebar-session-title">{gameTitle}</strong>
                     {PlatformIcon && platformName && (
                       <span className="sidebar-session-platform" title={platformName}>
@@ -1569,9 +1569,9 @@ export function StreamView({
                     )}
                   </div>
                 </section>
-                <section className="sidebar-session-metrics" aria-label="Session time">
+                <section className="sidebar-session-metrics" aria-label={t("sidebar.sessionTime")}>
                   <div className="sidebar-metric">
-                    <span>Total playtime left</span>
+                    <span>{t("sidebar.totalPlaytimeLeft")}</span>
                     <RemainingPlaytimeIndicator subscriptionInfo={subscriptionInfo} startedAtMs={sessionStartedAtMs} active={isStreaming} className="sidebar-metric-value" />
                   </div>
                   {sessionTimeRemainingText !== null && (
@@ -1586,8 +1586,8 @@ export function StreamView({
                 </section>
                 <section className="sidebar-section">
                   <div className="sidebar-section-header">
-                    <span>Session controls</span>
-                    <span className="sidebar-section-sub">Manage the active stream.</span>
+                    <span>{t("sidebar.sessionControls")}</span>
+                    <span className="sidebar-section-sub">{t("sidebar.manageActiveStream")}</span>
                   </div>
                   <div className="sidebar-quick-actions">
                     <button type="button" className="sidebar-action-card" onClick={handleFullscreenToggle}>
@@ -1596,12 +1596,12 @@ export function StreamView({
                     </button>
                     <button type="button" className="sidebar-action-card" onClick={handlePointerLockToggle}>
                       <MousePointer2 size={16} />
-                      <span>{isPointerLocked ? "Release mouse" : "Capture mouse"}</span>
+                      <span>{isPointerLocked ? t("sidebar.releaseMouse") : t("sidebar.captureMouse")}</span>
                     </button>
                     {onToggleMicrophone && (
                       <button type="button" className="sidebar-action-card" onClick={onToggleMicrophone}>
                         <Mic size={16} />
-                        <span>Toggle mic</span>
+                        <span>{t("sidebar.toggleMic")}</span>
                       </button>
                     )}
                     <button
@@ -1618,8 +1618,8 @@ export function StreamView({
                 {sessionTimeRemainingText !== null && (
                   <label className="sidebar-setting-card sidebar-mini-toggle" tabIndex={0}>
                     <span>
-                      <strong>Show time in stats</strong>
-                      <small>Keep session time visible in the performance overlay.</small>
+                      <strong>{t("sidebar.showTimeInStats")}</strong>
+                      <small>{t("sidebar.showTimeInStatsHint")}</small>
                     </span>
                     <input
                       type="checkbox"
@@ -1653,7 +1653,7 @@ export function StreamView({
                     <input
                       type="range"
                       name="mouse-sensitivity"
-                      aria-label="Mouse sensitivity"
+                      aria-label={t("sidebar.mouseSensitivity")}
                       className="settings-slider"
                       min={0.1}
                       max={4}
@@ -1676,7 +1676,7 @@ export function StreamView({
                     <input
                       type="range"
                       name="mouse-acceleration"
-                      aria-label="Mouse accelerator"
+                      aria-label={t("sidebar.mouseAcceleration")}
                       className="settings-slider"
                       min={1}
                       max={150}
@@ -1699,7 +1699,7 @@ export function StreamView({
                     <span className="sidebar-section-sub">GPU shaders applied to the stream.</span>
                   </div>
                   {gstreamerEnabled ? (
-                    <span className="sidebar-hint">Video filters are unavailable while the native streamer renders the video.</span>
+                    <span className="sidebar-hint">{t("sidebar.filtersNativeUnavailable")}</span>
                   ) : (
                     <>
                       <div className="sidebar-row sidebar-row--aligned">
@@ -1709,7 +1709,7 @@ export function StreamView({
                             type="checkbox"
                             name="enable-video-filters"
                             checked={videoShader.enabled}
-                            aria-label="Enable video filters"
+                            aria-label={t("sidebar.enableVideoFilters")}
                             onChange={(event) => onVideoShaderChange({ ...videoShader, enabled: event.target.checked })}
                           />
                           <span className="sidebar-mini-toggle-track" />
@@ -1718,12 +1718,12 @@ export function StreamView({
                       {videoShader.enabled && (
                         <>
                           {([
-                            { key: "sharpen", label: "Sharpen", min: 0, max: 100, neutral: 0, format: (v: number) => `${v}%`, hint: "Contrast-adaptive sharpening. Counters stream compression blur." },
-                            { key: "saturation", label: "Saturation", min: 0, max: 200, neutral: 100, format: (v: number) => `${v}%` },
-                            { key: "contrast", label: "Contrast", min: 50, max: 150, neutral: 100, format: (v: number) => `${v}%` },
-                            { key: "brightness", label: "Brightness", min: 50, max: 150, neutral: 100, format: (v: number) => `${v}%` },
-                            { key: "vibrance", label: "Vibrance", min: 0, max: 100, neutral: 0, format: (v: number) => `${v}%`, hint: "Boosts muted colors without oversaturating." },
-                            { key: "filmGrain", label: "Film Grain", min: 0, max: 100, neutral: 0, format: (v: number) => `${v}%` },
+                            { key: "sharpen", label: t("settings.videoFilters.sharpen"), min: 0, max: 100, neutral: 0, format: (v: number) => `${v}%`, hint: t("sidebar.sharpenHint") },
+                            { key: "saturation", label: t("settings.videoFilters.saturation"), min: 0, max: 200, neutral: 100, format: (v: number) => `${v}%` },
+                            { key: "contrast", label: t("settings.videoFilters.contrast"), min: 50, max: 150, neutral: 100, format: (v: number) => `${v}%` },
+                            { key: "brightness", label: t("settings.videoFilters.brightness"), min: 50, max: 150, neutral: 100, format: (v: number) => `${v}%` },
+                            { key: "vibrance", label: t("settings.videoFilters.vibrance"), min: 0, max: 100, neutral: 0, format: (v: number) => `${v}%`, hint: t("sidebar.vibranceHint") },
+                            { key: "filmGrain", label: t("settings.videoFilters.filmGrain"), min: 0, max: 100, neutral: 0, format: (v: number) => `${v}%` },
                           ] as const).map((control) => (
                             <div key={control.key} className="sidebar-row sidebar-row--column">
                               <div className="sidebar-row-top">
@@ -1760,7 +1760,7 @@ export function StreamView({
                               className="sidebar-button"
                               onClick={() => onVideoShaderChange({ ...DEFAULT_VIDEO_SHADER_SETTINGS, enabled: true })}
                             >
-                              <span>Reset</span>
+                              <span>{t("sidebar.reset")}</span>
                             </button>
                           </div>
                         </>
@@ -1771,8 +1771,8 @@ export function StreamView({
                 <div className="sidebar-separator" aria-hidden="true" />
                 <section className="sidebar-section">
                   <div className="sidebar-section-header">
-                    <span>Audio</span>
-                    <span className="sidebar-section-sub">Configure microphone handling.</span>
+                    <span>{t("sidebar.audio")}</span>
+                    <span className="sidebar-section-sub">{t("sidebar.configureMicrophone")}</span>
                   </div>
                   <div className="sidebar-row sidebar-row--column">
                     <div className="sidebar-row-top">
@@ -1800,7 +1800,7 @@ export function StreamView({
                   {microphoneMode !== "disabled" && (
                     <div className="sidebar-row sidebar-row--column">
                       <div className="sidebar-row-top">
-                        <span className="sidebar-label">Send level</span>
+                        <span className="sidebar-label">{t("sidebar.sendLevel")}</span>
                         <SidebarMicMutedBadge diagnosticsStore={diagnosticsStore} micTrack={micTrack} />
                       </div>
                       <canvas
@@ -1819,11 +1819,11 @@ export function StreamView({
               <div className="sidebar-page" role="tabpanel">
                 <section className="sidebar-section">
                   <div className="sidebar-section-header">
-                    <span>Gallery</span>
+                    <span>{t("sidebar.gallery")}</span>
                     <span className="sidebar-section-sub">Screenshot key: {shortcuts.screenshot}</span>
                   </div>
                   <div className="sidebar-row sidebar-row--aligned">
-                    <span className="sidebar-label">Screenshots</span>
+                    <span className="sidebar-label">{t("sidebar.screenshots")}</span>
                     <button
                       type="button"
                       className="sidebar-button sidebar-screenshot-button"
@@ -1841,7 +1841,7 @@ export function StreamView({
                       type="button"
                       className="sidebar-gallery-arrow"
                       onClick={() => scrollGallery("left")}
-                      aria-label="Scroll gallery left"
+                      aria-label={t("sidebar.scrollGalleryLeft")}
                     >
                       <ChevronLeft size={16} />
                     </button>
@@ -1862,7 +1862,7 @@ export function StreamView({
                       type="button"
                       className="sidebar-gallery-arrow"
                       onClick={() => scrollGallery("right")}
-                      aria-label="Scroll gallery right"
+                      aria-label={t("sidebar.scrollGalleryRight")}
                     >
                       <ChevronRight size={16} />
                     </button>
@@ -1875,7 +1875,7 @@ export function StreamView({
                 <div className="sidebar-separator" aria-hidden="true" />
                 <section className="sidebar-section">
                   <div className="sidebar-section-header">
-                    <span>Recordings</span>
+                    <span>{t("sidebar.recordings")}</span>
                     <span className="sidebar-section-sub">Record key: {shortcuts.recording}</span>
                   </div>
                   {usedMimeType && (
@@ -1909,7 +1909,7 @@ export function StreamView({
                         type="button"
                         className="sidebar-gallery-arrow"
                         onClick={() => scrollRecCarousel("left")}
-                        aria-label="Scroll recordings left"
+                        aria-label={t("sidebar.scrollRecordingsLeft")}
                       >
                         <ChevronLeft size={16} />
                       </button>
@@ -1937,8 +1937,8 @@ export function StreamView({
                               <button
                                 type="button"
                                 className="sidebar-rec-card-action"
-                                aria-label="Show in folder"
-                                title="Show in folder"
+                                aria-label={t("sidebar.showInFolder")}
+                                title={t("sidebar.showInFolder")}
                                 onClick={() => { void window.openNow.showRecordingInFolder(rec.id); }}
                                 disabled={typeof window.openNow?.showRecordingInFolder !== "function"}
                               >
@@ -1947,8 +1947,8 @@ export function StreamView({
                               <button
                                 type="button"
                                 className="sidebar-rec-card-action sidebar-rec-card-action--danger"
-                                aria-label="Delete recording"
-                                title="Delete"
+                                aria-label={t("sidebar.deleteRecording")}
+                                title={t("sidebar.delete")}
                                 onClick={() => { void handleDeleteRecording(rec.id); }}
                               >
                                 <Trash2 size={11} />
@@ -1961,7 +1961,7 @@ export function StreamView({
                         type="button"
                         className="sidebar-gallery-arrow"
                         onClick={() => scrollRecCarousel("right")}
-                        aria-label="Scroll recordings right"
+                        aria-label={t("sidebar.scrollRecordingsRight")}
                       >
                         <ChevronRight size={16} />
                       </button>
@@ -1976,7 +1976,7 @@ export function StreamView({
                 <section className="sidebar-section">
                   <div className="sidebar-section-header">
                     <span>Shortcut Bindings</span>
-                    <span className="sidebar-section-sub">Edit screenshot keybind here</span>
+                    <span className="sidebar-section-sub">{t("sidebar.editScreenshotKeybind")}</span>
                   </div>
                   <div className="sidebar-row sidebar-row--column">
                     <div className="sidebar-row-top">
@@ -1985,7 +1985,7 @@ export function StreamView({
                     <input
                       type="text"
                       name="screenshot-shortcut"
-                      aria-label="Screenshot shortcut"
+                      aria-label={t("sidebar.screenshotShortcut")}
                       className={`settings-text-input settings-shortcut-input sidebar-shortcut-input ${screenshotShortcutError ? "error" : ""}`}
                       value={screenshotShortcutInput}
                       readOnly
@@ -2010,7 +2010,7 @@ export function StreamView({
                       }}
                       onKeyDown={handleStreamScreenshotShortcutKeyDown}
                       placeholder="Click, then press a key"
-                      title="Focus and press the key combination to bind"
+                      title={t("sidebar.keybindFocusHint")}
                       spellCheck={false}
                     />
                   </div>
@@ -2022,7 +2022,7 @@ export function StreamView({
                     <input
                       type="text"
                       name="recording-shortcut"
-                      aria-label="Recording shortcut"
+                      aria-label={t("sidebar.recordingShortcut")}
                       className={`settings-text-input settings-shortcut-input sidebar-shortcut-input ${recordingShortcutError ? "error" : ""}`}
                       value={recordingShortcutInput}
                       readOnly
@@ -2047,7 +2047,7 @@ export function StreamView({
                       }}
                       onKeyDown={handleStreamRecordingShortcutKeyDown}
                       placeholder="Click, then press a key"
-                      title="Focus and press the key combination to bind"
+                      title={t("sidebar.keybindFocusHint")}
                       spellCheck={false}
                     />
                   </div>
@@ -2090,16 +2090,16 @@ export function StreamView({
             type="button"
             className="sv-shot-modal-backdrop"
             onClick={() => setSelectedScreenshotId(null)}
-            aria-label="Close screenshot preview"
+            aria-label={t("sidebar.closeScreenshotPreview")}
           />
           <div className="sv-shot-modal-card">
             <div className="sv-shot-modal-head">
-              <h4>Screenshot</h4>
+              <h4>{t("sidebar.screenshot")}</h4>
               <button
                 type="button"
                 className="sv-shot-modal-close"
                 onClick={() => setSelectedScreenshotId(null)}
-                aria-label="Close screenshot preview"
+                aria-label={t("sidebar.closeScreenshotPreview")}
               >
                 <X size={16} />
               </button>
@@ -2118,7 +2118,7 @@ export function StreamView({
                 }}
               >
                 <Save size={14} />
-                <span>Save</span>
+                <span>{t("sidebar.save")}</span>
               </button>
               <button
                 type="button"
@@ -2128,7 +2128,7 @@ export function StreamView({
                 }}
               >
                 <Trash2 size={14} />
-                <span>Delete</span>
+                <span>{t("sidebar.delete")}</span>
               </button>
             </div>
           </div>
@@ -2161,7 +2161,7 @@ export function StreamView({
       {sessionCounterEnabled && !isConnecting && (
         <div
           className={`sv-session-clock${showSessionClock ? " is-visible" : ""}`}
-          title="Current gaming session elapsed time"
+          title={t("session.elapsedTitle")}
           aria-hidden={!showSessionClock}
         >
           <SessionElapsedIndicator startedAtMs={sessionStartedAtMs} active={isStreaming} />
@@ -2171,7 +2171,7 @@ export function StreamView({
       {streamWarning && !isConnecting && !exitPrompt.open && (
         <div
           className={`sv-time-warning sv-time-warning--${streamWarning.tone}`}
-          title="Session time warning"
+          title={t("session.timeWarning")}
         >
           <AlertTriangle size={14} />
           <span>
@@ -2236,20 +2236,20 @@ export function StreamView({
       />
 
       {exitPrompt.open && !isConnecting && typeof document !== "undefined" && createPortal(
-        <div className="sv-exit" role="dialog" aria-modal="true" aria-label="Exit stream confirmation">
+        <div className="sv-exit" role="dialog" aria-modal="true" aria-label={t("session.exitConfirmation")}>
           <button
             type="button"
             className="sv-exit-backdrop"
             onClick={onCancelExit}
-            aria-label="Cancel exit"
+            aria-label={t("session.cancelExit")}
           />
           <div className="sv-exit-card">
-            <div className="sv-exit-kicker">Session Control</div>
-            <h3 className="sv-exit-title">Exit Stream?</h3>
+            <div className="sv-exit-kicker">{t("session.control")}</div>
+            <h3 className="sv-exit-title">{t("session.exitStream")}</h3>
             <p className="sv-exit-text">
               Do you really want to exit <strong>{exitPrompt.gameTitle}</strong>?
             </p>
-            <p className="sv-exit-subtext">Your current cloud gaming session will be closed.</p>
+            <p className="sv-exit-subtext">{t("stream.exitBody")}</p>
             <div className="sv-exit-actions">
               <button type="button" className="sv-exit-btn sv-exit-btn-cancel" onClick={onCancelExit}>
                 Keep Playing
@@ -2259,7 +2259,7 @@ export function StreamView({
               </button>
             </div>
             <div className="sv-exit-hint">
-              <span><kbd>Enter</kbd> confirm · <kbd>Esc</kbd> cancel</span>
+              <span><kbd>Enter</kbd> {t("stream.kbdConfirm")} · <kbd>Esc</kbd> {t("stream.kbdCancel")}</span>
               <span><kbd>A</kbd> select · <kbd>B</kbd> cancel</span>
             </div>
           </div>
@@ -2272,8 +2272,8 @@ export function StreamView({
         <button
           className="sv-fs"
           onClick={handleFullscreenToggle}
-          title={isFullscreen ? "Exit fullscreen" : "Enter fullscreen"}
-          aria-label={isFullscreen ? "Exit fullscreen" : "Enter fullscreen"}
+          title={isFullscreen ? t("stream.exitFullscreen") : t("stream.enterFullscreen")}
+          aria-label={isFullscreen ? t("stream.exitFullscreen") : t("stream.enterFullscreen")}
         >
           {isFullscreen ? <Minimize size={18} /> : <Maximize size={18} />}
         </button>
@@ -2284,8 +2284,8 @@ export function StreamView({
         <button
           className="sv-end"
           onClick={onEndSession}
-          title="End session"
-          aria-label="End session"
+          title={t("session.endSession")}
+          aria-label={t("session.endSession")}
         >
           <LogOut size={18} />
         </button>
@@ -2295,10 +2295,10 @@ export function StreamView({
       {showHints && !isConnecting && (
         <div className="sv-hints">
           <div className="sv-hint"><kbd>{shortcuts.toggleStats}</kbd><span>Stats</span></div>
-          <div className="sv-hint"><kbd>{shortcuts.togglePointerLock}</kbd><span>Mouse lock</span></div>
-          <div className="sv-hint"><kbd>{shortcuts.toggleFullscreen}</kbd><span>Full screen</span></div>
+          <div className="sv-hint"><kbd>{shortcuts.togglePointerLock}</kbd><span>{t("stream.mouseLock")}</span></div>
+          <div className="sv-hint"><kbd>{shortcuts.toggleFullscreen}</kbd><span>{t("stream.fullScreenShort")}</span></div>
           <div className="sv-hint"><kbd>{shortcuts.stopStream}</kbd><span>Stop</span></div>
-          <div className="sv-hint"><kbd>{CONTROLLER_SIDEBAR_SHORTCUT_DISPLAY}</kbd><span>Controller menu</span></div>
+          <div className="sv-hint"><kbd>{CONTROLLER_SIDEBAR_SHORTCUT_DISPLAY}</kbd><span>{t("stream.controllerMenu")}</span></div>
           {shortcuts.toggleMicrophone && <div className="sv-hint"><kbd>{shortcuts.toggleMicrophone}</kbd><span>Mic</span></div>}
         </div>
       )}

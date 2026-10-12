@@ -204,7 +204,7 @@ export function SettingsStreamSection({
       if (!entry) return notRun;
       const types = entry.candidateTypes.join(", ");
       if (entry.hasUdp) return t("settings.connectionTest.webrtcValue", { types: types || "—" });
-      return types ? `TCP only (${types})` : "—";
+      return types ? t("settings.connectionTest.webrtcTcpOnlyValue", { types }) : "—";
     })();
 
     const signalingValue = (() => {
@@ -560,7 +560,7 @@ export function SettingsStreamSection({
               title={t("settings.region.refreshPing")}
             >
               {isPinging ? (
-                <MotionSpinner size={14} label="Testing regions" />
+                <MotionSpinner size={14} label={t("accessibility.testingRegions")} />
               ) : (
                 <Wifi size={14} />
               )}
@@ -1113,7 +1113,7 @@ export function SettingsStreamSection({
         onClick={() => setCodecAdvancedOpen(v => !v)}
       >
         <SlidersHorizontal size={14} />
-        Advanced
+        {t("settings.advanced")}
         <svg viewBox="0 0 16 16" width="12" height="12" fill="currentColor" className={`settings-advanced-chevron ${codecAdvancedOpen ? "flipped" : ""}`}>
           <path d="M4.47 5.97a.75.75 0 0 1 1.06 0L8 8.44l2.47-2.47a.75.75 0 1 1 1.06 1.06l-3 3a.75.75 0 0 1-1.06 0l-3-3a.75.75 0 0 1 0-1.06Z" />
         </svg>

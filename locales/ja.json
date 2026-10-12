@@ -393,7 +393,21 @@
       "bitratePerformance": "ネゴシエートされた目標値に対する実際の受信ビットレート",
       "showAdvanced": "高度な診断",
       "hideAdvanced": "高度な診断を非表示",
-      "waitingForVideo": "ゲーム映像を待機中…"
+      "waitingForVideo": "ゲーム映像を待機中…",
+      "targetBitrate": "目標 {{mbps}} Mbps",
+      "nativeRenderer": "ネイティブレンダラー",
+      "drop": "ドロップ",
+      "loss": "ロス",
+      "nativeDropHint": "ネイティブレンダラーのドロップフレーム率",
+      "lagSourceLine": "ラグの原因 {{reason}} · {{detail}}",
+      "lagReasons": {
+        "network": "ネットワーク",
+        "decode": "デコード",
+        "input": "入力",
+        "render": "描画",
+        "stable": "安定",
+        "unknown": "不明"
+      }
     },
     "controls": {
       "antiAfkEnabled": "Anti-AFKが有効になっています",
@@ -448,7 +462,19 @@
     },
     "connectedBadge": {
       "title": "接続済み"
-    }
+    },
+    "exitBody": "現在のクラウドゲーミングセッションが閉じられます。",
+    "kbdConfirm": "決定",
+    "kbdCancel": "キャンセル",
+    "enterFullscreen": "フルスクリーンにする",
+    "exitFullscreen": "フルスクリーンを終了",
+    "mouseLock": "マウスロック",
+    "fullScreenShort": "フルスクリーン",
+    "controllerMenu": "コントローラーメニュー",
+    "muteMic": "マイクをミュート",
+    "unmuteMic": "マイクのミュートを解除",
+    "mutedBadge": "ミュート中",
+    "adBreak": "広告タイム"
   },
   "sidebar": {
     "title": "サイドバー",
@@ -456,7 +482,59 @@
     "sessionTimeRemaining": "セッション残り時間",
     "sessionTimeRemainingTitle": "セッション残り時間",
     "showSessionTimeRemainingInStatsOverlay": "統計オーバーレイにセッション残り時間を表示",
-    "statsOverlay": "統計オーバーレイ"
+    "statsOverlay": "統計オーバーレイ",
+    "quickMenu": "クイックメニュー",
+    "quickMenuPages": "クイックメニューのページ",
+    "tabSession": "セッション",
+    "tabControls": "コントロール",
+    "tabMedia": "メディア",
+    "tabKeys": "キー割り当て",
+    "currentStreamSession": "現在のストリームセッション",
+    "nowStreaming": "ストリーミング中",
+    "sessionTime": "セッション時間",
+    "totalPlaytimeLeft": "総残りプレイ時間",
+    "sessionControls": "セッションコントロール",
+    "manageActiveStream": "アクティブなストリームを管理します。",
+    "releaseMouse": "マウスを解放",
+    "captureMouse": "マウスをキャプチャ",
+    "toggleMic": "マイクを切り替え",
+    "showTimeInStats": "統計に時間を表示",
+    "showTimeInStatsHint": "パフォーマンスオーバーレイにセッション時間を表示し続けます。",
+    "mouseSensitivity": "マウス感度",
+    "mouseAcceleration": "マウス加速",
+    "filtersNativeUnavailable": "ネイティブストリーマーが映像を描画している間はビデオフィルターを使用できません。",
+    "enableVideoFilters": "ビデオフィルターを有効化",
+    "reset": "リセット",
+    "audio": "オーディオ",
+    "configureMicrophone": "マイクの扱いを設定します。",
+    "sendLevel": "送信レベル",
+    "gallery": "ギャラリー",
+    "screenshots": "スクリーンショット",
+    "recordings": "録画",
+    "scrollGalleryLeft": "ギャラリーを左にスクロール",
+    "scrollGalleryRight": "ギャラリーを右にスクロール",
+    "scrollRecordingsLeft": "録画一覧を左にスクロール",
+    "scrollRecordingsRight": "録画一覧を右にスクロール",
+    "showInFolder": "フォルダーで表示",
+    "deleteRecording": "録画を削除",
+    "delete": "削除",
+    "editScreenshotKeybind": "ここでスクリーンショットのキー割り当てを編集できます",
+    "screenshotShortcut": "スクリーンショットのショートカット",
+    "recordingShortcut": "録画のショートカット",
+    "keybindFocusHint": "フォーカスして、割り当てるキーの組み合わせを押してください",
+    "closeScreenshotPreview": "スクリーンショットのプレビューを閉じる",
+    "screenshot": "スクリーンショット",
+    "save": "保存",
+    "vibranceHint": "彩度を上げすぎずに、くすんだ色を引き立てます。",
+    "sharpenHint": "コントラスト適応型シャープ化。ストリーム圧縮によるぼけを軽減します。",
+    "micModes": {
+      "disabled": "無効",
+      "disabledDesc": "マイク入力を使用しません",
+      "pushToTalk": "プッシュトゥートーク",
+      "pushToTalkDesc": "キーを押している間だけ送信します",
+      "voiceActivity": "ボイスアクティビティ",
+      "voiceActivityDesc": "常に音声を拾います"
+    }
   },
   "settings": {
     "title": "設定",
@@ -872,12 +950,14 @@
         "pending": "待機中"
       },
       "webrtcNoCandidates": "ローカルの host 候補すら 1 つも生成されませんでした。host 候補はネットワーク接続を必要としないため、これは回線ではなくブラウザーか端末側の制限を示します。企業/学校のポリシー、プライバシー拡張機能、またはブラウザーのフラグで WebRTC が無効化されているケースが典型です。GeForce NOW は WebRTC が必須なので、この制限が解除されるまでゲーム起動時の接続は失敗する見込みです。診断情報: {{debug}}",
-      "webrtcStunUnreachable": "ローカルの UDP は動作していますが、公開 STUN サーバーのどちらにも到達できず、サーバー反射候補を確認できませんでした。GeForce NOW は NVIDIA 独自の ICE サーバーを使うため、ストリーミング自体は成功する場合があります。参考情報としてご覧ください。"
+      "webrtcStunUnreachable": "ローカルの UDP は動作していますが、公開 STUN サーバーのどちらにも到達できず、サーバー反射候補を確認できませんでした。GeForce NOW は NVIDIA 独自の ICE サーバーを使うため、ストリーミング自体は成功する場合があります。参考情報としてご覧ください。",
+      "webrtcTcpOnlyValue": "TCP のみ ({{types}})"
     },
     "queueNotifications": "キュー通知",
     "queueNotificationsHint": "このタブがバックグラウンドにあるとき、順番が来たりキュー失敗時に通知音を鳴らし、システム通知を表示します。",
     "adaptiveBitrate": "自動ビットレート調整",
-    "adaptiveBitrateHint": "RTT やパケットロスが悪化したときにビットレートを自動で下げ、回復したら元に戻します。"
+    "adaptiveBitrateHint": "RTT やパケットロスが悪化したときにビットレートを自動で下げ、回復したら元に戻します。",
+    "advanced": "詳細設定"
   },
   "navbar": {
     "subscriptionDetails": "サブスクリプションの詳細",
@@ -970,5 +1050,64 @@
     "readyBodyGeneric": "ストリーミングが始まりました。タブに戻ってプレイしてください。",
     "failedTitle": "キューに失敗しました",
     "failedBody": "ゲームセッションを開始できませんでした。"
+  },
+  "queueModal": {
+    "title": "サーバーを選択",
+    "subtitle": "{{title}} · フリーティアのサーバーキュー",
+    "close": "閉じる",
+    "fetching": "キューデータを取得中…",
+    "recommended": "おすすめ",
+    "autoSelected": "⚡ 自動選択",
+    "autoSubPinging": "最短キュー · ping 測定中…",
+    "autoSubBalance": "ping とキューの最適なバランス",
+    "autoSubQueue": "キュー順位が最短",
+    "closest": "📍 最寄りサーバー",
+    "closestSubMeasuring": "遅延を測定中…",
+    "closestSub": "あなたへの遅延が最小",
+    "closestSubUnavailable": "ping を取得できません",
+    "allServers": "すべてのサーバー",
+    "noServerData": "サーバーデータがありません。",
+    "poweredBy": "提供:",
+    "cancel": "キャンセル",
+    "pingingServers": "サーバーへ ping 中…",
+    "queueChip": "キュー: {{count}}",
+    "waitChip": "待ち {{duration}}",
+    "loadingServers": "サーバーを読み込み中",
+    "noPingData": "ping データがありません",
+    "regions": {
+      "US": "北米",
+      "EU": "ヨーロッパ",
+      "JP": "日本",
+      "KR": "韓国",
+      "CA": "カナダ",
+      "THAI": "東南アジア",
+      "MY": "マレーシア"
+    }
+  },
+  "accessibility": {
+    "loading": "読み込み中",
+    "testingRegions": "地域をテスト中",
+    "refreshingAccounts": "アカウントを更新中",
+    "resumingSession": "セッションを再開中",
+    "endingSession": "セッションを終了中"
+  },
+  "ads": {
+    "preview": {
+      "playing": "再生中",
+      "paused": "一時停止中",
+      "pausedMsg": "広告が完了前に一時停止されました。",
+      "resume": "再開",
+      "stalled": "停止",
+      "stalledMsg": "再生が進行しなくなりました。",
+      "retry": "再試行",
+      "blocked": "自動再生がブロックされました",
+      "blockedMsg": "ブラウザが自動再生をブロックしました。",
+      "start": "再生開始",
+      "timeout": "タイムアウト",
+      "timeoutMsg": "広告が時間内に開始されませんでした。",
+      "error": "再生エラー",
+      "errorMsg": "メディアの読み込みに失敗しました。",
+      "titleAdvertisement": "{{title}} の広告"
+    }
   }
 }

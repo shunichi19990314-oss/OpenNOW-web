@@ -1,4 +1,5 @@
 import { AlertTriangle, Loader2, PauseCircle, PlayCircle, RefreshCcw, XCircle } from "lucide-react";
+import { useTranslation } from "../i18n";
 import { forwardRef, useEffect, useImperativeHandle, useRef, useState, type JSX } from "react";
 import { m } from "motion/react";
 import { spinnerTransition } from "./MotionProvider";
@@ -36,43 +37,43 @@ function getPlaybackPresentation(state: QueueAdPlaybackState): PlaybackPresentat
   switch (state) {
     case "playing":
       return {
-        label: "Playing",
+        label: "ads.preview.playing",
         message: "",
         icon: PlayCircle,
       };
     case "paused":
       return {
-        label: "Paused",
-        message: "Ad paused before completion.",
-        retryLabel: "Resume",
+        label: "ads.preview.paused",
+        message: "ads.preview.pausedMsg",
+        retryLabel: "ads.preview.resume",
         icon: PauseCircle,
       };
     case "stalled":
       return {
-        label: "Stalled",
-        message: "Playback stopped progressing.",
-        retryLabel: "Retry",
+        label: "ads.preview.stalled",
+        message: "ads.preview.stalledMsg",
+        retryLabel: "ads.preview.retry",
         icon: AlertTriangle,
       };
     case "blocked":
       return {
-        label: "Autoplay blocked",
-        message: "Browser blocked automatic playback.",
-        retryLabel: "Start",
+        label: "ads.preview.blocked",
+        message: "ads.preview.blockedMsg",
+        retryLabel: "ads.preview.start",
         icon: AlertTriangle,
       };
     case "timeout":
       return {
-        label: "Timed out",
-        message: "Ad did not start in time.",
-        retryLabel: "Retry",
+        label: "ads.preview.timeout",
+        message: "ads.preview.timeoutMsg",
+        retryLabel: "ads.preview.retry",
         icon: AlertTriangle,
       };
     case "error":
       return {
-        label: "Playback error",
-        message: "Media failed to load.",
-        retryLabel: "Retry",
+        label: "ads.preview.error",
+        message: "ads.preview.errorMsg",
+        retryLabel: "ads.preview.retry",
         icon: XCircle,
       };
     case "loading":
@@ -89,6 +90,7 @@ export const QueueAdPreview = forwardRef<QueueAdPreviewHandle, QueueAdPreviewPro
   { mediaUrl, title, onPlaybackEvent }: QueueAdPreviewProps,
   ref,
 ): JSX.Element {
+  const { t } = useTranslation();
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const playbackStateRef = useRef<QueueAdPlaybackState>("loading");
   // Guards against firing "ended" twice when the proactive timeupdate path
@@ -277,7 +279,7 @@ export const QueueAdPreview = forwardRef<QueueAdPreviewHandle, QueueAdPreviewPro
           autoPlay
           playsInline
           preload="auto"
-          aria-label={title ? `${title} advertisement` : "Advertisement"}
+          aria-label={title ? t("ads.preview.titleAdvertisement", { title }) : t("streamLoading.ads.advertisement")}
         />
         {showFrameOverlay && (
           <div className="queue-ad-preview-overlay" aria-hidden="true">
@@ -298,13 +300,13 @@ export const QueueAdPreview = forwardRef<QueueAdPreviewHandle, QueueAdPreviewPro
           <div className="queue-ad-preview-status-main">
             <StatusIcon className="queue-ad-preview-icon" size={16} />
             <div className="queue-ad-preview-copy">
-              <span className="queue-ad-preview-label">{presentation.label}</span>
-              {presentation.message && <span className="queue-ad-preview-message">{presentation.message}</span>}
+              <span className="queue-ad-preview-label">{presentation.label ? t(presentation.label) : ""}</span>
+              {presentation.message && <span className="queue-ad-preview-message">{t(presentation.message)}</span>}
             </div>
           </div>
           <button className="queue-ad-preview-retry" onClick={() => void attemptPlayback()} type="button">
             <RefreshCcw size={14} />
-            <span>{presentation.retryLabel}</span>
+            <span>{t(presentation.retryLabel)}</span>
           </button>
         </div>
       )}

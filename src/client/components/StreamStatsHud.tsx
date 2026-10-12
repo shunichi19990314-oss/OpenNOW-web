@@ -18,17 +18,17 @@ import { useTranslation } from "../i18n";
 function getLagReasonLabel(reason: StreamLagReason): string {
   switch (reason) {
     case "network":
-      return "Network";
+      return "stream.stats.lagReasons.network";
     case "decoder":
-      return "Decode";
+      return "stream.stats.lagReasons.decode";
     case "input_backpressure":
-      return "Input";
+      return "stream.stats.lagReasons.input";
     case "render":
-      return "Render";
+      return "stream.stats.lagReasons.render";
     case "stable":
-      return "Stable";
+      return "stream.stats.lagReasons.stable";
     default:
-      return "Unknown";
+      return "stream.stats.lagReasons.unknown";
   }
 }
 
@@ -73,7 +73,7 @@ export function StreamStatsHud({
   const bitrateLabel = hasLiveBitrate
     ? `${bitrateMbps} Mbps`
     : stats.targetBitrateKbps > 0
-      ? `Target ${bitrateMbps} Mbps`
+      ? t("stream.stats.targetBitrate", { mbps: bitrateMbps })
       : "-- Mbps";
   const bitratePerformancePercent =
     stats.targetBitrateKbps > 0 && stats.bitrateKbps > 0
@@ -85,7 +85,7 @@ export function StreamStatsHud({
   const hasResolution = stats.nativeRendererActive || stats.resolution !== "";
   const displayFps = Math.max(stats.decodeFps, stats.renderFps);
   const primaryText = hasResolution
-    ? `${stats.resolution || "Native renderer"}${displayFps > 0 ? ` · ${displayFps}fps` : ""}`
+    ? `${stats.resolution || t("stream.stats.nativeRenderer")}${displayFps > 0 ? ` · ${displayFps}fps` : ""}`
     : t("stream.stats.connecting");
   const hasCodec = Boolean(stats.codec && stats.codec !== "");
   const regionLabel = stats.serverRegion || serverRegion || "";
@@ -93,9 +93,9 @@ export function StreamStatsHud({
   const renderColor = getTimingColor(stats.renderTimeMs, 12, 22);
   const jitterBufferColor = getTimingColor(stats.jitterBufferDelayMs, 10, 24);
   const lossColor = getPacketLossColor(stats.packetLossPercent);
-  const lossLabel = stats.nativeRendererActive ? "Drop" : "Loss";
+  const lossLabel = stats.nativeRendererActive ? t("stream.stats.drop") : t("stream.stats.loss");
   const lossTitle = stats.nativeRendererActive
-    ? "Native renderer dropped frame percentage"
+    ? t("stream.stats.nativeDropHint")
     : t("stream.stats.packetLoss");
   const dText = stats.decodeTimeMs > 0 ? `${stats.decodeTimeMs.toFixed(1)}ms` : "--";
   const rText = stats.renderTimeMs > 0 ? `${stats.renderTimeMs.toFixed(1)}ms` : "--";
@@ -141,7 +141,7 @@ export function StreamStatsHud({
     const gpuRegion = [stats.gpuType, regionLabel].filter(Boolean).join(" · ");
     if (gpuRegion) lines.push(gpuRegion);
     if (hasLagIssue) {
-      lines.push(`Lag source ${getLagReasonLabel(stats.lagReason).toLowerCase()} · ${stats.lagReasonDetail}`);
+      lines.push(t("stream.stats.lagSourceLine", { reason: t(getLagReasonLabel(stats.lagReason)).toLowerCase(), detail: stats.lagReasonDetail }));
     }
     return lines;
   }, [
@@ -235,7 +235,7 @@ export function StreamStatsHud({
             )}
             {hasLagIssue && (
               <span className="sv-stats-warn-pill" title={stats.lagReasonDetail}>
-                {getLagReasonLabel(stats.lagReason)}
+                {t(getLagReasonLabel(stats.lagReason))}
               </span>
             )}
           </m.div>
@@ -324,7 +324,7 @@ export function StreamStatsHud({
                   <span className="sv-stats-chip sv-stats-chip--warn" title={stats.lagReasonDetail}>
                     Lag{" "}
                     <span className="sv-stats-chip-val" style={{ color: getLagReasonColor(stats.lagReason) }}>
-                      {getLagReasonLabel(stats.lagReason)}
+                      {t(getLagReasonLabel(stats.lagReason))}
                     </span>
                   </span>
                 )}

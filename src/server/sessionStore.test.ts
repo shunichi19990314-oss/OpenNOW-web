@@ -43,9 +43,13 @@ describe("encrypted cookie sessions", () => {
 
   it("rejects a modified cookie instead of accepting forged profile state", () => {
     const encrypted = cookieSessionInternals.encrypt(snapshot("alice"));
-    const replacement = encrypted.endsWith("A") ? "B" : "A";
-    const tampered = `${encrypted.slice(0, -1)}${replacement}`;
-    expect(cookieSessionInternals.decrypt(tampered)).toBeNull();
+    // Flip a raw bit inside the GCM tag region. Character-level tampering on
+    // the base64url text is unreliable: depending on the byte-length modulo 3,
+    // the trailing character carries ignored bits, so swapping it for "A"/"B"
+    // can decode to identical bytes and the test flakes (~6-25% of runs).
+    const bytes = Buffer.from(encrypted, "base64url");
+    bytes[20] ^= 0x01;
+    expect(cookieSessionInternals.decrypt(bytes.toString("base64url"))).toBeNull();
   });
 
   it("uses a fresh nonce when encrypting identical profiles", () => {
