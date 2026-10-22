@@ -499,6 +499,65 @@ export const HomePage = memo(function HomePage({
     [catalogActionsRef, games, selectedGameId, selectedVariantByGameId],
   );
 
+  // "Continue playing" hero: most recently played owned game, hidden while
+  // searching so results stay the focus.
+  const continueGame = useMemo(() => {
+    if (searchQuery.trim()) return null;
+    let best: GameInfo | null = null;
+    let bestTime = 0;
+    for (const game of games) {
+      if (!game.lastPlayed) continue;
+      const owned = game.isInLibrary === true
+        || (game.variants ?? []).some((variant) => isOwnedLibraryStatus(variant.libraryStatus));
+      if (!owned) continue;
+      const time = new Date(game.lastPlayed).getTime();
+      if (Number.isFinite(time) && time > bestTime) {
+        bestTime = time;
+        best = game;
+      }
+    }
+    return best;
+  }, [games, searchQuery]);
+
+  // Featured hero carousel: the resume slot leads, then de-duped featured
+  // games. Only shown while browsing (no search/filter) so results stay the
+  // focus; falls back to the compact continue card when there is no hero.
+  const heroSlides = useMemo(() => {
+    const slides: Array<{ game: GameInfo; isResume: boolean }> = [];
+    if (continueGame) {
+      slides.push({ game: continueGame, isResume: true });
+    }
+    for (const game of storeHeroGames) {
+      if (slides.length >= 6) break;
+      if (slides.some((entry) => entry.game.id === game.id)) continue;
+      slides.push({ game, isResume: false });
+    }
+    return slides;
+  }, [continueGame, storeHeroGames]);
+
+  const browsingCatalog = searchQuery.trim().length === 0 && selectedFilterIds.length === 0;
+  const showHero = browsingCatalog && heroSlides.length > 0;
+  const [heroIndex, setHeroIndex] = useState(0);
+  const [heroPaused, setHeroPaused] = useState(false);
+  const safeHeroIndex = showHero ? heroIndex % heroSlides.length : 0;
+
+  useEffect(() => {
+    if (!showHero || heroPaused || heroSlides.length < 2) {
+      return undefined;
+    }
+    const timer = window.setInterval(() => {
+      setHeroIndex((current) => (current + 1) % heroSlides.length);
+    }, 8000);
+    return () => window.clearInterval(timer);
+  }, [showHero, heroPaused, heroSlides.length]);
+
+  // Curated collections as horizontally scrollable rows (same extraction as
+  // the controller theater), capped so the page stays scannable.
+  const homeRows = useMemo(
+    () => (browsingCatalog ? controllerSections.slice(0, 4) : []),
+    [browsingCatalog, controllerSections],
+  );
+
   if (controllerMode) {
     const showInitialLoading = isLoading && controllerSections.length === 0;
     const heroGame = controllerHeroGames[controllerHeroIndex];
@@ -694,65 +753,6 @@ export const HomePage = memo(function HomePage({
           ? t("home.count.shownSupported", { shown: games.length, supported: supportedCount })
           : t("home.count.shown", { shown: games.length });
 
-  // "Continue playing" hero: most recently played owned game, hidden while
-  // searching so results stay the focus.
-  const continueGame = useMemo(() => {
-    if (searchQuery.trim()) return null;
-    let best: GameInfo | null = null;
-    let bestTime = 0;
-    for (const game of games) {
-      if (!game.lastPlayed) continue;
-      const owned = game.isInLibrary === true
-        || (game.variants ?? []).some((variant) => isOwnedLibraryStatus(variant.libraryStatus));
-      if (!owned) continue;
-      const time = new Date(game.lastPlayed).getTime();
-      if (Number.isFinite(time) && time > bestTime) {
-        bestTime = time;
-        best = game;
-      }
-    }
-    return best;
-  }, [games, searchQuery]);
-
-  // Featured hero carousel: the resume slot leads, then de-duped featured
-  // games. Only shown while browsing (no search/filter) so results stay the
-  // focus; falls back to the compact continue card when there is no hero.
-  const heroSlides = useMemo(() => {
-    const slides: Array<{ game: GameInfo; isResume: boolean }> = [];
-    if (continueGame) {
-      slides.push({ game: continueGame, isResume: true });
-    }
-    for (const game of storeHeroGames) {
-      if (slides.length >= 6) break;
-      if (slides.some((entry) => entry.game.id === game.id)) continue;
-      slides.push({ game, isResume: false });
-    }
-    return slides;
-  }, [continueGame, storeHeroGames]);
-
-  const browsingCatalog = searchQuery.trim().length === 0 && selectedFilterIds.length === 0;
-  const showHero = browsingCatalog && heroSlides.length > 0;
-  const [heroIndex, setHeroIndex] = useState(0);
-  const [heroPaused, setHeroPaused] = useState(false);
-  const safeHeroIndex = showHero ? heroIndex % heroSlides.length : 0;
-
-  useEffect(() => {
-    if (!showHero || heroPaused || heroSlides.length < 2) {
-      return undefined;
-    }
-    const timer = window.setInterval(() => {
-      setHeroIndex((current) => (current + 1) % heroSlides.length);
-    }, 8000);
-    return () => window.clearInterval(timer);
-  }, [showHero, heroPaused, heroSlides.length]);
-
-  // Curated collections as horizontally scrollable rows (same extraction as
-  // the controller theater), capped so the page stays scannable.
-  const homeRows = useMemo(
-    () => (browsingCatalog ? controllerSections.slice(0, 4) : []),
-    [browsingCatalog, controllerSections],
-  );
-
   return (
     <div className="home-page">
       {continueGame && !showHero && (
@@ -933,8 +933,8 @@ export const HomePage = memo(function HomePage({
           );
         })()}
 
-        {homeRows.map((section) => (
-          <section key={section.id} className="home-row">
+        {homeRows.map((section, sectionIndex) => (
+          <section key={`${section.id}-${sectionIndex}`} className="home-row">
             <h2 className="home-section-title">
               <span className="home-section-bar" aria-hidden="true" />
               {section.title}
