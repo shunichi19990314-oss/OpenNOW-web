@@ -1683,7 +1683,9 @@ export function App(): JSX.Element {
     }
     if (key === "maxBitrateMbps") {
       try {
-        void (clientRef.current as any)?.setMaxBitrateKbps?.((value as number) * 1000);
+        const client = clientRef.current as any;
+        client?.setUserBitrateCeilingKbps?.((value as number) * 1000);
+        void client?.setMaxBitrateKbps?.((value as number) * 1000);
       } catch {
         // ignore
       }

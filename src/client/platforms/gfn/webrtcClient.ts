@@ -509,6 +509,8 @@ export class GfnWebRtcClient {
   private netPoorStreak = 0;
   private netHealthyStreak = 0;
   private netLastAdjustMs = 0;
+  /** Manual bitrate chosen in Settings mid-session; caps the adaptive loop. */
+  private userBitrateCeilingKbps = 0;
   // On-screen touch gamepad (settings.touchGamepadEnabled).
   private virtualGamepadSlot: number | null = null;
   private decoderPressureConsecutivePolls = 0;
@@ -863,6 +865,7 @@ export class GfnWebRtcClient {
       await this.pc.setLocalDescription(
         new RTCSessionDescription({ type: this.pc.localDescription.type, sdp: updatedSdp }),
       );
+      this.currentBitrateCeilingKbps = kbps;
       this.log(`Bitrate ceiling updated to ${kbps} kbps via local SDP`);
     } catch (err) {
       this.log(`setMaxBitrateKbps failed (non-fatal): ${String(err)}`);
@@ -970,6 +973,7 @@ export class GfnWebRtcClient {
     this.lastDecoderKeyframeRequestAtMs = 0;
     this.negotiatedMaxBitrateKbps = 0;
     this.currentBitrateCeilingKbps = 0;
+    this.userBitrateCeilingKbps = 0;
     this.netPoorStreak = 0;
     this.netHealthyStreak = 0;
     this.netLastAdjustMs = 0;
@@ -1087,6 +1091,9 @@ export class GfnWebRtcClient {
       Math.floor(settings.maxBitrateKbps),
     );
     this.currentBitrateCeilingKbps = this.negotiatedMaxBitrateKbps;
+    // A fresh session's negotiated max already reflects current Settings, so
+    // no separate manual ceiling applies until the visitor changes it again.
+    this.userBitrateCeilingKbps = 0;
 
     this.diagnostics.resolution = settings.resolution;
     this.diagnostics.codec = codec;
@@ -1306,6 +1313,15 @@ export class GfnWebRtcClient {
     return false;
   }
 
+  /**
+   * Record a manual Settings bitrate as the ceiling the adaptive loop must
+   * respect; without this the loop would climb back to the session's original
+   * negotiated maximum and override the visitor's choice.
+   */
+  public setUserBitrateCeilingKbps(kbps: number): void {
+    this.userBitrateCeilingKbps = Number.isFinite(kbps) && kbps > 0 ? Math.round(kbps) : 0;
+  }
+
   /** Enable/disable the network-driven adaptive bitrate loop at runtime. */
   public setAdaptiveBitrateEnabled(value: boolean): void {
     const enabled = Boolean(value);
@@ -1346,7 +1362,9 @@ export class GfnWebRtcClient {
       this.netHealthyStreak = 0;
       return;
     }
-    const negotiated = this.negotiatedMaxBitrateKbps;
+    const negotiated = this.userBitrateCeilingKbps > 0
+      ? Math.min(this.negotiatedMaxBitrateKbps, this.userBitrateCeilingKbps)
+      : this.negotiatedMaxBitrateKbps;
     if (negotiated <= 0) {
       return;
     }
@@ -3167,7 +3185,10 @@ export class GfnWebRtcClient {
    * 100 ms keepalive, and partially-reliable channel selection.
    */
   public sendVirtualGamepadFrame(frame: VirtualGamepadFrame): boolean {
-    if (!this.inputReady) {
+    // Mirror the physical pad path: while the sidebar/exit prompt blocks
+    // stream input, send nothing (a held stick must not keep driving the
+    // game behind an overlay).
+    if (!this.inputReady || this.isStreamInputBlocked()) {
       return false;
     }
     const slot = this.acquireVirtualGamepadSlot();
@@ -4919,6 +4940,9 @@ export class GfnWebRtcClient {
       Math.floor(settings.maxBitrateKbps),
     );
     this.currentBitrateCeilingKbps = this.negotiatedMaxBitrateKbps;
+    // A fresh session's negotiated max already reflects current Settings, so
+    // no separate manual ceiling applies until the visitor changes it again.
+    this.userBitrateCeilingKbps = 0;
     this.log(
       `Input channel policy: partial reliable threshold=${this.partialReliableThresholdMs}ms${negotiatedPartialReliable === null ? " (fallback)" : ""}, hidMask=0x${this.riInputCapabilities.hidDeviceMask.toString(16)}, prGamepadMask=0x${this.riInputCapabilities.enablePartiallyReliableTransferGamepad.toString(16)}, prHidMask=0x${this.riInputCapabilities.enablePartiallyReliableTransferHid.toString(16)}`,
     );
