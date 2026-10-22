@@ -758,7 +758,15 @@ export const HomePage = memo(function HomePage({
       {continueGame && !showHero && (
         <div className="home-continue-card">
           {continueGame.imageUrl ? (
-            <img className="home-continue-art" src={continueGame.imageUrl} alt="" loading="lazy" />
+            <img
+              className="home-continue-art"
+              src={continueGame.imageUrl}
+              alt=""
+              loading="lazy"
+              onError={(event) => {
+                event.currentTarget.style.display = "none";
+              }}
+            />
           ) : null}
           <div className="home-continue-info">
             <span className="home-continue-kicker">{t("home.continuePlaying.kicker")}</span>
@@ -875,7 +883,17 @@ export const HomePage = memo(function HomePage({
                   transition={{ duration: 0.45, ease: "easeOut" }}
                 >
                   {heroImage && (
-                    <img className="home-hero-bg" src={heroImage} alt="" draggable={false} />
+                    <img
+                      className="home-hero-bg"
+                      src={heroImage}
+                      alt=""
+                      draggable={false}
+                      onError={(event) => {
+                        // Dead CDN URLs must not show a broken-image glyph in
+                        // the hero; the gradient scrim alone still looks fine.
+                        event.currentTarget.style.visibility = "hidden";
+                      }}
+                    />
                   )}
                   <div className="home-hero-scrim" />
                   <div className="home-hero-content">
@@ -883,7 +901,15 @@ export const HomePage = memo(function HomePage({
                       <span className="home-hero-kicker">{t("home.continuePlaying.kicker")}</span>
                     )}
                     {heroLogo ? (
-                      <img className="home-hero-logo" src={heroLogo} alt={slide.game.title} draggable={false} />
+                      <img
+                        className="home-hero-logo"
+                        src={heroLogo}
+                        alt={slide.game.title}
+                        draggable={false}
+                        onError={(event) => {
+                          event.currentTarget.style.visibility = "hidden";
+                        }}
+                      />
                     ) : (
                       <h1 className="home-hero-title">{slide.game.title}</h1>
                     )}

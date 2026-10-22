@@ -139,6 +139,11 @@ export function useCatalogData({
 
   const storePanelsLoadedContextRef = useRef("");
   const storePanelsLoadIdRef = useRef(0);
+  // Generation guards: only the newest request per source may apply its
+  // results; a stale in-flight response (previous search/filter/sort/region)
+  // must never clobber fresher data.
+  const catalogLoadIdRef = useRef(0);
+  const libraryLoadIdRef = useRef(0);
   const runtimeDataLoadIdRef = useRef(0);
   const lastCatalogQueryRef = useRef<string | null>(null);
   const lastCatalogProxyUrlRef = useRef<string | undefined>(undefined);
@@ -381,6 +386,9 @@ export function useCatalogData({
     options?: { background?: boolean },
   ) => {
     const setLoading = targetSource === "main" ? setIsLoadingCatalog : setIsLoadingLibrary;
+    const loadId = targetSource === "main"
+      ? ++catalogLoadIdRef.current
+      : ++libraryLoadIdRef.current;
     if (!options?.background) {
       setLoading(true);
     }
@@ -403,10 +411,13 @@ export function useCatalogData({
           sortId: catalogSelectedSortId,
           filterIds: catalogSelectedFilterIds,
         });
+        if (loadId !== catalogLoadIdRef.current) {
+          return; // a newer catalog request is in flight or already applied
+        }
         applyCatalogBrowseResult(catalogResult);
         if (featuredGames.length === 0) {
           void window.openNow.fetchFeaturedGames({ token, userId, providerStreamingBaseUrl: baseUrl, proxyUrl }).then((featured) => {
-            if (featured.length > 0) setFeaturedGames(featured);
+            if (loadId === catalogLoadIdRef.current && featured.length > 0) setFeaturedGames(featured);
           }).catch((error) => {
             console.warn("Featured games refresh failed:", error);
           });
@@ -415,13 +426,19 @@ export function useCatalogData({
       }
 
       const result = await window.openNow.fetchLibraryGames({ token, userId, providerStreamingBaseUrl: baseUrl, proxyUrl });
+      if (loadId !== libraryLoadIdRef.current) {
+        return; // a newer library request is in flight or already applied
+      }
       setLibraryGames(result);
       setSelectedGameId((previous) => result.some((game) => game.id === previous) ? previous : (result[0]?.id ?? ""));
       applyVariantSelections(result);
     } catch (error) {
       console.error("Failed to load games:", error);
     } finally {
-      if (!options?.background) {
+      const stillLatest = targetSource === "main"
+        ? loadId === catalogLoadIdRef.current
+        : loadId === libraryLoadIdRef.current;
+      if (!options?.background && stillLatest) {
         setLoading(false);
       }
     }
