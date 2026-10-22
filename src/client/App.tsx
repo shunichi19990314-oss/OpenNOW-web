@@ -678,6 +678,10 @@ export function App(): JSX.Element {
     setStreamStatus("idle");
     setQueuePosition(undefined);
     setSessionStartedAtMs(null);
+    // Clear queue-notification latches so resuming a navbar session (which
+    // never queues) cannot fire the ready chime from a previous launch.
+    wasQueuedRef.current = false;
+    notifiedLaunchErrorRef.current = null;
     setRemoteStreamWarning(null);
     setLocalSessionTimerWarning(null);
     resetStatsOverlayToPreference();

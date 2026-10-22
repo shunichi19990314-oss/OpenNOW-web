@@ -100,6 +100,7 @@ async function connectSignaling(payload: SignalingConnectRequest): Promise<void>
     };
     activeSocket.onerror = () => reject(new Error("Unable to open the signaling bridge."));
     activeSocket.onmessage = (message) => {
+      if (socket !== activeSocket) return; // superseded connection
       try {
         const parsed = JSON.parse(String(message.data)) as { type?: string; payload?: MainToRendererSignalingEvent };
         if (parsed.type === "event" && parsed.payload) emitSignaling(parsed.payload);
@@ -107,7 +108,13 @@ async function connectSignaling(payload: SignalingConnectRequest): Promise<void>
         emitSignaling({ type: "error", message: "Received an invalid signaling message." });
       }
     };
-    activeSocket.onclose = (event) => emitSignaling({ type: "disconnected", reason: event.reason || "bridge closed" });
+    // A socket replaced by a reconnect (connectSignaling closes the previous
+    // one) must not emit "disconnected": App's recovery logic would treat it
+    // as a failed attach and tear down the brand-new session.
+    activeSocket.onclose = (event) => {
+      if (socket !== activeSocket) return;
+      emitSignaling({ type: "disconnected", reason: event.reason || "bridge closed" });
+    };
   });
 }
 
