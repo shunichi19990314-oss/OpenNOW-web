@@ -11400,7 +11400,7 @@ body {
   right: 22px;
   bottom: 24px;
   display: flex;
-  gap: 7px;
+  gap: 10px;
   z-index: 2;
 }
 
@@ -11416,11 +11416,13 @@ body {
   transition: width var(--t-normal), background-color var(--t-normal);
 }
 
-/* Grow the hit area without changing the visual size (touch friendly) */
+/* Grow the hit area without changing the visual size (touch friendly).
+   -5px keeps adjacent 19px targets exactly touching, never overlapping,
+   so a click always lands on the intended dot. */
 .home-hero-dot::before {
   content: "";
   position: absolute;
-  inset: -12px;
+  inset: -5px;
 }
 
 .home-hero-dot:hover {
@@ -11486,7 +11488,9 @@ body {
 
 .home-row-item {
   flex: 0 0 auto;
-  width: var(--game-poster-width);
+  /* --game-poster-width is scoped to .game-grid; repeat its formula here so
+     row cards match grid cards (--game-poster-scale inherits from app root). */
+  width: clamp(150px, calc(200px * var(--game-poster-scale, 1)), 270px);
   scroll-snap-align: start;
 }
 
