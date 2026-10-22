@@ -46,8 +46,14 @@ export function attachSignalingBridge(server: HttpServer): void {
       if (socket.readyState === WebSocket.OPEN) socket.send(JSON.stringify(payload));
     };
 
+    // Process messages strictly in arrival order. Concurrent async handlers
+    // could let an "answer"/"ice" message reach the NVIDIA socket before
+    // "connect" finished opening it (sendJson silently drops when not OPEN),
+    // and a trailing "disconnect" could tear down an already-established new
+    // session after a quick reconnect.
+    let messageQueue: Promise<void> = Promise.resolve();
     socket.on("message", (raw) => {
-      void (async () => {
+      messageQueue = messageQueue.then(async () => {
         const message = JSON.parse(raw.toString("utf8")) as ClientMessage;
         if (message.type === "connect") {
           const input = message.payload;
@@ -68,7 +74,7 @@ export function attachSignalingBridge(server: HttpServer): void {
         } else if (message.type === "disconnect") {
           signaling?.disconnect();
         }
-      })().catch((error) => send({ type: "event", payload: { type: "error", message: error instanceof Error ? error.message : String(error) } }));
+      }).catch((error) => send({ type: "event", payload: { type: "error", message: error instanceof Error ? error.message : String(error) } }));
     });
 
     socket.on("close", () => {
