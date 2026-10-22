@@ -63,12 +63,17 @@ self.addEventListener("fetch", (event) => {
   }
 
   // Navigations and the shell use network-first so deploys show up immediately,
-  // with an offline fallback to the cached shell.
+  // falling back to the cached shell when offline OR when the edge returns an
+  // error page (5xx HTML is common during Railway redeploy windows).
   if (isNavigation || APP_SHELL.includes(url.pathname)) {
     event.respondWith(
-      fetchAndCache(request, SHELL_CACHE).catch(() =>
-        caches.match(request).then((cached) => cached ?? caches.match("/index.html")),
-      ),
+      fetchAndCache(request, SHELL_CACHE)
+        .then((response) =>
+          response.ok
+            ? response
+            : cachedShell(request).then((cached) => cached ?? response),
+        )
+        .catch(() => cachedShell(request)),
     );
     return;
   }
@@ -81,6 +86,20 @@ self.addEventListener("fetch", (event) => {
     }),
   );
 });
+
+function cachedShell(request) {
+  return caches
+    .match(request)
+    .then((cached) => cached ?? caches.match("/index.html"))
+    .then((cached) =>
+      cached ??
+      new Response("OpenNOW Web is unavailable offline.", {
+        status: 503,
+        statusText: "Service Unavailable",
+        headers: { "Content-Type": "text/plain; charset=utf-8" },
+      }),
+    );
+}
 
 async function fetchAndCache(request, cacheName) {
   const response = await fetch(request);
