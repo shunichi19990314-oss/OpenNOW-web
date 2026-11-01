@@ -100,20 +100,49 @@ Node バージョンは `package.json` の `engines.node: "22"` で両プラッ�
 
 ## Render 無料プランの注意点
 
-- **15 分無通信でスリープ**し、次のリクエストでコールドスタート(〜1 分)。
-  シグナリング WebSocket が切断されるとセッション回復が走るため、
-  常時運用には有料プラン(Instance が常駐)を推奨。
+- **15 分無通信でスリープ**する仕様への対策を**二重で同梱済み**(下の「スリープ対策」参照)。
+  対策なしでの常時運用は有料プラン(Instance が常駐)が必要。
 - 512 MB RAM / 0.1 CPU — 本アプリ(アイドル ~200 MB)は収まります。
 - WebSocket は無料プランでもサポート済み(`/api/signaling` はそのまま動作)。
 - ディスクは一時領域 — GFN カタログキャッシュは再起動ごとに再取得(動作上問題なし)。
 - `OPENNOW_ORIGIN` 未設定/不一致の場合、シグナリング WS の Origin 検証で全接続が拒否されます
   (アプリ内「設定 → ストリーム → 接続テスト」の **シグナリングサーバー** 項目で検出可能)。
 
+## スリープ対策(同梱済み・要 1 手順)
+
+無料プランの 15 分スリープに対し、このリポジトリには 2 層の対策が入っています。
+
+### 層 1: アプリ内セルフ ping(自動・設定不要)
+
+`KEEP_ALIVE=true`(`render.yaml` で設定済み)により、サーバーが **10 分ごとに自分の
+`/api/health` を外部経由で叩き**、Render のアイドルタイマーをリセットします。
+一度起きていれば以後スリープしません。間隔は `KEEP_ALIVE_INTERVAL_MINUTES`(5〜30)で変更可。
+
+### 層 2: GitHub Actions の定期 ping(「起こし役」・1 手順だけ必要)
+
+スリープ中/デプロイ直後はセルフ ping も止まっているため、外からの最初の一撃が必要です。
+同梱のワークフロー `.github/workflows/render-keep-awake.yml` が **10 分ごと**に health URL を叩きます
+(公開リポジトリなので Actions は無料無制限)。
+
+**設定手順(1 回だけ)**:
+1. GitHub リポジトリ → Settings → Secrets and variables → **Actions** → Variables タブ
+2. **New repository variable** → Name: `RENDER_PING_URL`、Value: `https://<あなたのサービス>.onrender.com/api/health`
+3. 完了 — 以降 Actions タブに 10 分ごとの実行履歴が並びます(手動確認は Run workflow でも可能)
+
+注意: GitHub のスケジュール実行は混雑時に数分遅延することがあり、最悪の場合はコールドスタート
+(〜1 分)が 1 回発生し得ます。また 60 日間リポジトリに動きがないと GitHub がスケジュール
+ワークフローを自動停止するため、その場合は Actions タブから再有効化してください。
+
+### 代替案(外部サービス)
+
+GitHub Actions を使わない場合は [UptimeRobot](https://uptimerobot.com) や
+[cron-job.org](https://cron-job.org) 等で同じ URL を 5〜10 分間隔で監視しても同効果です。
+
 ## Railway ↔ Render 比較(このアプリの場合)
 
 | 項目 | Railway Trial | Render Free |
 |---|---|---|
-| 常駐性 | 30 日間は常駐($5 クレジット内) | 15 分無通信でスリープ |
+| 常駐性 | 30 日間は常駐($5 クレジット内) | スリープ対策を同梱(セルフ ping + Actions、要 1 手順) |
 | リソース | 最大 2 vCPU / 1 GB | 0.1 CPU / 512 MB |
 | 自動デプロイ | GitHub 連携 | Blueprint / autoDeploy |
 | WebSocket | ✅ | ✅ |
