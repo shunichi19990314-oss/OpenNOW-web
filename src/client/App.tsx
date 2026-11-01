@@ -443,6 +443,8 @@ export function App(): JSX.Element {
   const awaitingRecoveryRemoteIceRef = useRef(false);
   const appUnloadingRef = useRef(false);
   const hasConfirmedRemoteIceRef = useRef(false);
+  /** True once the rig delivered an SDP offer for the current launch attempt. */
+  const offerReceivedForLaunchRef = useRef(false);
   const latestIceConnectionStateRef = useRef<RTCIceConnectionState>("new");
   const iceDisconnectedRecoveryTimerRef = useRef<number | null>(null);
   const pendingControlledDisconnectsRef = useRef(0);
@@ -668,6 +670,7 @@ export function App(): JSX.Element {
     remoteIceRecoveryGenerationRef.current = null;
     awaitingRecoveryRemoteIceRef.current = false;
     hasConfirmedRemoteIceRef.current = false;
+    offerReceivedForLaunchRef.current = false;
     latestIceConnectionStateRef.current = "new";
     pendingControlledDisconnectsRef.current = 0;
     discordStreamingActivitySessionRef.current = null;
@@ -817,6 +820,7 @@ export function App(): JSX.Element {
     remoteIceRecoveryGenerationRef.current = null;
     awaitingRecoveryRemoteIceRef.current = false;
     hasConfirmedRemoteIceRef.current = false;
+    offerReceivedForLaunchRef.current = false;
     latestIceConnectionStateRef.current = "new";
     pendingControlledDisconnectsRef.current = 0;
     signalingRecoveryRef.current.generation += 1;
@@ -845,6 +849,7 @@ export function App(): JSX.Element {
     remoteIceRecoveryGenerationRef.current = null;
     awaitingRecoveryRemoteIceRef.current = false;
     hasConfirmedRemoteIceRef.current = false;
+    offerReceivedForLaunchRef.current = false;
     latestIceConnectionStateRef.current = "new";
     pendingControlledDisconnectsRef.current = 0;
     signalingRecoveryRef.current.generation += 1;
@@ -2288,6 +2293,7 @@ export function App(): JSX.Element {
       console.log(`[App] Signaling event: ${event.type}`, event.type === "offer" ? `(SDP ${event.sdp.length} chars)` : "", event.type === "remote-ice" ? event.candidate : "");
       try {
         if (event.type === "offer") {
+          offerReceivedForLaunchRef.current = true;
           pendingControlledDisconnectsRef.current = 0;
           const activeSession = sessionRef.current;
           if (!activeSession) {
@@ -2467,15 +2473,20 @@ export function App(): JSX.Element {
             console.log("[Recovery] Ignoring signaling disconnect during app shutdown");
             return;
           }
-          if (streamStatusRef.current !== "idle" && isExpectedNativeSessionClose(event.reason)) {
-            handleExpectedNativeSessionClose(event.reason);
+          // A bare "socket closed"/BYE only means "session ended normally"
+          // once the stream actually got going. During the launch/connecting
+          // phase it means the rig never delivered the offer — that is a
+          // failure and must surface an error instead of silently dropping
+          // back to the home screen.
+          if (streamStatusRef.current === "idle") {
+            console.log("[Recovery] Ignoring signaling disconnect while idle");
             return;
           }
-          if (
-            nativeStreamingRef.current
-            && streamStatusRef.current === "streaming"
-            && isExpectedNativeSessionClose(event.reason)
-          ) {
+          const sessionEverConnected =
+            hasConfirmedRemoteIceRef.current ||
+            streamStatusRef.current === "streaming" ||
+            nativeStreamingRef.current;
+          if (sessionEverConnected && isExpectedNativeSessionClose(event.reason)) {
             handleExpectedNativeSessionClose(event.reason);
             return;
           }
@@ -2492,13 +2503,17 @@ export function App(): JSX.Element {
           // Official-style behavior: if the attach never reached a confirmed remote ICE
           // handshake, do not auto-recover. Fail this attempt and require explicit resume.
           if (!hasConfirmedRemoteIceRef.current) {
-            console.warn("[Recovery] Skipping auto-recovery: disconnected before remote ICE handshake");
+            console.warn(
+              `[Recovery] Skipping auto-recovery: disconnected before remote ICE handshake (offerReceived=${offerReceivedForLaunchRef.current}, reason=${event.reason})`,
+            );
             clientRef.current?.dispose();
             clientRef.current = null;
             setLaunchError({
               stage: streamStatusToLoadingStage(streamStatusRef.current),
               title: t("errors.sessionConnectionLostTitle"),
-              description: t("errors.resumeAttachFailedDescription"),
+              description: offerReceivedForLaunchRef.current
+                ? t("errors.resumeAttachFailedDescription")
+                : t("errors.noOfferDescription"),
             });
             resetLaunchRuntime({ keepLaunchError: true, keepStreamingContext: true });
             void refreshNavbarActiveSession();
@@ -2742,11 +2757,6 @@ export function App(): JSX.Element {
         zone: "prod",
         settings: streamSettings,
       };
-      let newSession = await window.openNow.createSession(createSessionInput);
-
-      setSession(newSession);
-      setQueuePosition(newSession.queuePosition);
-
       // GFN occasionally abandons a queued free-tier session (code 69) or
       // removes its queue server for maintenance (71). Re-queue automatically
       // before surfacing an error — and switch launch bases between attempts:
@@ -2758,6 +2768,38 @@ export function App(): JSX.Element {
       const requeueBases: string[] = i2pStorageRegionBaseUrl
         ? [launchStreamingBaseUrl]
         : [...new Set([launchStreamingBaseUrl, effectiveStreamingBaseUrl].filter(Boolean))];
+
+      // POST /v2/session itself can also answer with the account's previous
+      // abandoned queue record (statusCode 69 with the same statusDescription
+      // hash for minutes afterwards). Retry with the alternating base so the
+      // next attempt lands on a different zone LB and draws a fresh queue.
+      let newSession: SessionInfo;
+      while (true) {
+        try {
+          newSession = await window.openNow.createSession(createSessionInput);
+          break;
+        } catch (createError) {
+          const createUpstreamCode = (createError as { upstreamCode?: number } | null)?.upstreamCode;
+          const createAbandoned = createUpstreamCode === 69
+            || createUpstreamCode === 71
+            || /abandoned/i.test(createError instanceof Error ? createError.message : "");
+          if (!createAbandoned || autoRequeueCount >= MAX_AUTO_REQUEUES || launchAbortRef.current) {
+            throw createError;
+          }
+          autoRequeueCount += 1;
+          const retryBase = requeueBases.length > 1
+            ? requeueBases[autoRequeueCount % requeueBases.length]
+            : launchStreamingBaseUrl;
+          console.warn(
+            `[Launch] createSession hit a stale abandoned queue record (code ${createUpstreamCode ?? "n/a"}); ` +
+            `retry ${autoRequeueCount}/${MAX_AUTO_REQUEUES} via ${retryBase || "provider default"}`,
+          );
+          createSessionInput.streamingBaseUrl = retryBase;
+        }
+      }
+
+      setSession(newSession);
+      setQueuePosition(newSession.queuePosition);
 
       // Poll for readiness.
       // Queue and setup/starting modes wait indefinitely until the session becomes ready

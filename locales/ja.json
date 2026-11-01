@@ -1024,6 +1024,7 @@
     "nativeStreamerStoppedDescription": "ネイティブ ストリーミング プロセスが停止し、自動的に復元できませんでした。アプリからセッションを再度再開してみてください。",
     "sessionConnectionLostTitle": "セッション接続が失われました",
     "resumeAttachFailedDescription": "メディア ハンドシェイクの前にアタッチの再開に失敗しました。もう一度再開してみてください。",
+    "noOfferDescription": "セッションの準備は完了しましたが、ゲームサーバーがストリーミングを開始しませんでした。割り当てられたサーバーがこのプロキシに接続できなかった可能性があります。もう一度起動するか、プロキシの地域に近いキューサーバーを選択してください。",
     "sessionConnectionLostDescription": "実行中のセッションへの接続が失われ、自動的に復元できませんでした。アプリから再度再開してみてください。",
     "sessionResumeFailedDescription": "実行中のセッションへの接続が失われ、再開に失敗しました。",
     "queueAdPlayTimeout": "広告再生タイムアウト",
