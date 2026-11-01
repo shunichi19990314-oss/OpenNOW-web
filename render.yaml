@@ -1,0 +1,40 @@
+# Render Blueprint for OpenNOW Web.
+#
+# Deploy: Render dashboard -> "New +" -> "Blueprint" -> pick this repository
+# -> Apply. Render reads this file and creates the web service with the
+# correct build/start commands and environment variables.
+#
+# After the first deploy, copy the service URL (Settings -> Networking,
+# e.g. https://opennow-web-xxxx.onrender.com) into the OPENNOW_ORIGIN
+# environment variable (exact origin, https:// prefix, no trailing slash)
+# and let the service redeploy. WebSocket origin checks and secure cookies
+# depend on that exact match.
+
+services:
+  - type: web
+    name: opennow-web
+    runtime: node
+    plan: free
+    # Singapore is Render's closest region to Japan; change as needed
+    # (oregon / ohio / virginia / frankfurt / singapore).
+    region: singapore
+    # Explicit and platform-independent: always install devDependencies
+    # (typescript/vite are needed by the build) regardless of NODE_ENV,
+    # then typecheck + build the SPA into dist/.
+    buildCommand: npm ci --include=dev && npm run build
+    # tsx serves the built SPA, the /api surface, and the signaling
+    # WebSocket bridge from src/server/index.ts.
+    startCommand: npm start
+    healthCheckPath: /api/health
+    autoDeploy: true
+    envVars:
+      - key: NODE_ENV
+        value: production
+      # Render generates a strong random secret. Keep it stable: rotating it
+      # signs every visitor out. Use the same value across instances.
+      - key: SESSION_SECRET
+        generateValue: true
+      # Fill in manually AFTER the first deploy with the exact public origin,
+      # e.g. https://opennow-web-xxxx.onrender.com (no trailing slash).
+      - key: OPENNOW_ORIGIN
+        sync: false

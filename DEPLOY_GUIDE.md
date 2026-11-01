@@ -1,6 +1,11 @@
-# OpenNOW Web → Railway(Trialプラン)デプロイ手順
+# OpenNOW Web デプロイガイド(Railway / Render)
 
-対象リポジトリ: https://github.com/OpenCloudGaming/Opennow-web
+---
+
+# Part 1: Railway(Trial プラン)
+
+対象リポジトリ: https://github.com/shunichi19990314-oss/OpenNOW-web
+(上流: https://github.com/OpenCloudGaming/Opennow-web)
 構成: Node.js (Express 5 + tsx) サーバーが Vite ビルド済み SPA (`dist/`) を配信。
 シグナリング用 WebSocket (`/api/signaling`) は同一オリジン・同一ポートで動作。
 
@@ -60,3 +65,61 @@ GitHub で Fork してから自分の Fork をデプロイするのがおすす�
 - 独自ドメインを後から付けたら `OPENNOW_ORIGIN` も必ず更新する。
 - Trial クレジットが尽きるとサービスは停止する。Settings → Usage で消費を確認可能。
 - 本アプリは **非公式の GeForce NOW クライアント**。利用は自分の NVIDIA アカウント・自己責任であり、NVIDIA の利用規約に照らして判断すること。
+
+
+---
+
+# Part 2: Render(無料プラン)
+
+同梱の **`render.yaml`(Blueprint)** により、Render でも数クリックでデプロイできます。
+Node バージョンは `package.json` の `engines.node: "22"` で両プラットフォーム共通に固定されます。
+
+## デプロイ手順(Blueprint 方式・推奨)
+
+1. [render.com](https://render.com) → GitHub アカウントでサインアップ/ログイン
+2. **New +** → **Blueprint** → このリポジトリ(`OpenNOW-web`)を選択
+   - 初回は Render GitHub App にリポジトリへのアクセスを許可
+3. **Apply** — `render.yaml` から Web サービスが自動作成される:
+   - Build: `npm ci --include=dev && npm run build`(typecheck + vite build)
+   - Start: `npm start`(`tsx src/server/index.ts`)
+   - Healthcheck: `/api/health`
+   - `SESSION_SECRET`: Render が強い乱数を自動生成
+   - リージョン: singapore(日本から最寄り。dashboard で変更可)
+4. 初回デプロイ完了後、**Settings → Networking の URL を確認**
+   (例: `https://opennow-web-xxxx.onrender.com`)
+5. **Environment** タブで `OPENNOW_ORIGIN` にその URL を
+   `https://` 込み・**末尾スラッシュなし・完全一致**で設定 → 自動再デプロイ
+6. URL を開いて QR ログイン画面が出れば成功
+
+## 手動設定する場合(Blueprint を使わない)
+
+- New + → **Web Service** → リポジトリ選択
+- Runtime: **Node**、Build Command: `npm ci --include=dev && npm run build`、Start Command: `npm start`
+- 環境変数: `NODE_ENV=production` / `SESSION_SECRET`(Generate 推奨)/ `OPENNOW_ORIGIN`(手順 5 のとおり後設定)
+- Health Check Path: `/api/health`
+
+## Render 無料プランの注意点
+
+- **15 分無通信でスリープ**し、次のリクエストでコールドスタート(〜1 分)。
+  シグナリング WebSocket が切断されるとセッション回復が走るため、
+  常時運用には有料プラン(Instance が常駐)を推奨。
+- 512 MB RAM / 0.1 CPU — 本アプリ(アイドル ~200 MB)は収まります。
+- WebSocket は無料プランでもサポート済み(`/api/signaling` はそのまま動作)。
+- ディスクは一時領域 — GFN カタログキャッシュは再起動ごとに再取得(動作上問題なし)。
+- `OPENNOW_ORIGIN` 未設定/不一致の場合、シグナリング WS の Origin 検証で全接続が拒否されます
+  (アプリ内「設定 → ストリーム → 接続テスト」の **シグナリングサーバー** 項目で検出可能)。
+
+## Railway ↔ Render 比較(このアプリの場合)
+
+| 項目 | Railway Trial | Render Free |
+|---|---|---|
+| 常駐性 | 30 日間は常駐($5 クレジット内) | 15 分無通信でスリープ |
+| リソース | 最大 2 vCPU / 1 GB | 0.1 CPU / 512 MB |
+| 自動デプロイ | GitHub 連携 | Blueprint / autoDeploy |
+| WebSocket | ✅ | ✅ |
+| 無料期間 | 30 日($5 一回性) | 無期限(スリープあり) |
+
+**ゲームプレイ用途では、セッションがスリープで切れない Railway のほうが安定します。**
+Render は常時アクセス可能なミラー/バックアップ、または Railway クレジット消化後の受け皿として有用です。
+両方にデプロイした場合、`SESSION_SECRET` はサービスごとに別々で問題ありません
+(クッキーはオリジン単位のため相互干渉なし)。
