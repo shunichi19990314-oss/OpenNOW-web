@@ -30,6 +30,10 @@ services:
     envVars:
       - key: NODE_ENV
         value: production
+      # Keep the V8 heap under the free instance's 512 MB so memory pressure
+      # surfaces as a logged JS error instead of a silent kernel OOM kill.
+      - key: NODE_OPTIONS
+        value: "--max-old-space-size=384"
       # Self-ping /api/health every 10 minutes so the free instance does not
       # idle-sleep once awake (the GitHub Actions cron wakes it after deploys).
       - key: KEEP_ALIVE

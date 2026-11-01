@@ -138,6 +138,20 @@ Node バージョンは `package.json` の `engines.node: "22"` で両プラッ�
 GitHub Actions を使わない場合は [UptimeRobot](https://uptimerobot.com) や
 [cron-job.org](https://cron-job.org) 等で同じ URL を 5〜10 分間隔で監視しても同効果です。
 
+## トラブルシュート(Render で「Request failed (500)」等)
+
+1. **Render ダッシュボード → 対象サービス → Logs** を開き、失敗時刻の前後を確認:
+   - `[Server] Unhandled promise rejection ...` / `[Server] Uncaught exception ...`
+     → サーバーコード内の未処理エラー(内容を報告してください)
+   - `Your service was OOM killed` / 再起動イベント → メモリ不足。
+     カタログ操作が重い場合は環境変数 `NODE_OPTIONS` の
+     `--max-old-space-size` を下げる(既定 384)か、有料プラン(2 GB)を検討
+   - `[CloudMatch] ...` のエラー行 → NVIDIA 側応答の詳細(地域・ゲーム固有の問題の切り分けに有用)
+2. **ブラウザ DevTools(F12)→ Network** で赤いリクエストの URL と
+   Response の中身を確認(`/api/stream/create` か `/api/resolve-launch-id` か等で原因箇所が分かる)
+3. インスタンスがスリープ明け直後はコールドスタートで数十秒応答しないことがあります
+   (Actions の定期 ping を設定済みなら通常発生しません)
+
 ## Railway ↔ Render 比較(このアプリの場合)
 
 | 項目 | Railway Trial | Render Free |
