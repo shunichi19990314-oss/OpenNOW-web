@@ -2,10 +2,7 @@ import crypto from "node:crypto";
 import { createHash } from "node:crypto";
 
 import type { SessionCreateRequest, StreamSettings } from "@shared/gfn";
-import {
-  colorQualityBitDepth,
-  colorQualityChromaFormat,
-} from "@shared/gfn";
+import { colorQualityChromaFormat } from "@shared/gfn";
 
 import type { CloudMatchRequest } from "./types";
 import { buildGfnCloudMatchHeaders } from "./clientHeaders";
@@ -13,6 +10,7 @@ import { getStableDeviceId } from "./deviceId";
 import {
   appLaunchModeWireValue,
   buildRequestedStreamingFeatures,
+  cloudmatchBitDepth,
   shouldEnableInGameSettingsPersistence,
 } from "./cloudmatchFeatures";
 import {
@@ -202,7 +200,10 @@ export function buildSessionRequestBody(
   // Conflating them caused the server to set up an HDR pipeline, which
   // dynamically downscaled resolution to ~540p.
   const hdrEnabled = false; // No HDR toggle implemented yet; hardcode off like claim body
-  const bitDepth = colorQualityBitDepth(cq);
+  // CloudMatch's requestedStreamingFeatures.bitDepth uses the 0/10 wire scale
+  // (0 = 8-bit, 10 = 10-bit), matching the OpenNOW-vita reference - not the
+  // 0/1 enum colorQualityBitDepth() returns for other protocol messages.
+  const bitDepth = cloudmatchBitDepth(input.settings);
   const chromaFormat = colorQualityChromaFormat(cq);
   const accountLinked = input.accountLinked ?? true;
 

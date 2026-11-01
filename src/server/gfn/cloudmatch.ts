@@ -48,7 +48,6 @@ import {
 import {
   buildClaimRequestBody,
   buildSessionRequestBody,
-  createNetworkTestSession,
 } from "./cloudmatchSessionRequest";
 import {
   echoedSessionAppLaunchMode,
@@ -100,14 +99,11 @@ export async function createSession(input: SessionCreateRequest): Promise<Sessio
     deviceId,
     input.proxyUrl,
   );
-  const networkTestSessionId = await createNetworkTestSession({
-    base,
-    token: input.token,
-    clientId,
-    deviceId,
-    settings: input.settings,
-    proxyUrl: input.proxyUrl,
-  });
+  // The known-working WebRTC reference (OpenNOW-vita) sends
+  // networkTestSessionId: null - GFN provisions the WebRTC seat without a
+  // preceding nettest session, and skipping it removes one variable (and one
+  // round trip) from launch. The /api/speedtest connection test is unaffected.
+  const networkTestSessionId: string | null = null;
   const body = buildSessionRequestBody(input, deviceId, networkTestSessionId);
   console.log(
     `[CloudMatch] createSession in-game settings persistence: user=${input.enablePersistingInGameSettings === true}, ` +
