@@ -3,6 +3,9 @@
   "version": "0.1.0",
   "description": "Browser-native OpenNOW client using QR authentication and WebRTC streaming.",
   "private": true,
+  "engines": {
+    "node": "22"
+  },
   "type": "module",
   "author": "OpenCloudGaming",
   "homepage": "https://github.com/OpenCloudGaming/Opennow-web#readme",
