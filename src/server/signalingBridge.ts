@@ -43,8 +43,30 @@ export function attachSignalingBridge(server: HttpServer): void {
     let signaling: GfnSignalingClient | null = null;
     let unsubscribe: (() => void) | null = null;
     const send = (payload: unknown) => {
-      if (socket.readyState === WebSocket.OPEN) socket.send(JSON.stringify(payload));
+      if (socket.readyState === WebSocket.OPEN) {
+        socket.send(JSON.stringify(payload));
+      } else {
+        // A dropped "offer" here means the browser leg died (e.g. an edge
+        // proxy idle timeout), not that NVIDIA was silent — make that
+        // distinction visible in the logs.
+        const eventType = (payload as { payload?: { type?: string } })?.payload?.type ?? "unknown";
+        console.warn(`[Bridge] Dropped event "${eventType}": browser socket state ${socket.readyState}`);
+      }
     };
+
+    // Edge proxies (Render's free plan in particular) drop idle WebSockets.
+    // NVIDIA can stay silent for a minute or more while the rig prepares the
+    // offer, so ping at the protocol level every 25 s; browsers answer with
+    // pongs automatically, keeping traffic flowing in both directions.
+    const pingTimer = setInterval(() => {
+      if (socket.readyState === WebSocket.OPEN) {
+        try {
+          socket.ping();
+        } catch {
+          // Socket already closing; the close handler cleans up.
+        }
+      }
+    }, 25_000);
 
     // Process messages strictly in arrival order. Concurrent async handlers
     // could let an "answer"/"ice" message reach the NVIDIA socket before
@@ -63,7 +85,10 @@ export function attachSignalingBridge(server: HttpServer): void {
           signaling?.disconnect();
           unsubscribe?.();
           signaling = new GfnSignalingClient(input.signalingServer, input.sessionId, input.signalingUrl);
-          unsubscribe = signaling.onEvent((event) => send({ type: "event", payload: event }));
+          unsubscribe = signaling.onEvent((event) => {
+            console.log(`[Bridge] Relaying NVIDIA event: ${event.type}`);
+            send({ type: "event", payload: event });
+          });
           await signaling.connect();
         } else if (message.type === "answer") {
           await signaling?.sendAnswer(message.payload);
@@ -78,6 +103,7 @@ export function attachSignalingBridge(server: HttpServer): void {
     });
 
     socket.on("close", () => {
+      clearInterval(pingTimer);
       unsubscribe?.();
       signaling?.disconnect();
     });

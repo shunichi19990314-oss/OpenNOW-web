@@ -1049,7 +1049,9 @@
     "queueAbandonedTitle": "Queue session abandoned",
     "queueAbandonedDescription": "GeForce NOW released your place in the queue (code 69). Common causes: the queue slot expired, required queue ads could not finish, or the same account queued from another tab or server. One automatic re-queue was already attempted.",
     "queueMaintenanceTitle": "Queue server maintenance",
-    "queueMaintenanceDescription": "The queue server was removed for maintenance (code 71). Try again, optionally selecting a different queue server."
+    "queueMaintenanceDescription": "The queue server was removed for maintenance (code 71). Try again, optionally selecting a different queue server.",
+    "recoveryExhaustedTitle": "Could not connect to the game server",
+    "recoveryExhaustedDescription": "All reconnection attempts were exhausted while waiting for the game server. Try launching again; if it keeps failing, try a different time or network."
   },
   "releaseHighlights": {
     "kicker": "What's new",

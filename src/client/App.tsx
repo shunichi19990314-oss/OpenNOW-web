@@ -1971,6 +1971,16 @@ export function App(): JSX.Element {
 
     if (recoveryState.attemptCount >= SIGNALING_RECOVERY_ATTEMPT_DELAYS_MS.length) {
       console.warn("[Recovery] Recovery budget exhausted");
+      // Give the visitor explicit closure instead of a silent trip back to
+      // the home screen after the loading UI hangs.
+      setLaunchError({
+        stage: streamStatusToLoadingStage(streamStatusRef.current),
+        title: t("errors.recoveryExhaustedTitle"),
+        description: t("errors.recoveryExhaustedDescription"),
+      });
+      resetLaunchRuntime({ keepLaunchError: true, keepStreamingContext: true });
+      void refreshNavbarActiveSession();
+      launchInFlightRef.current = false;
       return false;
     }
 
