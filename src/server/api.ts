@@ -32,7 +32,16 @@ function resolveSpeedTestByteCount(raw: unknown): number {
 
 export function registerApi(app: Express): void {
   app.get("/api/health", (_request, response) => {
-    response.json({ ok: true, runtime: "web", streamer: "webrtc" });
+    response.json({
+      ok: true,
+      runtime: "web",
+      streamer: "webrtc",
+      // Render and Railway both inject the deployed git metadata; exposing it
+      // here lets anyone verify from the outside which commit is live.
+      commit: process.env.RENDER_GIT_COMMIT ?? process.env.RAILWAY_GIT_COMMIT_SHA ?? null,
+      branch: process.env.RENDER_GIT_BRANCH ?? process.env.RAILWAY_GIT_BRANCH ?? null,
+      uptimeSec: Math.round(process.uptime()),
+    });
   });
 
   /**
