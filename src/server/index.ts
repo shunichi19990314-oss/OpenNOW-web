@@ -51,12 +51,26 @@ if (process.env.NODE_ENV === "production") {
 }
 
 app.use((error: unknown, _request: express.Request, response: express.Response, _next: express.NextFunction) => {
-  const status = typeof error === "object" && error && "statusCode" in error && typeof error.statusCode === "number"
+  const rawStatus = typeof error === "object" && error && "statusCode" in error && typeof error.statusCode === "number"
     ? error.statusCode
-    : 500;
+    : undefined;
+  // SessionError.statusCode carries the CloudMatch protocol code (e.g. 69 =
+  // SessionInQueueAbandoned), NOT an HTTP status. Passing it to
+  // response.status() throws a RangeError that destroys the response into an
+  // opaque non-JSON 500, hiding the mapped human-readable error from the
+  // visitor. Only genuine HTTP statuses pass through; upstream protocol codes
+  // become 502 with the code exposed in the body.
+  const isHttpStatus = rawStatus !== undefined
+    && Number.isInteger(rawStatus)
+    && rawStatus >= 400
+    && rawStatus <= 599;
+  const status = isHttpStatus ? (rawStatus as number) : 502;
   const message = error instanceof Error ? error.message : "Unexpected server error.";
+  const upstreamCode = !isHttpStatus && rawStatus !== undefined ? rawStatus : undefined;
   if (status >= 500) console.error("[Server]", error);
-  response.status(status).json({ error: message });
+  response.status(status).json(
+    upstreamCode === undefined ? { error: message } : { error: message, upstreamCode },
+  );
 });
 
 // Process-level safety net. A stray unhandled rejection would otherwise
