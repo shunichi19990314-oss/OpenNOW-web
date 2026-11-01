@@ -30,6 +30,10 @@ services:
     envVars:
       - key: NODE_ENV
         value: production
+      # Self-ping /api/health every 10 minutes so the free instance does not
+      # idle-sleep once awake (the GitHub Actions cron wakes it after deploys).
+      - key: KEEP_ALIVE
+        value: "true"
       # Render generates a strong random secret. Keep it stable: rotating it
       # signs every visitor out. Use the same value across instances.
       - key: SESSION_SECRET

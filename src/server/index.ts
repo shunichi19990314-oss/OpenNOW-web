@@ -5,6 +5,7 @@ import express from "express";
 import { registerApi } from "./api";
 import { attachSignalingBridge } from "./signalingBridge";
 import { cacheManager } from "./services/cacheManager";
+import { resolveKeepAliveConfig, startKeepAlive } from "./keepAlive";
 import { cookieSessionMiddleware } from "./sessionStore";
 
 const app = express();
@@ -62,3 +63,6 @@ await cacheManager.initialize();
 server.listen(port, () => {
   console.log(`OpenNOW Web is running at http://localhost:${port}`);
 });
+
+// Optional idle-sleep countermeasure for Render's free plan (KEEP_ALIVE=true).
+startKeepAlive(resolveKeepAliveConfig());
