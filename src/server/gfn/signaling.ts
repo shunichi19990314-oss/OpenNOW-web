@@ -53,7 +53,10 @@ export class GfnSignalingClient {
     signInUrl.pathname = `${signInUrl.pathname.replace(/\/?$/, "/")}sign_in`;
     signInUrl.search = "";
     signInUrl.searchParams.set("peer_id", this.peerName);
-    signInUrl.searchParams.set("version", "2");
+    // nvst protocol version: 3.0 matches the actively maintained OpenNOW
+    // reference client (OpenNOW-vita). Version 2 sign-ins are still accepted
+    // but the rig never sends the SDP offer on them.
+    signInUrl.searchParams.set("version", "3.0");
     signInUrl.searchParams.set("peer_role", "1");
     signInUrl.searchParams.set("pairing_id", this.sessionId);
 
@@ -109,7 +112,10 @@ export class GfnSignalingClient {
         connected: true,
         id: this.peerId,
         name: this.peerName,
-        peerRole: 0,
+        // peer_role=1 in the sign-in URL and peerRole=1 in the body must
+        // agree (OpenNOW-vita reference); a mismatched 0 here is another
+        // candidate for the rig never starting the offer flow.
+        peerRole: 1,
         resolution: "1920x1080",
         version: 2,
       },
@@ -173,7 +179,7 @@ export class GfnSignalingClient {
         this.handleMessage(text);
       });
 
-      ws.on("close", (_code, reason) => {
+      ws.on("close", (code, reason) => {
         this.clearHeartbeat();
 
         if (!isCurrentSocket()) {
@@ -183,6 +189,7 @@ export class GfnSignalingClient {
         this.ws = null;
 
         const reasonText = typeof reason === "string" ? reason : reason.toString("utf8");
+        console.log(`[Signaling] nvst socket closed: code=${code} reason="${reasonText || "-"}"`);
         this.emit({ type: "disconnected", reason: reasonText || "socket closed" });
       });
     });

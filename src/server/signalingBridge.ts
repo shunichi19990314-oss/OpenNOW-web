@@ -77,6 +77,7 @@ export function attachSignalingBridge(server: HttpServer): void {
     socket.on("message", (raw) => {
       messageQueue = messageQueue.then(async () => {
         const message = JSON.parse(raw.toString("utf8")) as ClientMessage;
+        console.log(`[Bridge] Browser message: ${message.type}`);
         if (message.type === "connect") {
           const input = message.payload;
           if (!browserSession.ownsActiveSession(input.sessionId)) {
