@@ -1037,7 +1037,11 @@
     "markOwnedFailed": "ゲームを所有としてマークできませんでした。",
     "markOwnedFailedWithReason": "ゲームを所有としてマークできませんでした: {{reason}}",
     "markOwnedMissingVariant": "所有としてマークする前にストアバリアントを選択してください。",
-    "markOwnedSignInRequired": "ゲームを所有としてマークするには先にサインインしてください。"
+    "markOwnedSignInRequired": "ゲームを所有としてマークするには先にサインインしてください。",
+    "queueAbandonedTitle": "キューセッションが放棄されました",
+    "queueAbandonedDescription": "GeForce NOW がキューの順番を解放しました(コード 69)。主な原因: キュー枠の有効期限切れ、キュー広告の再生未完了、または同じアカウントで別のタブ/サーバーから起動したこと。自動での再キューは 1 回試行済みです。",
+    "queueMaintenanceTitle": "キューサーバーのメンテナンス",
+    "queueMaintenanceDescription": "キューサーバーがメンテナンスのため外されました(コード 71)。別のキューサーバーを選んで再試行してください。"
   },
   "common": {
     "loading": "読み込み中..."

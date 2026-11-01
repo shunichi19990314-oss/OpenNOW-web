@@ -1045,7 +1045,11 @@
     "sessionResumeFailedDescription": "The connection to the running session was lost and resume failed.",
     "queueAdPlayTimeout": "Ad play timeout",
     "queueAdVideoStuck": "Ad video is stuck",
-    "queueAdUrlLoad": "Error loading url"
+    "queueAdUrlLoad": "Error loading url",
+    "queueAbandonedTitle": "Queue session abandoned",
+    "queueAbandonedDescription": "GeForce NOW released your place in the queue (code 69). Common causes: the queue slot expired, required queue ads could not finish, or the same account queued from another tab or server. One automatic re-queue was already attempted.",
+    "queueMaintenanceTitle": "Queue server maintenance",
+    "queueMaintenanceDescription": "The queue server was removed for maintenance (code 71). Try again, optionally selecting a different queue server."
   },
   "releaseHighlights": {
     "kicker": "What's new",

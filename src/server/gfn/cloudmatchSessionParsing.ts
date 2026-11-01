@@ -395,6 +395,7 @@ export async function toSessionInfo(options: ToSessionInfoOptions): Promise<Sess
     `[CloudMatch] toSessionInfo: status=${payload.session.status}, ` +
     `seatSetupStep=${seatSetupStep ?? "n/a"}, ` +
     `queuePosition=${queuePosition ?? "n/a"}, ` +
+    `adState=${adState ? JSON.stringify(adState).slice(0, 180) : "none"}, ` +
     `connectionInfo=${connections.length} entries, ` +
     `serverIp=${signaling.serverIp}, ` +
     `signalingServer=${signaling.signalingServer}, ` +
