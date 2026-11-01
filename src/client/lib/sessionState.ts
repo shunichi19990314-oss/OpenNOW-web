@@ -202,6 +202,29 @@ export function toLaunchErrorState(
     };
   }
 
+  const upstreamCode =
+    error && typeof error === "object" && "upstreamCode" in error && typeof error.upstreamCode === "number"
+      ? error.upstreamCode
+      : undefined;
+
+  if (upstreamCode === 69 || combined.includes("ABANDONED")) {
+    return {
+      stage,
+      title: t("errors.queueAbandonedTitle"),
+      description: t("errors.queueAbandonedDescription"),
+      codeLabel: toCodeLabel(upstreamCode ?? code),
+    };
+  }
+
+  if (upstreamCode === 71 || combined.includes("REMOVED FROM QUEUE MAINTENANCE")) {
+    return {
+      stage,
+      title: t("errors.queueMaintenanceTitle"),
+      description: t("errors.queueMaintenanceDescription"),
+      codeLabel: toCodeLabel(upstreamCode ?? code),
+    };
+  }
+
   if (
     isSessionLimitError(error) ||
     combined.includes("SESSION_LIMIT") ||

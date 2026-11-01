@@ -31,8 +31,18 @@ export async function api<T>(path: string, init: RequestInit = {}): Promise<T> {
     },
   });
   if (!response.ok) {
-    const payload = await response.json().catch(() => null) as { error?: string } | null;
-    throw new Error(payload?.error ?? `Request failed (${response.status})`);
+    const payload = await response.json().catch(() => null) as { error?: string; upstreamCode?: number } | null;
+    const error = new Error(payload?.error ?? `Request failed (${response.status})`) as Error & {
+      upstreamCode?: number;
+      httpStatus?: number;
+    };
+    // Preserve the CloudMatch protocol code (e.g. 69 = queue abandoned) so
+    // callers can react to specific upstream outcomes.
+    if (typeof payload?.upstreamCode === "number") {
+      error.upstreamCode = payload.upstreamCode;
+    }
+    error.httpStatus = response.status;
+    throw error;
   }
   if (response.status === 204) return undefined as T;
   return response.json() as Promise<T>;

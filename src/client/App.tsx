@@ -2719,7 +2719,7 @@ export function App(): JSX.Element {
       const sessionProxyUrl = activeSessionProxyUrl;
 
       // Create new session
-      const newSession = await window.openNow.createSession({
+      const createSessionInput = {
         token: token || undefined,
         streamingBaseUrl: launchStreamingBaseUrl,
         appId,
@@ -2731,10 +2731,16 @@ export function App(): JSX.Element {
         proxyUrl: sessionProxyUrl,
         zone: "prod",
         settings: streamSettings,
-      });
+      };
+      let newSession = await window.openNow.createSession(createSessionInput);
 
       setSession(newSession);
       setQueuePosition(newSession.queuePosition);
+
+      // GFN occasionally abandons a queued free-tier session (code 69) or
+      // removes its queue server for maintenance (71). Re-queue once
+      // automatically before surfacing an error; a second failure is real.
+      let autoRequeueUsed = false;
 
       // Poll for readiness.
       // Queue and setup/starting modes wait indefinitely until the session becomes ready
@@ -2795,16 +2801,38 @@ export function App(): JSX.Element {
           return;
         }
 
-        const polled = await window.openNow.pollSession({
-          token: token || undefined,
-          streamingBaseUrl: newSession.streamingBaseUrl ?? effectiveStreamingBaseUrl,
-          serverIp: newSession.serverIp,
-          zone: newSession.zone,
-          sessionId: newSession.sessionId,
-          clientId: newSession.clientId,
-          deviceId: newSession.deviceId,
-          proxyUrl: sessionProxyUrl,
-        });
+        let polled: SessionInfo;
+        try {
+          polled = await window.openNow.pollSession({
+            token: token || undefined,
+            streamingBaseUrl: newSession.streamingBaseUrl ?? effectiveStreamingBaseUrl,
+            serverIp: newSession.serverIp,
+            zone: newSession.zone,
+            sessionId: newSession.sessionId,
+            clientId: newSession.clientId,
+            deviceId: newSession.deviceId,
+            proxyUrl: sessionProxyUrl,
+          });
+        } catch (pollError) {
+          const upstreamCode = (pollError as { upstreamCode?: number } | null)?.upstreamCode;
+          const abandoned = upstreamCode === 69
+            || upstreamCode === 71
+            || /abandoned/i.test(pollError instanceof Error ? pollError.message : "");
+          if (abandoned && !autoRequeueUsed && !launchAbortRef.current) {
+            autoRequeueUsed = true;
+            console.warn(
+              `[Launch] GFN released the queued session (code ${upstreamCode ?? "n/a"}); auto re-queueing once`,
+            );
+            newSession = await window.openNow.createSession(createSessionInput);
+            latestSession = newSession;
+            setSession(newSession);
+            setQueuePosition(newSession.queuePosition);
+            isInQueueMode = isSessionInQueue(newSession);
+            attempt = 0;
+            continue;
+          }
+          throw pollError;
+        }
 
         if (launchAbortRef.current) {
           return;
