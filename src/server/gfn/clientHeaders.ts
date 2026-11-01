@@ -9,6 +9,18 @@ export const GFN_USER_AGENT = process.platform === "darwin" ? GFN_MACOS_USER_AGE
 export const GFN_CLIENT_VERSION = "2.0.80.173";
 export const LCARS_CLIENT_ID = "ec7e38d4-03af-4b58-b131-cfb0495903ab";
 
+// Plain browser identities used for the WebRTC streaming path. CloudMatch picks
+// the seat transport (NVST/RTSP vs WebRTC) from the client identity it sees, so
+// session create/poll/stop/claim MUST present as the browser WebRTC client -
+// values mirror the known-working OpenNOW-vita reference (src/gfn/headers.rs).
+export const GFN_BROWSER_USER_AGENT =
+  "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/152.0.0.0 Safari/537.36";
+// The nvst signaling WebSocket uses the reference client's own (slightly older)
+// Chrome UA - see OpenNOW-vita src/gfn/signaling.rs.
+export const GFN_NVST_USER_AGENT =
+  "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36";
+export const GFN_BROWSER_CLIENT_VERSION = "2.0.89.154";
+
 import { GFN_PLAY_ORIGIN as SHARED_GFN_PLAY_ORIGIN, GFN_PLAY_REFERER as SHARED_GFN_PLAY_REFERER } from "@shared/gfn/endpoints";
 
 export const GFN_PLAY_ORIGIN = SHARED_GFN_PLAY_ORIGIN;
@@ -123,6 +135,11 @@ export interface GfnCloudMatchHeadersOptions {
   token: string;
   clientId?: string;
   deviceId?: string;
+  /**
+   * Deprecated: kept for call-site compatibility. The known-working reference
+   * client (OpenNOW-vita) sends Origin/Referer on EVERY CloudMatch call
+   * (create, poll, claim, stop), so they are now always included.
+   */
   includeOrigin?: boolean;
 }
 
@@ -133,46 +150,56 @@ function resolveCloudMatchIdentity(options: GfnCloudMatchHeadersOptions): { clie
   };
 }
 
+/**
+ * Headers for CloudMatch session create/poll/stop endpoints.
+ *
+ * CRITICAL: these must present a BROWSER + WEBRTC client. With the previous
+ * NATIVE + NVIDIA-CLASSIC identity CloudMatch provisioned NVST/RTSP seats even
+ * when the request body asked for WebRTC (GSStreamerType/wssignaling metadata):
+ * the rig then waits for an RTSP setup and never sends an SDP offer over the
+ * nvst signaling socket, so the browser sat on "connecting" until timeout.
+ * Values mirror OpenNOW-vita's apply_cloudmatch_headers (known-working).
+ */
 export function buildGfnCloudMatchHeaders(options: GfnCloudMatchHeadersOptions): Record<string, string> {
   const { clientId, deviceId } = resolveCloudMatchIdentity(options);
-  const headers: Record<string, string> = {
-    "User-Agent": GFN_USER_AGENT,
-    Authorization: gfnJwtAuthorization(options.token),
+  return {
+    Accept: "application/json",
     "Content-Type": "application/json",
+    "User-Agent": GFN_BROWSER_USER_AGENT,
+    Authorization: gfnJwtAuthorization(options.token),
+    Origin: GFN_PLAY_ORIGIN,
+    Referer: GFN_PLAY_REFERER,
     "nv-browser-type": "CHROME",
     "nv-client-id": clientId,
-    "nv-client-streamer": "NVIDIA-CLASSIC",
-    "nv-client-type": "NATIVE",
-    "nv-client-version": GFN_CLIENT_VERSION,
+    "nv-client-streamer": "WEBRTC",
+    "nv-client-type": "BROWSER",
+    "nv-client-version": GFN_BROWSER_CLIENT_VERSION,
     "nv-device-make": "UNKNOWN",
     "nv-device-model": "UNKNOWN",
-    "nv-device-os": platformToGfnDeviceOs(),
+    "nv-device-os": "WINDOWS",
     "nv-device-type": "DESKTOP",
     "x-device-id": deviceId,
   };
-
-  if (options.includeOrigin !== false) {
-    headers.Origin = GFN_PLAY_ORIGIN;
-    headers.Referer = GFN_PLAY_REFERER;
-  }
-
-  return headers;
 }
 
 export function buildGfnCloudMatchClaimHeaders(options: GfnCloudMatchHeadersOptions): Record<string, string> {
   const { clientId, deviceId } = resolveCloudMatchIdentity(options);
 
   return {
-    "User-Agent": GFN_USER_AGENT,
-    Authorization: gfnJwtAuthorization(options.token),
+    Accept: "application/json",
     "Content-Type": "application/json",
+    "User-Agent": GFN_BROWSER_USER_AGENT,
+    Authorization: gfnJwtAuthorization(options.token),
     Origin: GFN_PLAY_ORIGIN,
     Referer: GFN_PLAY_REFERER,
+    "nv-browser-type": "CHROME",
     "nv-client-id": clientId,
-    "nv-client-streamer": "NVIDIA-CLASSIC",
-    "nv-client-type": "NATIVE",
-    "nv-client-version": GFN_CLIENT_VERSION,
-    "nv-device-os": platformToGfnDeviceOs(),
+    "nv-client-streamer": "WEBRTC",
+    "nv-client-type": "BROWSER",
+    "nv-client-version": GFN_BROWSER_CLIENT_VERSION,
+    "nv-device-make": "UNKNOWN",
+    "nv-device-model": "UNKNOWN",
+    "nv-device-os": "WINDOWS",
     "nv-device-type": "DESKTOP",
     "x-device-id": deviceId,
   };

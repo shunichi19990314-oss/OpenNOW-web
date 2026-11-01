@@ -15,28 +15,45 @@ export function appLaunchModeWireValue(mode: AppLaunchMode | undefined): number 
   return APP_LAUNCH_MODE_WIRE_VALUES[mode ?? "default"];
 }
 
+/**
+ * requestedStreamingFeatures for the createSession body.
+ *
+ * Values mirror the known-working OpenNOW-vita reference exactly: WebRTC seats
+ * do not support Cloud G-Sync / Reflex / L4S (the OpenNOW WebRTC docs confirm
+ * "Always SDR and stereo... no Cloud G-Sync"), and asking for them - or for the
+ * all-zero prefilter block - risks CloudMatch refusing the WebRTC transport or
+ * provisioning a mismatched pipeline. bitDepth uses the CloudMatch wire scale
+ * (0 = 8-bit, 10 = 10-bit), NOT the 0/1 enum used elsewhere in this codebase.
+ */
 export function buildRequestedStreamingFeatures(
-  settings: StreamSettings,
+  _settings: StreamSettings,
   bitDepth: number,
   chromaFormat: number,
   _hdrEnabled: boolean,
 ): CloudMatchRequest["sessionRequestData"]["requestedStreamingFeatures"] {
-  const cloudGsync = settings.enableCloudGsync;
-
   return {
-    reflex: shouldRequestReflex(settings),
+    reflex: false,
     bitDepth,
-    cloudGsync,
-    enabledL4S: settings.enableL4S,
+    cloudGsync: false,
+    enabledL4S: false,
     supportedHidDevices: 0,
     profile: 0,
     fallbackToLogicalResolution: false,
     chromaFormat,
-    prefilterMode: 0,
-    prefilterSharpness: 0,
+    prefilterMode: 1,
+    prefilterSharpness: 50,
     prefilterNoiseReduction: 0,
     hudStreamingMode: 0,
   };
+}
+
+/**
+ * CloudMatch wire bit depth: 0 for 8-bit, 10 for 10-bit (OpenNOW-vita's
+ * cloudmatch_bit_depth()). Distinct from colorQualityBitDepth(), which returns
+ * a 0/1 enum used by other protocol messages.
+ */
+export function cloudmatchBitDepth(settings: Pick<StreamSettings, "colorQuality">): number {
+  return settings.colorQuality.startsWith("10bit") ? 10 : 0;
 }
 
 export function shouldRequestReflex(settings: StreamSettings): boolean {

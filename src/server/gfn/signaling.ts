@@ -8,7 +8,7 @@ import type {
   MainToRendererSignalingEvent,
   SendAnswerRequest,
 } from "@shared/gfn";
-import { GFN_PLAY_ORIGIN, GFN_USER_AGENT } from "./clientHeaders";
+import { GFN_NVST_USER_AGENT, GFN_PLAY_ORIGIN } from "./clientHeaders";
 
 interface SignalingMessage {
   ackid?: number;
@@ -144,7 +144,9 @@ export class GfnSignalingClient {
         headers: {
           Host: urlHost,
           Origin: GFN_PLAY_ORIGIN,
-          "User-Agent": GFN_USER_AGENT,
+          // vita reference (src/gfn/signaling.rs) uses a plain Chrome/131 UA for the
+          // nvst WebSocket - NOT the native GFN-PC client UA.
+          "User-Agent": GFN_NVST_USER_AGENT,
           "Sec-WebSocket-Key": randomBytes(16).toString("base64"),
         },
       });

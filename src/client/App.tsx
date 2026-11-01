@@ -2910,7 +2910,18 @@ export function App(): JSX.Element {
         setSession(mergedSession);
         // A poll that omits queuePosition must not flash the UI back to
         // "calculating"; keep the last known position until the queue clears.
-        setQueuePosition((previous) => mergedSession.queuePosition ?? previous);
+        // GFN's zone load balancer answers polls from rotating backends whose
+        // queue views disagree (observed: 30 -> 12 -> 30 within seconds), so
+        // within one queue session only ever show the lowest position seen -
+        // an increasing number looks broken even though the queue is moving.
+        // A re-queue resets via the setQueuePosition(newSession.queuePosition)
+        // calls at launch/re-queue time.
+        const polledPosition = mergedSession.queuePosition;
+        if (typeof polledPosition === "number") {
+          setQueuePosition((previous) =>
+            typeof previous === "number" ? Math.min(previous, polledPosition) : polledPosition,
+          );
+        }
 
         // Check if queue just cleared so the loading UI can transition to setup mode.
         isInQueueMode = isSessionInQueue(mergedSession);
