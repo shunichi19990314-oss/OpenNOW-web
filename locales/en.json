@@ -1047,7 +1047,7 @@
     "queueAdVideoStuck": "Ad video is stuck",
     "queueAdUrlLoad": "Error loading url",
     "queueAbandonedTitle": "Queue session abandoned",
-    "queueAbandonedDescription": "GeForce NOW released your place in the queue (code 69). Common causes: the queue slot expired, required queue ads could not finish, or the same account queued from another tab or server. One automatic re-queue was already attempted.",
+    "queueAbandonedDescription": "GeForce NOW released your place in the queue (code 69). This usually means the selected queue zone could not free capacity in time; less often the queue slot expired or the same account queued from another tab or server. Two automatic re-queues on different servers were already attempted.",
     "queueMaintenanceTitle": "Queue server maintenance",
     "queueMaintenanceDescription": "The queue server was removed for maintenance (code 71). Try again, optionally selecting a different queue server.",
     "recoveryExhaustedTitle": "Could not connect to the game server",

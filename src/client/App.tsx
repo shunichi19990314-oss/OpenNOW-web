@@ -2748,9 +2748,16 @@ export function App(): JSX.Element {
       setQueuePosition(newSession.queuePosition);
 
       // GFN occasionally abandons a queued free-tier session (code 69) or
-      // removes its queue server for maintenance (71). Re-queue once
-      // automatically before surfacing an error; a second failure is real.
-      let autoRequeueUsed = false;
+      // removes its queue server for maintenance (71). Re-queue automatically
+      // before surfacing an error — and switch launch bases between attempts:
+      // an abandoned queue zone rarely recovers within minutes, while the
+      // account/region default base draws from a different pool.
+      // Install-to-play storage-region routing must never be varied.
+      const MAX_AUTO_REQUEUES = 2;
+      let autoRequeueCount = 0;
+      const requeueBases: string[] = i2pStorageRegionBaseUrl
+        ? [launchStreamingBaseUrl]
+        : [...new Set([launchStreamingBaseUrl, effectiveStreamingBaseUrl].filter(Boolean))];
 
       // Poll for readiness.
       // Queue and setup/starting modes wait indefinitely until the session becomes ready
@@ -2828,12 +2835,19 @@ export function App(): JSX.Element {
           const abandoned = upstreamCode === 69
             || upstreamCode === 71
             || /abandoned/i.test(pollError instanceof Error ? pollError.message : "");
-          if (abandoned && !autoRequeueUsed && !launchAbortRef.current) {
-            autoRequeueUsed = true;
+          if (abandoned && autoRequeueCount < MAX_AUTO_REQUEUES && !launchAbortRef.current) {
+            autoRequeueCount += 1;
+            const nextBase = requeueBases.length > 1
+              ? requeueBases[autoRequeueCount % requeueBases.length]
+              : launchStreamingBaseUrl;
             console.warn(
-              `[Launch] GFN released the queued session (code ${upstreamCode ?? "n/a"}); auto re-queueing once`,
+              `[Launch] GFN released the queued session (code ${upstreamCode ?? "n/a"}); ` +
+              `auto re-queue ${autoRequeueCount}/${MAX_AUTO_REQUEUES} via ${nextBase || "provider default"}`,
             );
-            newSession = await window.openNow.createSession(createSessionInput);
+            newSession = await window.openNow.createSession({
+              ...createSessionInput,
+              streamingBaseUrl: nextBase,
+            });
             latestSession = newSession;
             setSession(newSession);
             setQueuePosition(newSession.queuePosition);
