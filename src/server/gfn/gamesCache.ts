@@ -71,8 +71,15 @@ export async function loadAccountScopedFromCache<T>(
     if (legacyKey !== primaryKey) {
       const legacy = await cacheManager.loadFromCache<T>(legacyKey);
       if (legacy) {
-        void cacheManager.saveToCache(primaryKey, legacy.data);
-        void cacheManager.invalidateCache(legacyKey);
+        // Fire-and-forget cache migration must never become an unhandled
+        // rejection: on Node 22 that terminates the process, which surfaces
+        // to visitors as a proxy 500 on their next request.
+        cacheManager.saveToCache(primaryKey, legacy.data).catch((error: unknown) => {
+          console.warn("[GamesCache] Legacy cache migration save failed:", error);
+        });
+        cacheManager.invalidateCache(legacyKey).catch((error: unknown) => {
+          console.warn("[GamesCache] Legacy cache invalidation failed:", error);
+        });
         return legacy;
       }
     }

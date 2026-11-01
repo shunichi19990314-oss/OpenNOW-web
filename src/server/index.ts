@@ -59,6 +59,17 @@ app.use((error: unknown, _request: express.Request, response: express.Response, 
   response.status(status).json({ error: message });
 });
 
+// Process-level safety net. A stray unhandled rejection would otherwise
+// terminate Node (v22 default), killing the instance mid-request and showing
+// visitors a non-JSON proxy 500. Log loudly and stay up; Render restarts are
+// reserved for genuinely unrecoverable states.
+process.on("unhandledRejection", (reason) => {
+  console.error("[Server] Unhandled promise rejection (process kept alive):", reason);
+});
+process.on("uncaughtException", (error) => {
+  console.error("[Server] Uncaught exception (process kept alive):", error);
+});
+
 await cacheManager.initialize();
 server.listen(port, () => {
   console.log(`OpenNOW Web is running at http://localhost:${port}`);
