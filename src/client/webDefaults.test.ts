@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { chooseStreamDefaultsForDevice } from "./webDefaults";
+import { chooseStreamDefaultsForDevice, fitResolutionToDisplay } from "./webDefaults";
 
 describe("chooseStreamDefaultsForDevice", () => {
   it("matches small low-power panels (ASUS Chromebook CR11 Flip: 1366x768, N150 4-core)", () => {
@@ -85,5 +85,42 @@ describe("chooseStreamDefaultsForDevice", () => {
         hardwareConcurrency: 0,
       }),
     ).toEqual({ resolution: "1920x1080", maxBitrateMbps: 40 });
+  });
+});
+
+describe("fitResolutionToDisplay", () => {
+  const cr11 = { screenWidth: 1366, screenHeight: 768, devicePixelRatio: 1, hardwareConcurrency: 4 };
+
+  it("downsizes a stale oversized request to the device default on a small panel (CR11 1080p -> 720p)", () => {
+    expect(fitResolutionToDisplay("1920x1080", cr11)).toBe("1280x720");
+  });
+
+  it("honors a request that already fits the panel (including 1:1 native)", () => {
+    expect(fitResolutionToDisplay("1280x720", cr11)).toBe("1280x720");
+    expect(fitResolutionToDisplay("1366x768", cr11)).toBe("1366x768");
+  });
+
+  it("leaves capable displays untouched when the request fits", () => {
+    const desktop = { screenWidth: 2560, screenHeight: 1440, devicePixelRatio: 1, hardwareConcurrency: 16 };
+    expect(fitResolutionToDisplay("1920x1080", desktop)).toBe("1920x1080");
+    // A 4K request on a 1440p panel is oversized -> device default (1080p).
+    expect(fitResolutionToDisplay("3840x2160", desktop)).toBe("1920x1080");
+  });
+
+  it("accounts for devicePixelRatio when measuring the panel", () => {
+    // Retina laptop: 1512x982 CSS at dpr 2 -> 3024x1964 physical panel.
+    const retina = { screenWidth: 1512, screenHeight: 982, devicePixelRatio: 2, hardwareConcurrency: 10 };
+    expect(fitResolutionToDisplay("1920x1080", retina)).toBe("1920x1080");
+    expect(fitResolutionToDisplay("3840x2160", retina)).toBe("1920x1080");
+  });
+
+  it("does not guess when the display probe is unavailable", () => {
+    const unknown = { screenWidth: 0, screenHeight: 0, devicePixelRatio: 0, hardwareConcurrency: 0 };
+    expect(fitResolutionToDisplay("1920x1080", unknown)).toBe("1920x1080");
+  });
+
+  it("passes through unparseable resolutions untouched", () => {
+    expect(fitResolutionToDisplay("garbage", cr11)).toBe("garbage");
+    expect(fitResolutionToDisplay("", cr11)).toBe("");
   });
 });

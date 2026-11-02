@@ -63,7 +63,7 @@ import type {
 import { loadStoredCodecResults, saveStoredCodecResults, testCodecSupport, type CodecTestResult } from "./lib/codecDiagnostics";
 import { clampBitrateForConnection, readNavigatorConnection } from "./lib/connectionBitrate";
 import { ensureNotificationPermission, notifyQueueFailed, notifyStreamReady } from "./lib/queueNotifier";
-import { DEVICE_STREAM_DEFAULTS } from "./webDefaults";
+import { DEVICE_STREAM_DEFAULTS, fitResolutionToDisplay } from "./webDefaults";
 import {
   createSyntheticDirectLaunchGame,
   findDirectLaunchTarget,
@@ -737,7 +737,11 @@ export function App(): JSX.Element {
   const buildCurrentStreamSettings = useCallback((subscriptionOverride?: SubscriptionInfo | null): StreamSettings => {
     const currentSubscription = subscriptionOverride === undefined ? subscriptionInfo : subscriptionOverride;
     const entitledProfile = resolveEntitledStreamProfile(currentSubscription?.entitledResolutions ?? [], {
-      resolution: settings.resolution,
+      // Fit the request to the active display before entitlement resolution so a
+      // stale oversized setting (e.g. 1080p carried onto a 1366x768 panel) does
+      // not force the rig to render/encode pixels the screen cannot show. The
+      // stored preference is left untouched; this only shapes the launch request.
+      resolution: fitResolutionToDisplay(settings.resolution),
       fps: settings.fps,
     });
     const streamProfile = entitledProfile ?? SAFE_FALLBACK_STREAM_PROFILE;
@@ -2348,7 +2352,7 @@ export function App(): JSX.Element {
             await client.handleOffer(event.sdp, activeSession, {
               codec: settings.codec,
               colorQuality: settings.colorQuality,
-              resolution: settings.resolution,
+              resolution: fitResolutionToDisplay(settings.resolution),
               fps: settings.fps,
               maxBitrateKbps: clampBitrateForConnection(settings.maxBitrateMbps, readNavigatorConnection()) * 1000,
               nativeTransitionDiagnostics: settings.nativeTransitionDiagnostics,
