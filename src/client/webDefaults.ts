@@ -63,6 +63,54 @@ function probeDeviceForStreamDefaults(): DeviceStreamProbe {
   }
 }
 
+/**
+ * Right-size a requested stream resolution to the display that will actually
+ * show it, without ever touching the user's stored preference.
+ *
+ * Requesting more pixels than the panel can display (e.g. a stale 1920x1080
+ * setting carried onto a 1366x768 Chromebook) buys nothing visually — the panel
+ * downscales the result — while still costing decode work, bandwidth and
+ * latency on the link. On low-power hardware over a long-haul route (the free
+ * tier streams from US rigs) that extra load shows up as stutter. When the
+ * request already fits the panel we respect it verbatim (including deliberate
+ * 1:1 native-panel choices); only an oversized request falls back to the
+ * device-appropriate default from chooseStreamDefaultsForDevice.
+ *
+ * The active display is read from window.screen, so connecting an external
+ * monitor raises the ceiling automatically. An unknown/failed probe leaves the
+ * request untouched rather than guessing.
+ */
+export function fitResolutionToDisplay(
+  requested: string,
+  probe: DeviceStreamProbe = probeDeviceForStreamDefaults(),
+): string {
+  const dpr = probe.devicePixelRatio > 0 ? probe.devicePixelRatio : 1;
+  const panelLong = Math.max(probe.screenWidth, probe.screenHeight) * dpr;
+  const panelShort = Math.min(probe.screenWidth, probe.screenHeight) * dpr;
+  // Unknown display (SSR, probe failure): never guess, keep the request.
+  if (panelLong <= 0 || panelShort <= 0) {
+    return requested;
+  }
+
+  const [rawWidth, rawHeight] = requested.split("x");
+  const width = Number.parseInt(rawWidth ?? "", 10);
+  const height = Number.parseInt(rawHeight ?? "", 10);
+  if (!Number.isFinite(width) || !Number.isFinite(height) || width <= 0 || height <= 0) {
+    return requested;
+  }
+
+  const requestedLong = Math.max(width, height);
+  const requestedShort = Math.min(width, height);
+  // Fits within the panel: honor the explicit choice.
+  if (requestedLong <= panelLong && requestedShort <= panelShort) {
+    return requested;
+  }
+
+  // Oversized for this display: fall back to the device-appropriate default
+  // (e.g. 720p on a small panel) which is guaranteed to fit the panel.
+  return chooseStreamDefaultsForDevice(probe).resolution;
+}
+
 export const DEVICE_STREAM_DEFAULTS = chooseStreamDefaultsForDevice(probeDeviceForStreamDefaults());
 
 export const WEB_DEFAULT_SETTINGS: Settings = {
