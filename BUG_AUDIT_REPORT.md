@@ -2,6 +2,7 @@
 
 監査日: 2026-10-10 / 対象: `shunichi19990314-oss/Opennow-web-railway` main
 検証: typecheck ✅ / ユニットテスト 18 件 ✅ / プロダクションビルド ✅ / エンドポイントスモークテスト ✅
+再検証 (2026-11-03): typecheck ✅ / ユニットテスト 53 件 ✅ / プロダクションビルド ✅
 
 ---
 
@@ -19,17 +20,24 @@
 
 ## B. 報告のみ(未修正)— 優先度順
 
-### B-1.【中低】放棄されたストリームセッション ID が Cookie に恒久蓄積
+> 更新 (2026-11-03, `OpenNOW-web` main): B-1 / B-2 / B-3 は修正済み。
+> - **B-1** `WebAuthSession.MAX_ACTIVE_SESSION_IDS = 16` の FIFO 上限 + `reduceVolatileState()` を追加(ユニットテスト 3 件)。
+> - **B-2** `requireAuth` のリフレッシュを try/catch で包み、一過性失敗時は現行トークンで継続(次回リトライ)、既に期限切れのときだけ 401(再サインイン)を返すようにした。502 への劣化を解消(ユニットテスト 6 件)。
+> - **B-3** `App.tsx` の重複した `if (launchAbortRef.current) { return; }` を削除。
+>
+> 追加で判明した **B-7**(`fitResolutionToDisplay` のフォールバックが画面に収まらない場合がある)も同日修正。下記に追記する。
+
+### B-1.【中低・修正済み】放棄されたストリームセッション ID が Cookie に恒久蓄積
 - 場所: `src/server/webAuth.ts` `addActiveSession` / `src/server/sessionStore.ts` `persistCookieSession`
 - 詳細: `removeActiveSession` は `/api/stream/stop` 時のみ呼ばれる。タブを閉じて放棄されたセッションの ID は 30 日の Cookie 有効期内に蓄積し続ける。スナップショットが 4 チャンク(約 14KB)を超えると `onHeaders` コールバック内で `throw` され、**ヘッダー送信後のため 500 に劣化できず接続が壊れる**。数百件の放棄が必要で確率は低いが、緩やかな劣化として実在。
 - 推奨対応: `activeSessionIds` に上限(例: 最新 20 件)を設ける、または `/api/active-sessions` 照合時に GFN 側に存在しない ID を prune。
 
-### B-2.【低】トークンリフレッシュにエラーハンドリングなし
+### B-2.【低・修正済み】トークンリフレッシュにエラーハンドリングなし
 - 場所: `src/server/webAuth.ts` `requireAuth`
 - 詳細: `refreshAuthTokens(...)` がネットワーク一過性エラーで reject すると、例外がそのまま伝播し全 API が 500(401 相当の「再サインイン」誘導にならない)。`previous.authClientId!` の非 null アサーションも、旧バージョンのスナップショットに対して脆い。リトライ自体は次回リクエストで可能なため実害は限定的。
 
-### B-3.【無害】完全重複したデッドコード
-- 場所: `src/client/App.tsx` 2685–2691 行 — `if (launchAbortRef.current) { return; }` が連続 2 回(上流リポジトリ由来)。動作影響なし。
+### B-3.【無害・修正済み】完全重複したデッドコード
+- 場所: `src/client/App.tsx`(旧 2685–2691 行)— `if (launchAbortRef.current) { return; }` が連続 2 回(上流リポジトリ由来)。動作影響なし。→ 重複ブロックを削除。
 
 ### B-4.【設計通り】ja/en 以外のロケール欠落
 - de/es/fr/ko/nl/pl/ro/ru/tr/zh は en 比 244 キー欠落(英語フォールバック、意図された設計)。**プレースホルダ `{{...}}` の不一致は 12 ロケール全てで 0 件**。ja は完全翻訳済み。
@@ -39,6 +47,16 @@
 
 ### B-6.【許容】広めの CSP `connect-src`
 - `connect-src 'self' https: ws: wss:` は GFN 全地域エンドポイントへの到達に必要。`script-src 'self'`、`object-src 'none'`、`frame-ancestors 'none'` 等は適切に絞られている。
+
+### B-7.【中・修正済み】`fitResolutionToDisplay` のフォールバックが画面に収まらないことがある
+- 場所: `src/client/webDefaults.ts` `fitResolutionToDisplay`
+- 症状: 「画面より大きい要求は device default に落とす」実装だったが、`chooseStreamDefaultsForDevice` の判定は `longEdge <= 1600 && shortEdge <= 900` のみ。そのため
+  - **1680x1050 パネル**(longEdge 1680 > 1600 で「small」扱いされない)に 1920x1080 を要求 → device default は **1920x1080 のまま**で、依然としてパネルより大きい値を rig に送る(=この関数の目的が果たされない)。
+  - **4:3 の 1024x768 パネル**では default の 1280x720 が横方向に収まらない。
+- 影響: 直近コミット `fc59685`(「小さいパネルでのカクつき低減」)が、まさに上記の中間サイズのパネルで効いていなかった。
+- 修正: device default がパネルに収まることを検証し、収まらない場合は **GFN が実際に受け付けるモード**(`@shared/gfn/entitlements` の `STREAM_MODE_PRESETS` と同一集合)から「パネルに収まる最大面積・要求と同じアスペクト比優先」で一段下げる。どれも収まらない極小パネルでは推測せず要求をそのまま返す。
+  - 注意: 対応外解像度(例 1024x576)を返すと `resolveEntitledStreamProfile` が完全一致に失敗し、**最も大きい entitled モード**へ再バインドされて逆効果になるため、候補は必ずサポート済みモードに限定している。
+- テスト: `webDefaults.test.ts` に 7 件追加(旧実装では 5 件が fail することを確認済み)。
 
 ## C. 問題なしを確認した領域
 
