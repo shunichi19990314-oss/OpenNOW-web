@@ -137,11 +137,21 @@
     },
     "qr": {
       "title": "スキャンしてサインイン",
+      "titleLinkFirst": "この端末でサインイン",
       "preparing": "QRログインを準備中",
       "preparingDescription": "サインインコードを要求しています...",
+      "renewing": "新しいコードを取得中",
+      "renewingDescription": "以前のコードの有効期限が切れました。新しいコードを要求しています...",
+      "renewed": "以前のコードの有効期限が切れたため、新しいコードを発行しました。",
       "description": "スマートフォンでスキャンし、サインイン要求を承認してください。OpenNOW は自動的に続行します。",
+      "descriptionLinkFirst": "ボタンをタップし、NVIDIA アプリまたはブラウザで承認してから、この画面に戻ってください。OpenNOW は自動的に続行します。",
+      "openOnDevice": "この端末でサインインを開く",
       "alt": "ログインQRコード",
-      "expired": "QRログインの有効期限が切れました。新しいQRログインを開始して再試行してください。"
+      "copyCode": "コードをコピー",
+      "codeCopied": "コピーしました",
+      "expiresIn": "残り {{time}}",
+      "enterCodeHint": "または {{uri}} でコードを入力",
+      "expired": "複数のコードでサインインが完了しませんでした。新しいサインインを開始して再試行してください。"
     }
   },
   "navigation": {

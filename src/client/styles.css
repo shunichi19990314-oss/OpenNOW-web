@@ -1752,6 +1752,79 @@ body,
   grid-column: 1 / -1;
 }
 
+/* Same-device sign-in: a phone cannot scan its own screen, so the tappable
+   link spans the panel and, on touch-first devices, is ordered above the QR. */
+.login-qr-link {
+  grid-column: 1 / -1;
+  text-decoration: none;
+}
+
+.login-qr-link:hover {
+  transform: translateY(-1px);
+}
+
+.login-qr-panel--link-first .login-qr-link {
+  order: -1;
+}
+
+.login-qr-panel--link-first .login-qr-copy > p {
+  margin-bottom: 10px;
+}
+
+.login-qr-code-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.login-qr-copy-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 5px 9px;
+  background: color-mix(in srgb, var(--ink) 4%, transparent);
+  border: 1px solid var(--panel-border-solid);
+  border-radius: 8px;
+  color: var(--ink-muted);
+  font-size: 0.74rem;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  transition: border-color var(--t-normal), color var(--t-normal), background var(--t-normal);
+}
+
+.login-qr-copy-button:hover {
+  color: var(--ink);
+  border-color: rgba(var(--accent-rgb), 0.35);
+  background: color-mix(in srgb, var(--ink) 7%, transparent);
+}
+
+.login-qr-copy-button:focus {
+  outline: none;
+  box-shadow: 0 0 0 2px var(--accent-surface);
+}
+
+.login-qr-countdown {
+  display: inline-block;
+  margin-top: 8px;
+  color: var(--ink-muted);
+  font-size: 0.74rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.login-qr-copy p.login-qr-renewed {
+  margin: 8px 0 0;
+  color: var(--accent);
+  font-size: 0.74rem;
+}
+
+.login-qr-copy p.login-qr-manual {
+  margin: 6px 0 0;
+  font-size: 0.72rem;
+  word-break: break-all;
+}
+
 .login-actions {
   display: flex;
   flex-direction: column;

@@ -105,11 +105,21 @@
     },
     "qr": {
       "title": "Scan to sign in",
+      "titleLinkFirst": "Sign in on this device",
       "preparing": "Preparing QR login",
       "preparingDescription": "Requesting a sign-in code...",
+      "renewing": "Getting a new code",
+      "renewingDescription": "The previous code expired. Requesting a fresh one...",
+      "renewed": "The previous code expired, so a new one was issued.",
       "description": "Scan with your phone, then approve the sign-in request. OpenNOW will continue automatically.",
+      "descriptionLinkFirst": "Tap the button, approve in the NVIDIA app or browser, then come back here. OpenNOW continues automatically.",
+      "openOnDevice": "Open sign-in on this device",
       "alt": "Login QR code",
-      "expired": "QR login expired. Start a new QR login to try again."
+      "copyCode": "Copy code",
+      "codeCopied": "Copied",
+      "expiresIn": "Expires in {{time}}",
+      "enterCodeHint": "Or enter the code manually at {{uri}}",
+      "expired": "Sign-in did not complete after several codes. Start a new sign-in to try again."
     },
     "accounts": {
       "activeAccount": "Active account",

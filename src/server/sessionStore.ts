@@ -17,7 +17,15 @@ import { WebAuthSession, type WebAuthSessionSnapshot } from "./webAuth";
 
 const COOKIE_PREFIX = "opennow_state_";
 const COOKIE_PATH = "/api";
-const COOKIE_MAX_AGE_MS = 30 * 24 * 60 * 60 * 1000;
+/**
+ * Browsers cap cookie lifetimes (Chrome/Firefox/Safari all clamp `Max-Age` to
+ * ~400 days), so a longer value would silently be truncated. The window is
+ * instead slid forward on use — see COOKIE_RENEW_AFTER_MS — which keeps a
+ * regular visitor signed in indefinitely.
+ */
+const COOKIE_MAX_AGE_MS = 400 * 24 * 60 * 60 * 1000;
+/** Re-stamp the cookie at most once per quarter of its lifetime. */
+const COOKIE_RENEW_AFTER_MS = COOKIE_MAX_AGE_MS / 4;
 const COOKIE_CHUNK_SIZE = 3_500;
 const MAX_COOKIE_CHUNKS = 4;
 const COOKIE_VERSION = 1;
@@ -97,7 +105,9 @@ function loadCookieSession(request: Pick<IncomingMessage, "headers">): WebAuthSe
 }
 
 function persistCookieSession(response: Response, session: WebAuthSession): void {
-  if (!session.isDirty()) return;
+  // Write on change, and periodically even without one so an unchanged but
+  // still-used session does not age out of the cookie window.
+  if (!session.isDirty() && !session.needsCookieRenewal(COOKIE_RENEW_AFTER_MS)) return;
   // Never throw from this path: it runs inside onHeaders while the response is
   // already being flushed, so an exception would break the request instead of
   // degrading gracefully.
@@ -168,4 +178,7 @@ export const cookieSessionInternals = {
   encrypt: encryptedCookieValue,
   decrypt: decryptCookieValue,
   load: loadCookieSession,
+  persist: persistCookieSession,
+  COOKIE_MAX_AGE_MS,
+  COOKIE_RENEW_AFTER_MS,
 };
