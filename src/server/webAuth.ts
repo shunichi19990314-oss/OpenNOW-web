@@ -7,7 +7,7 @@ import {
   SERVICE_URLS_ENDPOINT,
 } from "./gfn/auth/constants";
 import { exchangeDeviceCode, requestDeviceAuthorization } from "./gfn/auth/deviceLogin";
-import { isNearExpiry } from "./gfn/auth/helpers";
+import { isExpired, isNearExpiry } from "./gfn/auth/helpers";
 import { fetchUserInfo } from "./gfn/auth/userInfo";
 import { refreshAuthTokens, requestClientToken } from "./gfn/auth/tokenRefresh";
 import { fetchDynamicRegions, fetchSubscription } from "./gfn/subscription";
@@ -32,6 +32,8 @@ interface RefreshCacheEntry {
 const refreshInFlight = new Map<string, Promise<AuthTokens>>();
 const refreshRecentlyCompleted = new Map<string, RefreshCacheEntry>();
 const REFRESH_REUSE_WINDOW_MS = 30_000;
+/** Refresh this long before expiry so a request never races the deadline. */
+const REFRESH_AHEAD_MS = 10 * 60 * 1000;
 
 function refreshTokenKey(refreshToken: string): string {
   return createHash("sha256").update(refreshToken).digest("hex").slice(0, 32);
@@ -55,7 +57,10 @@ async function refreshAuthTokensShared(
 
   const promise = (async (): Promise<AuthTokens> => {
     try {
-      const tokens = await refreshAuthTokens(refreshToken, authClientId as string);
+      // `authClientId` is optional on purpose: older cookie snapshots predate the
+      // field, and refreshAuthTokens already falls back to CLIENT_ID when it is
+      // undefined. Passing it through uncast keeps that fallback type-honest.
+      const tokens = await refreshAuthTokens(refreshToken, authClientId);
       for (const [cachedKey, entry] of refreshRecentlyCompleted) {
         if (now - entry.atMs > REFRESH_REUSE_WINDOW_MS * 4) {
           refreshRecentlyCompleted.delete(cachedKey);
@@ -335,22 +340,38 @@ export class WebAuthSession {
 
   async requireAuth(): Promise<AuthSession> {
     if (!this.auth) throw Object.assign(new Error("Sign in with the QR code first."), { statusCode: 401 });
-    if (isNearExpiry(this.auth.tokens.expiresAt, 10 * 60 * 1000)) {
+    if (isNearExpiry(this.auth.tokens.expiresAt, REFRESH_AHEAD_MS)) {
       const refreshToken = this.auth.tokens.refreshToken;
       if (!refreshToken) {
         this.logout();
         throw Object.assign(new Error("Your NVIDIA session expired. Sign in again."), { statusCode: 401 });
       }
       const previous = this.auth.tokens;
-      const refreshed = await refreshAuthTokensShared(refreshToken, previous.authClientId);
-      this.auth.tokens = {
-        ...previous,
-        ...refreshed,
-        clientToken: previous.clientToken,
-        clientTokenExpiresAt: previous.clientTokenExpiresAt,
-        clientTokenLifetimeMs: previous.clientTokenLifetimeMs,
-      };
-      this.dirty = true;
+      try {
+        const refreshed = await refreshAuthTokensShared(refreshToken, previous.authClientId);
+        this.auth.tokens = {
+          ...previous,
+          ...refreshed,
+          clientToken: previous.clientToken,
+          clientTokenExpiresAt: previous.clientTokenExpiresAt,
+          clientTokenLifetimeMs: previous.clientTokenLifetimeMs,
+        };
+        this.dirty = true;
+      } catch (error) {
+        // A transient NVIDIA/network failure while refreshing must not turn every
+        // authorized API call into a 502. While the current access token is still
+        // inside its validity window we keep serving with it — the refresh is
+        // simply retried by the next request — so one dropped call to the token
+        // endpoint degrades to a warning instead of breaking the whole session.
+        if (isExpired(previous.expiresAt)) {
+          // Nothing safe left to fall back on: this is an auth failure, not a
+          // server error, so the client gets its "sign in again" path (401).
+          console.warn("[Auth] Token refresh failed and the access token has expired; requiring re-sign-in.", error);
+          this.logout();
+          throw Object.assign(new Error("Your NVIDIA session expired. Sign in again."), { statusCode: 401 });
+        }
+        console.warn("[Auth] Token refresh failed; continuing with the current token and retrying on the next request.", error);
+      }
     }
     return this.auth;
   }

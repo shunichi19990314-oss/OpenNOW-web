@@ -2860,10 +2860,6 @@ export function App(): JSX.Element {
           return;
         }
 
-        if (launchAbortRef.current) {
-          return;
-        }
-
         let polled: SessionInfo;
         try {
           polled = await window.openNow.pollSession({

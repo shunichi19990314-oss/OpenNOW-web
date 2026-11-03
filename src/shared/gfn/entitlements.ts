@@ -38,6 +38,19 @@ const STREAM_MODE_PRESETS: ReadonlyArray<Readonly<{
   { width: 1024, height: 768, fps: [120, 60, 30] },
 ]);
 
+/**
+ * The stream modes GeForce NOW accepts, as "WxH" strings.
+ *
+ * Anything that has to invent a resolution the service will actually honor —
+ * e.g. right-sizing a launch request to the visitor's display — must pick from
+ * this list. `resolveEntitledStreamProfile` matches width/height exactly and
+ * rebinds an unmatched request to the LARGEST entitled mode, so a made-up value
+ * (1024x576) would silently become the biggest stream instead of a downgrade.
+ */
+export function supportedStreamResolutions(): string[] {
+  return STREAM_MODE_PRESETS.map((mode) => `${mode.width}x${mode.height}`);
+}
+
 export const SAFE_FALLBACK_STREAM_PROFILE: Readonly<EntitledStreamProfile> = Object.freeze({
   resolution: "1920x1080",
   fps: 60,

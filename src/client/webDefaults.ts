@@ -3,6 +3,7 @@ import {
   DEFAULT_KEYBOARD_LAYOUT,
   DEFAULT_VIDEO_SHADER_SETTINGS,
   getDefaultStreamPreferences,
+  supportedStreamResolutions,
 } from "@shared/gfn";
 
 const streamPreferences = getDefaultStreamPreferences();
@@ -64,6 +65,69 @@ function probeDeviceForStreamDefaults(): DeviceStreamProbe {
 }
 
 /**
+ * Stream modes GeForce NOW actually accepts, read from the single source of
+ * truth in `@shared/gfn/entitlements` (STREAM_MODE_PRESETS) so this list can
+ * never drift from what the entitlement layer will match.
+ */
+const GFN_STREAM_RESOLUTIONS: readonly string[] = supportedStreamResolutions();
+
+interface ResolutionSize {
+  value: string;
+  width: number;
+  height: number;
+  long: number;
+  short: number;
+}
+
+function parseResolution(value: string): ResolutionSize | null {
+  const [rawWidth, rawHeight] = value.split("x");
+  const width = Number.parseInt(rawWidth ?? "", 10);
+  const height = Number.parseInt(rawHeight ?? "", 10);
+  if (!Number.isFinite(width) || !Number.isFinite(height) || width <= 0 || height <= 0) {
+    return null;
+  }
+  return {
+    value,
+    width,
+    height,
+    long: Math.max(width, height),
+    short: Math.min(width, height),
+  };
+}
+
+function fitsPanel(size: ResolutionSize, panelLong: number, panelShort: number): boolean {
+  return size.long <= panelLong && size.short <= panelShort;
+}
+
+/**
+ * Largest GFN-supported mode that still fits the panel, preferring the aspect
+ * ratio of the original request so an automatic downgrade never silently turns
+ * a 16:9 launch into a 16:10 one. Returns null when nothing supported fits
+ * (very small or unreadable panel) so the caller can leave the request alone.
+ */
+function largestResolutionForPanel(
+  requested: ResolutionSize,
+  panelLong: number,
+  panelShort: number,
+): string | null {
+  const requestedRatio = requested.long / requested.short;
+  const fitting = GFN_STREAM_RESOLUTIONS
+    .map(parseResolution)
+    .filter((size): size is ResolutionSize => size !== null && fitsPanel(size, panelLong, panelShort));
+  if (fitting.length === 0) return null;
+
+  const sameAspectRatio = fitting.filter(
+    (size) => Math.abs(size.long / size.short - requestedRatio) < 0.02,
+  );
+  const pool = sameAspectRatio.length > 0 ? sameAspectRatio : fitting;
+  let best = pool[0];
+  for (const size of pool) {
+    if (size.width * size.height > best.width * best.height) best = size;
+  }
+  return best.value;
+}
+
+/**
  * Right-size a requested stream resolution to the display that will actually
  * show it, without ever touching the user's stored preference.
  *
@@ -92,23 +156,28 @@ export function fitResolutionToDisplay(
     return requested;
   }
 
-  const [rawWidth, rawHeight] = requested.split("x");
-  const width = Number.parseInt(rawWidth ?? "", 10);
-  const height = Number.parseInt(rawHeight ?? "", 10);
-  if (!Number.isFinite(width) || !Number.isFinite(height) || width <= 0 || height <= 0) {
+  const requestedSize = parseResolution(requested);
+  if (requestedSize === null) {
     return requested;
   }
-
-  const requestedLong = Math.max(width, height);
-  const requestedShort = Math.min(width, height);
   // Fits within the panel: honor the explicit choice.
-  if (requestedLong <= panelLong && requestedShort <= panelShort) {
+  if (fitsPanel(requestedSize, panelLong, panelShort)) {
     return requested;
   }
 
   // Oversized for this display: fall back to the device-appropriate default
-  // (e.g. 720p on a small panel) which is guaranteed to fit the panel.
-  return chooseStreamDefaultsForDevice(probe).resolution;
+  // (e.g. 720p on a small panel).
+  const deviceDefault = parseResolution(chooseStreamDefaultsForDevice(probe).resolution);
+  if (deviceDefault !== null && fitsPanel(deviceDefault, panelLong, panelShort)) {
+    return deviceDefault.value;
+  }
+
+  // That default is sized for common 16:9 panels, so on an unusual display it
+  // can itself be larger than the glass — a 1680x1050 monitor is not "small"
+  // (long edge > 1600) yet cannot show 1920x1080, and a 4:3 1024x768 panel
+  // cannot show 1280x720. Handing back a value that still does not fit would
+  // defeat the whole point, so step down to the largest supported mode that does.
+  return largestResolutionForPanel(requestedSize, panelLong, panelShort) ?? requested;
 }
 
 export const DEVICE_STREAM_DEFAULTS = chooseStreamDefaultsForDevice(probeDeviceForStreamDefaults());

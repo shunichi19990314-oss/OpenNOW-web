@@ -1,5 +1,7 @@
 import { describe, expect, it } from "vitest";
 
+import { supportedStreamResolutions } from "@shared/gfn";
+
 import { chooseStreamDefaultsForDevice, fitResolutionToDisplay } from "./webDefaults";
 
 describe("chooseStreamDefaultsForDevice", () => {
@@ -122,5 +124,79 @@ describe("fitResolutionToDisplay", () => {
   it("passes through unparseable resolutions untouched", () => {
     expect(fitResolutionToDisplay("garbage", cr11)).toBe("garbage");
     expect(fitResolutionToDisplay("", cr11)).toBe("");
+  });
+});
+
+describe("fitResolutionToDisplay panels the device default does not fit", () => {
+  it("steps down to a supported mode on a 1680x1050 panel (not 'small', cannot show 1080p)", () => {
+    // longEdge 1680 > 1600 so chooseStreamDefaultsForDevice returns 1920x1080,
+    // which is wider than the glass. Handing that back would defeat the fit.
+    const panel = { screenWidth: 1680, screenHeight: 1050, devicePixelRatio: 1, hardwareConcurrency: 8 };
+    expect(fitResolutionToDisplay("1920x1080", panel)).toBe("1600x900");
+  });
+
+  it("steps down on a 4:3 1024x768 panel where 720p is too wide", () => {
+    const panel = { screenWidth: 1024, screenHeight: 768, devicePixelRatio: 1, hardwareConcurrency: 8 };
+    expect(fitResolutionToDisplay("1920x1080", panel)).toBe("1024x768");
+  });
+
+  it("keeps the requested aspect ratio when stepping down (16:10 request stays 16:10)", () => {
+    const panel = { screenWidth: 1680, screenHeight: 1050, devicePixelRatio: 1, hardwareConcurrency: 8 };
+    expect(fitResolutionToDisplay("1920x1200", panel)).toBe("1680x1050");
+  });
+
+  it("leaves the request alone when no supported mode fits the panel", () => {
+    // Smallest GFN mode is 1024x768; an 800x600 panel fits none, so do not guess.
+    const tiny = { screenWidth: 800, screenHeight: 600, devicePixelRatio: 1, hardwareConcurrency: 4 };
+    expect(fitResolutionToDisplay("1920x1080", tiny)).toBe("1920x1080");
+  });
+
+  it("accounts for devicePixelRatio when deciding what the panel can show", () => {
+    // 1680x1050 CSS at dpr 1.25 -> 2100x1312 physical: 1920x1080 now fits.
+    const scaled = { screenWidth: 1680, screenHeight: 1050, devicePixelRatio: 1.25, hardwareConcurrency: 8 };
+    expect(fitResolutionToDisplay("1920x1080", scaled)).toBe("1920x1080");
+  });
+
+  it("always returns a resolution GeForce NOW supports", () => {
+    // Read straight from the entitlement layer: a value outside
+    // STREAM_MODE_PRESETS is not matched by resolveEntitledStreamProfile, which
+    // rebinds it to the LARGEST entitled mode instead of the intended downgrade.
+    const supported = new Set(supportedStreamResolutions());
+    expect(supported.has("1920x1080")).toBe(true);
+    expect(supported.has("1024x768")).toBe(true);
+    const panels = [
+      { screenWidth: 1680, screenHeight: 1050, devicePixelRatio: 1, hardwareConcurrency: 8 },
+      { screenWidth: 1024, screenHeight: 768, devicePixelRatio: 1, hardwareConcurrency: 4 },
+      { screenWidth: 1366, screenHeight: 768, devicePixelRatio: 1, hardwareConcurrency: 4 },
+      { screenWidth: 1600, screenHeight: 1200, devicePixelRatio: 1, hardwareConcurrency: 16 },
+    ];
+    for (const panel of panels) {
+      for (const requested of ["3840x2160", "2560x1440", "1920x1080", "1920x1200"]) {
+        const result = fitResolutionToDisplay(requested, panel);
+        // Either the untouched request or a supported mode, never an invention.
+        expect(result === requested || supported.has(result)).toBe(true);
+      }
+    }
+  });
+
+  it("never returns a resolution larger than a panel it claims to fit", () => {
+    const panels = [
+      { screenWidth: 1680, screenHeight: 1050, devicePixelRatio: 1 },
+      { screenWidth: 1024, screenHeight: 768, devicePixelRatio: 1 },
+      { screenWidth: 1600, screenHeight: 1200, devicePixelRatio: 1 },
+      { screenWidth: 1440, screenHeight: 900, devicePixelRatio: 1 },
+    ];
+    for (const raw of panels) {
+      const panel = { ...raw, hardwareConcurrency: 8 };
+      const result = fitResolutionToDisplay("3840x2160", panel);
+      if (result === "3840x2160") continue; // nothing fit; request preserved by design
+      const [w, h] = result.split("x").map((part) => Number.parseInt(part, 10));
+      const long = Math.max(w, h);
+      const short = Math.min(w, h);
+      const panelLong = Math.max(panel.screenWidth, panel.screenHeight);
+      const panelShort = Math.min(panel.screenWidth, panel.screenHeight);
+      expect(long).toBeLessThanOrEqual(panelLong);
+      expect(short).toBeLessThanOrEqual(panelShort);
+    }
   });
 });
