@@ -504,6 +504,7 @@ export function App(): JSX.Element {
     loginError,
     setLoginError,
     qrLoginChallenge,
+    qrRenewalsUsed,
     isInitializing,
     startupStatusMessage,
     startupRefreshNotice,
@@ -3818,6 +3819,7 @@ export function App(): JSX.Element {
           isInitializing={isInitializing}
           statusMessage={startupStatusMessage}
           qrLoginChallenge={qrLoginChallenge}
+          qrRenewalsUsed={qrRenewalsUsed}
           isQrLoginPending={activeLoginMode === "qr" && !qrLoginChallenge}
         />
         {releaseHighlightsPayload && (

@@ -7,8 +7,11 @@ The client UI is the official OpenNOW renderer copied from `OpenNOW/opennow-stab
 ## What changed
 
 - QR-code device authorization is the only sign-in flow. There is no redirect-based NVIDIA sign-in.
+- Sign-in is low-friction: a code is requested automatically when the login screen appears, an expired code is re-issued twice without any click, a live countdown shows how long it stays valid, and the last used provider is remembered per device.
+- The same code can be approved on the device you are already holding. A tappable link opens NVIDIA's verification page (with the code pre-filled) in a new tab, and the code can be copied by hand; on touch-first devices the link leads, because a phone cannot scan its own screen.
 - Each visitor's profile, QR attempt, NVIDIA tokens, and owned stream IDs are stored in compressed AES-256-GCM encrypted, HTTP-only cookies. They are never returned to page JavaScript.
 - Session cookies are scoped to `/api`, use `SameSite=Strict`, and are marked `Secure` in production.
+- Cookies request the longest lifetime browsers honour (~400 days) and slide that window forward while the app is used, so a returning visitor stays signed in indefinitely. The practical limit is the lifetime of the NVIDIA refresh token, not the cookie.
 - The session layer is stateless: any server instance can handle any visitor when every instance uses the same `SESSION_SECRET`.
 - Game video, audio, keyboard, mouse, and controller input use browser WebRTC.
 - Region latency is measured from each visitor's browser with bounded HTTPS checks; unreachable regions remain selectable and show a neutral unavailable state.

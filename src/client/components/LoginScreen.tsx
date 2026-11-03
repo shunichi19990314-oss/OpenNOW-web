@@ -1,9 +1,10 @@
-import { useState, useRef, useEffect } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import type { JSX } from "react";
 import QRCode from "qrcode";
-import { ChevronDown, QrCode } from "lucide-react";
+import { Check, ChevronDown, Copy, ExternalLink, QrCode } from "lucide-react";
 import { AnimatePresence, m } from "motion/react";
 import type { AuthDeviceLoginChallenge, LoginProvider } from "@shared/gfn";
+import { formatCodeCountdown, prefersLinkOverQr } from "../lib/deviceLoginFlow";
 import { useTranslation } from "../i18n";
 import { OpenNowLogoMark } from "./OpenNowLogoMark";
 import { MotionSpinner } from "./MotionSpinner";
@@ -21,6 +22,8 @@ export interface LoginScreenProps {
   statusMessage?: string;
   qrLoginChallenge?: AuthDeviceLoginChallenge | null;
   isQrLoginPending?: boolean;
+  /** Codes already replaced automatically after expiring (drives the notice). */
+  qrRenewalsUsed?: number;
 }
 
 export function LoginScreen({
@@ -35,11 +38,22 @@ export function LoginScreen({
   statusMessage,
   qrLoginChallenge,
   isQrLoginPending = false,
+  qrRenewalsUsed = 0,
 }: LoginScreenProps): JSX.Element {
   const { t } = useTranslation();
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [qrCodeDataUrl, setQrCodeDataUrl] = useState<string | null>(null);
+  // Seeded eagerly so the countdown is present on the very first paint instead
+  // of appearing a tick later when the interval effect runs.
+  const [remainingMs, setRemainingMs] = useState<number | null>(
+    () => (qrLoginChallenge ? qrLoginChallenge.expiresAt - Date.now() : null),
+  );
+  const [isCodeCopied, setIsCodeCopied] = useState(false);
+  // A phone or tablet cannot photograph its own screen, so on touch-first
+  // devices the sign-in link leads and the QR becomes the secondary path.
+  const [isLinkFirst, setIsLinkFirst] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
+  const copyResetTimerRef = useRef<number | null>(null);
 
   const selectedProvider = providers.find((p) => p.idpId === selectedProviderId);
   const title = isInitializing ? t("auth.title.restoringSession") : t("auth.title.signIn");
@@ -88,6 +102,74 @@ export function LoginScreen({
       cancelled = true;
     };
   }, [qrLoginChallenge]);
+
+  useEffect(() => {
+    if (typeof window === "undefined" || typeof window.matchMedia !== "function") return;
+    const coarsePointer = window.matchMedia("(pointer: coarse)");
+    const narrowViewport = window.matchMedia("(max-width: 720px)");
+    const update = () => setIsLinkFirst(prefersLinkOverQr(coarsePointer.matches, narrowViewport.matches));
+    update();
+    coarsePointer.addEventListener("change", update);
+    narrowViewport.addEventListener("change", update);
+    return () => {
+      coarsePointer.removeEventListener("change", update);
+      narrowViewport.removeEventListener("change", update);
+    };
+  }, []);
+
+  // Live countdown so an expiring code is visible before it silently dies.
+  useEffect(() => {
+    if (!qrLoginChallenge) {
+      setRemainingMs(null);
+      return;
+    }
+    const update = () => setRemainingMs(qrLoginChallenge.expiresAt - Date.now());
+    update();
+    const timer = window.setInterval(update, 1000);
+    // Hidden tabs throttle intervals; resync the moment the visitor returns.
+    const onVisible = () => {
+      if (typeof document !== "undefined" && document.visibilityState === "visible") update();
+    };
+    document.addEventListener("visibilitychange", onVisible);
+    return () => {
+      window.clearInterval(timer);
+      document.removeEventListener("visibilitychange", onVisible);
+    };
+  }, [qrLoginChallenge]);
+
+  useEffect(() => {
+    setIsCodeCopied(false);
+  }, [qrLoginChallenge?.userCode]);
+
+  useEffect(() => () => {
+    if (copyResetTimerRef.current !== null) window.clearTimeout(copyResetTimerRef.current);
+  }, []);
+
+  const handleCopyUserCode = useCallback(async () => {
+    const code = qrLoginChallenge?.userCode;
+    if (!code) return;
+    try {
+      if (navigator.clipboard?.writeText) {
+        await navigator.clipboard.writeText(code);
+      } else {
+        // Clipboard API needs a secure context; fall back for plain-HTTP LAN use.
+        const scratch = document.createElement("textarea");
+        scratch.value = code;
+        scratch.setAttribute("readonly", "");
+        scratch.style.position = "fixed";
+        scratch.style.opacity = "0";
+        document.body.appendChild(scratch);
+        scratch.select();
+        document.execCommand("copy");
+        document.body.removeChild(scratch);
+      }
+      setIsCodeCopied(true);
+      if (copyResetTimerRef.current !== null) window.clearTimeout(copyResetTimerRef.current);
+      copyResetTimerRef.current = window.setTimeout(() => setIsCodeCopied(false), 2000);
+    } catch (error) {
+      console.warn("[Login] Copying the sign-in code failed.", error);
+    }
+  }, [qrLoginChallenge?.userCode]);
 
   const handleProviderSelect = (providerId: string) => {
     onProviderChange(providerId);
@@ -198,7 +280,23 @@ export function LoginScreen({
           </div>
 
           {isQrLoginActive && (
-            <div className="login-qr-panel" role="status" aria-live="polite">
+            <div
+              className={isLinkFirst ? "login-qr-panel login-qr-panel--link-first" : "login-qr-panel"}
+              role="status"
+              aria-live="polite"
+            >
+              {qrLoginChallenge?.verificationUriComplete && (
+                <a
+                  className="login-button login-qr-link"
+                  href={qrLoginChallenge.verificationUriComplete}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  <ExternalLink size={18} />
+                  <span>{t("auth.qr.openOnDevice")}</span>
+                </a>
+              )}
+
               <div className="login-qr-code">
                 {qrLoginChallenge && qrCodeDataUrl ? (
                   <img src={qrCodeDataUrl} alt={t("auth.qr.alt")} />
@@ -206,15 +304,50 @@ export function LoginScreen({
                   <MotionSpinner className="login-motion-spinner" size={16} label={t("common.loading")} />
                 )}
               </div>
+
               <div className="login-qr-copy">
                 <div className="login-qr-title">
-                  {qrLoginChallenge ? t("auth.qr.title") : t("auth.qr.preparing")}
+                  {qrLoginChallenge
+                    ? (isLinkFirst ? t("auth.qr.titleLinkFirst") : t("auth.qr.title"))
+                    : (qrRenewalsUsed > 0 ? t("auth.qr.renewing") : t("auth.qr.preparing"))}
                 </div>
                 <p>
-                  {qrLoginChallenge ? t("auth.qr.description") : t("auth.qr.preparingDescription")}
+                  {qrLoginChallenge
+                    ? (isLinkFirst ? t("auth.qr.descriptionLinkFirst") : t("auth.qr.description"))
+                    : (qrRenewalsUsed > 0 ? t("auth.qr.renewingDescription") : t("auth.qr.preparingDescription"))}
                 </p>
-                {qrLoginChallenge && <code>{qrLoginChallenge.userCode}</code>}
+
+                {qrLoginChallenge && (
+                  <>
+                    <div className="login-qr-code-row">
+                      <code>{qrLoginChallenge.userCode}</code>
+                      <button
+                        className="login-qr-copy-button"
+                        onClick={() => void handleCopyUserCode()}
+                        type="button"
+                        title={t("auth.qr.copyCode")}
+                      >
+                        {isCodeCopied ? <Check size={14} /> : <Copy size={14} />}
+                        <span>{isCodeCopied ? t("auth.qr.codeCopied") : t("auth.qr.copyCode")}</span>
+                      </button>
+                    </div>
+                    {qrRenewalsUsed > 0 && (
+                      <p className="login-qr-renewed">{t("auth.qr.renewed")}</p>
+                    )}
+                    {remainingMs !== null && (
+                      <span className="login-qr-countdown">
+                        {t("auth.qr.expiresIn", { time: formatCodeCountdown(remainingMs) })}
+                      </span>
+                    )}
+                    {qrLoginChallenge.verificationUri && (
+                      <p className="login-qr-manual">
+                        {t("auth.qr.enterCodeHint", { uri: qrLoginChallenge.verificationUri })}
+                      </p>
+                    )}
+                  </>
+                )}
               </div>
+
               <button
                 className="login-secondary-button"
                 onClick={onCancelQrLogin}

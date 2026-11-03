@@ -81,6 +81,11 @@ export interface WebAuthSessionSnapshot {
   auth: AuthSession | null;
   attempts: Array<[string, DeviceAttempt]>;
   activeSessionIds: string[];
+  /**
+   * When this snapshot was written to the cookie. Absent on cookies saved
+   * before sliding renewal existed, which simply means "renew on next write".
+   */
+  savedAt?: number;
 }
 
 export interface BrowserSession {
@@ -162,6 +167,8 @@ export class WebAuthSession {
   private auth: AuthSession | null = null;
   private readonly attempts = new Map<string, DeviceAttempt>();
   private readonly activeSessionIds = new Set<string>();
+  /** Last time this snapshot reached the cookie; drives sliding renewal. */
+  private savedAt: number | null = null;
   // Fresh sessions start clean: an empty snapshot carries no state worth
   // persisting, and writing one would clobber a valid auth cookie whenever a
   // single request transiently failed to read/decrypt the incoming cookies.
@@ -178,6 +185,9 @@ export class WebAuthSession {
     for (const sessionId of snapshot.activeSessionIds) {
       if (typeof sessionId === "string" && sessionId.length > 0) session.activeSessionIds.add(sessionId);
     }
+    session.savedAt = typeof snapshot.savedAt === "number" && Number.isFinite(snapshot.savedAt)
+      ? snapshot.savedAt
+      : null;
     session.dirty = false;
     return session;
   }
@@ -191,7 +201,28 @@ export class WebAuthSession {
       auth: this.auth,
       attempts,
       activeSessionIds,
+      savedAt: Date.now(),
     };
+  }
+
+  /** Is there anything in this session worth keeping in a cookie? */
+  hasPersistedState(): boolean {
+    return this.auth !== null || this.activeSessionIds.size > 0;
+  }
+
+  /**
+   * Sliding expiry check.
+   *
+   * Browsers clamp cookie lifetimes to roughly 400 days, so "stay signed in
+   * forever" can only be built as a long window that is pushed forward while
+   * the visitor keeps using the app. Rewriting up to four cookie chunks on
+   * every response would be wasteful, so renewal is throttled by the caller to
+   * a fraction of the window.
+   */
+  needsCookieRenewal(renewAfterMs: number, now = Date.now()): boolean {
+    if (!this.hasPersistedState()) return false;
+    if (this.savedAt === null) return true;
+    return now - this.savedAt >= renewAfterMs;
   }
 
   /**
