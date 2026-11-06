@@ -3192,6 +3192,9 @@ export class GfnWebRtcClient {
       return false;
     }
     const slot = this.acquireVirtualGamepadSlot();
+    if (slot === null) {
+      return false;
+    }
     const input: GamepadInput = {
       controllerId: slot,
       buttons: frame.buttons & 0xffff,
@@ -3261,23 +3264,31 @@ export class GfnWebRtcClient {
     this.log("Virtual touch gamepad detached");
   }
 
-  /** First controller slot free of physical pads; treated as Xbox-like. */
-  private acquireVirtualGamepadSlot(): number {
+  /**
+   * First controller slot free of physical pads; treated as Xbox-like.
+   * Returns null when all four slots are taken by physical pads — hijacking
+   * one would make the virtual and physical streams fight over the same
+   * controller id.
+   */
+  private acquireVirtualGamepadSlot(): number | null {
     const current = this.virtualGamepadSlot;
     if (current !== null && !this.connectedGamepads.has(current)) {
       return current;
     }
-    let slot = 0;
     for (let candidate = 0; candidate < GAMEPAD_MAX_CONTROLLERS; candidate += 1) {
-      if (!this.connectedGamepads.has(candidate)) {
-        slot = candidate;
-        break;
+      if (this.connectedGamepads.has(candidate)) {
+        continue;
       }
+      this.virtualGamepadSlot = candidate;
+      this.gamepadBitmap |= (1 << candidate) | (1 << (candidate + 8));
+      this.log(`Virtual touch gamepad attached at slot ${candidate}`);
+      return candidate;
     }
-    this.virtualGamepadSlot = slot;
-    this.gamepadBitmap |= (1 << slot) | (1 << (slot + 8));
-    this.log(`Virtual touch gamepad attached at slot ${slot}`);
-    return slot;
+    if (this.virtualGamepadSlot !== null) {
+      this.log("Virtual touch gamepad disabled: all controller slots are in use");
+      this.virtualGamepadSlot = null;
+    }
+    return null;
   }
 
   private sendGamepad(payload: Uint8Array): void {

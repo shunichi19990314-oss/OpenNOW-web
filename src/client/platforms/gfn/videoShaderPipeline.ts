@@ -188,6 +188,7 @@ export class VideoShaderPipeline {
     this.gl = null;
     this.program = null;
     this.texture = null;
+    this.canvas.removeEventListener("webglcontextlost", this.onContextLost);
     this.canvas.remove();
   }
 
