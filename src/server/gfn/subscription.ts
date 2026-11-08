@@ -90,6 +90,23 @@ function parseIsoDate(value: unknown): string | undefined {
   return typeof value === "string" && value.length > 0 ? value : undefined;
 }
 
+function noEntitlementSubscription(vpcId: string): SubscriptionInfo {
+  return {
+    membershipTier: "FREE",
+    allottedHours: 0,
+    purchasedHours: 0,
+    rolledOverHours: 0,
+    usedHours: 0,
+    remainingHours: 0,
+    totalHours: 0,
+    serverRegionId: vpcId,
+    state: "INACTIVE",
+    isGamePlayAllowed: false,
+    isUnlimited: false,
+    entitledResolutions: [],
+  };
+}
+
 /**
  * Fetch subscription info from MES API
  * @param token - The authentication token
@@ -118,6 +135,16 @@ export async function fetchSubscription(
 
   if (!response.ok) {
     const body = await response.text();
+    // MES uses a 404 for a normal free/unentitled account. Treat only this
+    // documented response shape as an empty subscription; other 404s must
+    // still surface so real endpoint or authentication problems are visible.
+    if (
+      response.status === 404 &&
+      /not_found/i.test(body) &&
+      /active entitlement/i.test(body)
+    ) {
+      return noEntitlementSubscription(vpcId);
+    }
     throw new Error(`Subscription API failed with status ${response.status}: ${body}`);
   }
 
