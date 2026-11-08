@@ -5,6 +5,7 @@ import express from "express";
 import { registerApi } from "./api";
 import { attachSignalingBridge } from "./signalingBridge";
 import { cacheManager } from "./services/cacheManager";
+import { privateAccessMiddleware } from "./privateAccess";
 import { resolveKeepAliveConfig, startKeepAlive } from "./keepAlive";
 import { cookieSessionMiddleware } from "./sessionStore";
 
@@ -14,6 +15,7 @@ const port = Number(process.env.PORT ?? 3000);
 
 app.disable("x-powered-by");
 app.use(express.json({ limit: "1mb" }));
+app.use(privateAccessMiddleware);
 app.use("/api", cookieSessionMiddleware);
 app.use((request, response, next) => {
   response.setHeader("Referrer-Policy", "same-origin");
