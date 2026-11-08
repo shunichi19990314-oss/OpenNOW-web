@@ -147,7 +147,10 @@ export function getNextAdReportAction(
 ): SessionAdAction | null {
   switch (playbackEvent) {
     case "playing":
-      if (!lastAction) {
+      // A failed playback is reported as cancel. Allow the user to retry the
+      // same ad by starting a fresh report sequence instead of leaving the
+      // session in a locally-cancelled state until the server times out.
+      if (!lastAction || lastAction === "cancel") {
         return "start";
       }
       return lastAction === "pause" ? "resume" : null;
