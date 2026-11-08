@@ -562,6 +562,7 @@ export function App(): JSX.Element {
     catalogSelectedSortId,
     setCatalogSelectedSortId,
     catalogSelectedFilterIds,
+    setCatalogSelectedFilterIds,
     catalogTotalCount,
     catalogSupportedCount,
     markOwnedInFlightByVariantId,
@@ -4054,6 +4055,7 @@ export function App(): JSX.Element {
                 filterGroups={catalogFilterGroups}
                 selectedFilterIds={catalogSelectedFilterIds}
                 onToggleFilter={handleToggleCatalogFilter}
+                onClearFilters={() => setCatalogSelectedFilterIds([])}
                 sortOptions={catalogSortOptions}
                 selectedSortId={catalogSelectedSortId}
                 onSortChange={setCatalogSelectedSortId}
