@@ -11595,6 +11595,41 @@ body {
   padding-right: 40px;
 }
 
+.home-clear-filters,
+.home-empty-reset {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 34px;
+  padding: 0 12px;
+  border: 1px solid color-mix(in srgb, var(--accent) 34%, var(--panel-border-solid));
+  border-radius: var(--r-sm);
+  background: var(--accent-surface);
+  color: var(--accent);
+  font: inherit;
+  font-size: 0.78rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background-color var(--t-fast), border-color var(--t-fast), transform var(--t-fast);
+}
+
+.home-clear-filters {
+  width: 100%;
+  margin-top: 4px;
+}
+
+.home-clear-filters:hover,
+.home-empty-reset:hover {
+  background: var(--accent-surface-strong);
+  border-color: var(--accent);
+  transform: translateY(-1px);
+}
+
+.home-empty-reset:active,
+.home-clear-filters:active {
+  transform: translateY(0) scale(0.98);
+}
+
 /* --- Skeleton loading grid --- */
 .home-skeleton-card {
   width: 100%;

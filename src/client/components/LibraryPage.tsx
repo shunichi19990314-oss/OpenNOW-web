@@ -115,6 +115,22 @@ export const LibraryPage = memo(function LibraryPage({
     controllerSearchInputRef.current?.focus();
   }, [controllerMode, controllerSearchOpen]);
 
+  useEffect(() => {
+    const handleSearchShortcut = (event: KeyboardEvent): void => {
+      const target = event.target as HTMLElement | null;
+      const isTyping = Boolean(target && (
+        target.tagName === "INPUT" ||
+        target.tagName === "TEXTAREA" ||
+        target.isContentEditable
+      ));
+      if (isTyping || event.key !== "/") return;
+      event.preventDefault();
+      document.querySelector<HTMLInputElement>("[data-global-search='library']")?.focus();
+    };
+    window.addEventListener("keydown", handleSearchShortcut);
+    return () => window.removeEventListener("keydown", handleSearchShortcut);
+  }, []);
+
   const librarySearchHasQuery = searchQuery.trim().length > 0;
   const libraryFilterGroups = useMemo(
     () => getLibraryFilterGroups(allGames, playtimeData, t),
@@ -524,6 +540,7 @@ export const LibraryPage = memo(function LibraryPage({
         <div className="library-search">
           <Search className="library-search-icon" size={16} />
           <input
+            data-global-search="library"
             type="text"
             value={searchQuery}
             onChange={(e) => onSearchChange(e.target.value)}

@@ -49,6 +49,7 @@ export interface HomePageProps {
   filterGroups: CatalogFilterGroup[];
   selectedFilterIds: string[];
   onToggleFilter: (filterId: string) => void;
+  onClearFilters: () => void;
   sortOptions: CatalogSortOption[];
   selectedSortId: string;
   onSortChange: (sortId: string) => void;
@@ -233,6 +234,7 @@ export const HomePage = memo(function HomePage({
   filterGroups,
   selectedFilterIds,
   onToggleFilter,
+  onClearFilters,
   sortOptions,
   selectedSortId,
   onSortChange,
@@ -551,6 +553,22 @@ export const HomePage = memo(function HomePage({
     return () => window.clearInterval(timer);
   }, [showHero, heroPaused, heroSlides.length]);
 
+  useEffect(() => {
+    const handleSearchShortcut = (event: KeyboardEvent): void => {
+      const target = event.target as HTMLElement | null;
+      const isTyping = Boolean(target && (
+        target.tagName === "INPUT" ||
+        target.tagName === "TEXTAREA" ||
+        target.isContentEditable
+      ));
+      if (isTyping || event.key !== "/") return;
+      event.preventDefault();
+      document.querySelector<HTMLInputElement>("[data-global-search='home']")?.focus();
+    };
+    window.addEventListener("keydown", handleSearchShortcut);
+    return () => window.removeEventListener("keydown", handleSearchShortcut);
+  }, []);
+
   // Curated collections as horizontally scrollable rows (same extraction as
   // the controller theater), capped so the page stays scannable.
   const homeRows = useMemo(
@@ -787,6 +805,7 @@ export const HomePage = memo(function HomePage({
         <div className="home-search">
           <Search className="home-search-icon" size={16} />
           <input
+            data-global-search="home"
             type="text"
             className="home-search-input"
             placeholder={t("home.searchPlaceholder")}
@@ -836,6 +855,11 @@ export const HomePage = memo(function HomePage({
                   </div>
                 </div>
               ))}
+              {activeFilterCount > 0 && (
+                <button type="button" className="home-clear-filters" onClick={onClearFilters}>
+                  {t("library.clearFilters")}
+                </button>
+              )}
             </div>
           </details>
         )}
@@ -1007,6 +1031,18 @@ export const HomePage = memo(function HomePage({
                 ? t("home.empty.tryAdjustingSearch")
                 : t("home.empty.checkBackLater")}
             </p>
+            {(searchQuery || selectedFilterIds.length > 0) && (
+              <button
+                type="button"
+                className="home-empty-reset"
+                onClick={() => {
+                  onSearchChange("");
+                  onClearFilters();
+                }}
+              >
+                {t("library.clearFilters")}
+              </button>
+            )}
           </div>
         ) : (
           <div className="game-grid">
