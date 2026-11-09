@@ -9,7 +9,7 @@
  * Vite emits content-hashed asset filenames, so hashed bundles are cached
  * permanently and a version bump naturally leaves old entries unreferenced.
  */
-const CACHE_VERSION = "opennow-v1";
+const CACHE_VERSION = "opennow-v2-ja";
 const SHELL_CACHE = `${CACHE_VERSION}-shell`;
 const ASSET_CACHE = `${CACHE_VERSION}-assets`;
 const APP_SHELL = ["/", "/index.html", "/manifest.webmanifest"];
