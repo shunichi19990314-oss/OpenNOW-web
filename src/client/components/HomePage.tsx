@@ -1,4 +1,4 @@
-import { Search, LayoutGrid, ArrowUpDown, Filter, ChevronDown, Gamepad2, Menu, Play, X } from "lucide-react";
+import { Heart, Search, LayoutGrid, ArrowUpDown, Filter, ChevronDown, Gamepad2, Menu, Play, X } from "lucide-react";
 import { memo, useEffect, useMemo, useRef, useState } from "react";
 import type { JSX } from "react";
 import { AnimatePresence, m } from "motion/react";
@@ -7,6 +7,7 @@ import type { CatalogFilterGroup, CatalogSortOption, GameInfo, GamePanelResult, 
 import { getStoreDisplayName, getStoreIconComponent } from "./GameCard";
 import { formatCatalogLastPlayed } from "../utils/lastPlayedFormat";
 import { GameCardListItem, useCatalogCardActionsRef } from "./GameCardListItem";
+import { GameDetailsModal } from "./GameDetailsModal";
 import { appendImageType, appendUnique, gameMatchesActiveSession } from "../lib/controllerCatalogUi";
 import { useTranslation } from "../i18n";
 import { controllerButton, readControllerGamepadButtons } from "../utils/controllerGamepad";
@@ -41,6 +42,8 @@ export interface HomePageProps {
   searchQuery: string;
   onSearchChange: (query: string) => void;
   onPlayGame: (game: GameInfo) => void;
+  favoriteGameIds: string[];
+  onToggleFavorite: (game: GameInfo) => void;
   isLoading: boolean;
   selectedGameId: string;
   onSelectGame: (id: string) => void;
@@ -226,6 +229,8 @@ export const HomePage = memo(function HomePage({
   searchQuery,
   onSearchChange,
   onPlayGame,
+  favoriteGameIds,
+  onToggleFavorite,
   isLoading,
   selectedGameId,
   onSelectGame,
@@ -251,8 +256,11 @@ export const HomePage = memo(function HomePage({
   onNextControllerPage,
 }: HomePageProps): JSX.Element {
   const { t } = useTranslation();
+  const [detailsGame, setDetailsGame] = useState<GameInfo | null>(null);
   const catalogActionsRef = useCatalogCardActionsRef({
     onPlayGame,
+    onToggleFavorite,
+    onViewGameDetails: setDetailsGame,
     onSelectGame,
     onSelectGameVariant,
   });
@@ -494,11 +502,12 @@ export const HomePage = memo(function HomePage({
         key={game.id}
         game={game}
         isSelected={game.id === selectedGameId}
+        isFavorite={favoriteGameIds.includes(game.id)}
         selectedVariantId={selectedVariantByGameId[game.id]}
         actionsRef={catalogActionsRef}
       />
     )),
-    [catalogActionsRef, games, selectedGameId, selectedVariantByGameId],
+    [catalogActionsRef, favoriteGameIds, games, selectedGameId, selectedVariantByGameId],
   );
 
   // "Continue playing" hero: most recently played owned game, hidden while
@@ -956,7 +965,7 @@ export const HomePage = memo(function HomePage({
                       <button
                         type="button"
                         className="home-hero-details"
-                        onClick={() => onSelectGame(slide.game.id)}
+                        onClick={() => setDetailsGame(slide.game)}
                       >
                         {t("home.hero.details")}
                       </button>
@@ -983,6 +992,29 @@ export const HomePage = memo(function HomePage({
           );
         })()}
 
+        {games.some((game) => favoriteGameIds.includes(game.id)) && (
+          <section className="home-row home-favorites-row">
+            <h2 className="home-section-title">
+              <span className="home-section-bar" aria-hidden="true" />
+              <Heart size={17} aria-hidden="true" />
+              {t("home.favorites")}
+            </h2>
+            <div className="home-row-scroller">
+              {games.filter((game) => favoriteGameIds.includes(game.id)).slice(0, 18).map((game) => (
+                <div key={game.id} className="home-row-item">
+                  <GameCardListItem
+                    game={game}
+                    isSelected={game.id === selectedGameId}
+                    isFavorite
+                    selectedVariantId={selectedVariantByGameId[game.id]}
+                    actionsRef={catalogActionsRef}
+                  />
+                </div>
+              ))}
+            </div>
+          </section>
+        )}
+
         {homeRows.map((section, sectionIndex) => (
           <section key={`${section.id}-${sectionIndex}`} className="home-row">
             <h2 className="home-section-title">
@@ -995,6 +1027,7 @@ export const HomePage = memo(function HomePage({
                   <GameCardListItem
                     game={game}
                     isSelected={game.id === selectedGameId}
+                    isFavorite={favoriteGameIds.includes(game.id)}
                     selectedVariantId={selectedVariantByGameId[game.id]}
                     actionsRef={catalogActionsRef}
                   />
@@ -1050,6 +1083,15 @@ export const HomePage = memo(function HomePage({
           </div>
         )}
       </div>
+      {detailsGame && (
+        <GameDetailsModal
+          game={detailsGame}
+          isFavorite={favoriteGameIds.includes(detailsGame.id)}
+          onToggleFavorite={() => onToggleFavorite(detailsGame)}
+          onPlay={() => onPlayGame(detailsGame)}
+          onClose={() => setDetailsGame(null)}
+        />
+      )}
     </div>
   );
 });

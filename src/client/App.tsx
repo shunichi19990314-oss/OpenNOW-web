@@ -1767,6 +1767,10 @@ export function App(): JSX.Element {
     void updateSetting("favoriteGameIds", next);
   }, [settings.favoriteGameIds, updateSetting]);
 
+  const handleToggleFavorite = useCallback((game: GameInfo): void => {
+    handleToggleFavoriteGame(game.id);
+  }, [handleToggleFavoriteGame]);
+
   const handleMouseAccelerationChange = useCallback((value: number) => {
     void updateSetting("mouseAcceleration", value);
   }, [updateSetting]);
@@ -4085,6 +4089,8 @@ export function App(): JSX.Element {
                 searchQuery={searchQuery}
                 onSearchChange={setSearchQuery}
                 onPlayGame={handleInitiatePlay}
+                favoriteGameIds={settings.favoriteGameIds}
+                onToggleFavorite={handleToggleFavorite}
                 isLoading={effectiveControllerMode ? isLoadingStorePanels : isLoadingCatalog}
                 selectedGameId={selectedGameId}
                 onSelectGame={setSelectedGameId}
@@ -4120,6 +4126,8 @@ export function App(): JSX.Element {
                   searchQuery={searchQuery}
                   onSearchChange={setSearchQuery}
                   onPlayGame={handleInitiatePlay}
+                  favoriteGameIds={settings.favoriteGameIds}
+                  onToggleFavorite={handleToggleFavorite}
                   isLoading={isLoadingLibrary}
                   selectedGameId={selectedGameId}
                   onSelectGame={setSelectedGameId}

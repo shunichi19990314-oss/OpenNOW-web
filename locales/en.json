@@ -209,7 +209,8 @@
     "allGames": "All Games",
     "search": {
       "clear": "Clear search"
-    }
+    },
+    "favorites": "Favorites"
   },
   "library": {
     "title": "My Library",
@@ -271,7 +272,8 @@
       "noGamesMatch": "No games match \"{{query}}\"",
       "noFilteredGames": "No games match those filters",
       "tryAdjustingFilters": "Try clearing a filter or changing your search."
-    }
+    },
+    "gameDetails": "Game details"
   },
   "gameCard": {
     "selectGame": "Select {{title}}",
@@ -283,7 +285,10 @@
       "maintenance": "Under maintenance",
       "updating": "Updating",
       "unavailable": "Unavailable"
-    }
+    },
+    "addFavorite": "Add to favorites",
+    "removeFavorite": "Remove from favorites",
+    "viewDetails": "View details for {{title}}"
   },
   "streamLoading": {
     "labels": {

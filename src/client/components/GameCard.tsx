@@ -1,4 +1,4 @@
-import { Play, Monitor } from "lucide-react";
+import { Heart, Info, Play, Monitor } from "lucide-react";
 import { memo, useCallback, useMemo, useState } from "react";
 import type { JSX } from "react";
 import { m } from "motion/react";
@@ -15,6 +15,9 @@ interface GameCardProps {
   onSelect: () => void;
   selectedVariantId?: string;
   onSelectStore?: (variantId: string) => void;
+  isFavorite?: boolean;
+  onToggleFavorite?: () => void;
+  onDetails?: () => void;
 }
 
 /* ── Official store brand icons (Simple Icons / MDI, viewBox 0 0 24 24) ── */
@@ -141,6 +144,9 @@ function gameCardPropsAreEqual(prev: GameCardProps, next: GameCardProps): boolea
     && prev.onPlay === next.onPlay
     && prev.onSelect === next.onSelect
     && prev.onSelectStore === next.onSelectStore
+    && prev.isFavorite === next.isFavorite
+    && prev.onToggleFavorite === next.onToggleFavorite
+    && prev.onDetails === next.onDetails
   );
 }
 
@@ -151,6 +157,9 @@ export const GameCard = memo(function GameCard({
   onSelect,
   selectedVariantId,
   onSelectStore,
+  isFavorite = false,
+  onToggleFavorite,
+  onDetails,
 }: GameCardProps): JSX.Element {
   const { t } = useTranslation();
   const storeOptions = useMemo(
@@ -230,6 +239,29 @@ export const GameCard = memo(function GameCard({
 
         <div className="game-card-overlay">
           <div className="game-card-gradient" />
+          <div className="game-card-quick-actions">
+            {onToggleFavorite && (
+              <button
+                type="button"
+                className={`game-card-quick-button game-card-favorite-button ${isFavorite ? "active" : ""}`}
+                onClick={(event) => { event.stopPropagation(); onToggleFavorite(); }}
+                aria-label={isFavorite ? t("gameCard.removeFavorite") : t("gameCard.addFavorite")}
+                aria-pressed={isFavorite}
+              >
+                <Heart size={16} fill={isFavorite ? "currentColor" : "none"} />
+              </button>
+            )}
+            {onDetails && (
+              <button
+                type="button"
+                className="game-card-quick-button"
+                onClick={(event) => { event.stopPropagation(); onDetails(); }}
+                aria-label={t("gameCard.viewDetails", { title: game.title })}
+              >
+                <Info size={16} />
+              </button>
+            )}
+          </div>
           <button
             className="game-card-play-button"
             onClick={handlePlayClick}

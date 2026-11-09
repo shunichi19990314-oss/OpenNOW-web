@@ -4,6 +4,8 @@ import { GameCard } from "./GameCard";
 
 export interface CatalogCardActions {
   onPlayGame: (game: GameInfo) => void;
+  onToggleFavorite: (game: GameInfo) => void;
+  onViewGameDetails: (game: GameInfo) => void;
   onSelectGame: (gameId: string) => void;
   onSelectGameVariant: (gameId: string, variantId: string) => void;
 }
@@ -12,6 +14,7 @@ export interface GameCardListItemProps {
   game: GameInfo;
   selectedVariantId?: string;
   isSelected?: boolean;
+  isFavorite?: boolean;
   actionsRef: RefObject<CatalogCardActions>;
 }
 
@@ -23,6 +26,7 @@ function gameCardListItemPropsAreEqual(
     prev.game === next.game
     && prev.selectedVariantId === next.selectedVariantId
     && prev.isSelected === next.isSelected
+    && prev.isFavorite === next.isFavorite
     && prev.actionsRef === next.actionsRef
   );
 }
@@ -31,6 +35,7 @@ export const GameCardListItem = memo(function GameCardListItem({
   game,
   selectedVariantId,
   isSelected = false,
+  isFavorite = false,
   actionsRef,
 }: GameCardListItemProps) {
   const handleSelect = useCallback(() => {
@@ -45,6 +50,14 @@ export const GameCardListItem = memo(function GameCardListItem({
     actionsRef.current?.onSelectGameVariant(game.id, variantId);
   }, [actionsRef, game.id]);
 
+  const handleToggleFavorite = useCallback(() => {
+    actionsRef.current?.onToggleFavorite(game);
+  }, [actionsRef, game]);
+
+  const handleDetails = useCallback(() => {
+    actionsRef.current?.onViewGameDetails(game);
+  }, [actionsRef, game]);
+
   return (
     <GameCard
       game={game}
@@ -53,6 +66,9 @@ export const GameCardListItem = memo(function GameCardListItem({
       onSelect={handleSelect}
       onPlay={handlePlay}
       onSelectStore={handleSelectStore}
+      isFavorite={isFavorite}
+      onToggleFavorite={handleToggleFavorite}
+      onDetails={handleDetails}
     />
   );
 }, gameCardListItemPropsAreEqual);

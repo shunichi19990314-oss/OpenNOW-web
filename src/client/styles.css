@@ -3599,6 +3599,144 @@ body,
   background: rgba(2, 3, 4, 0.82);
   backdrop-filter: blur(8px);
 }
+.game-details-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 2300;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  background: rgba(2, 3, 4, 0.78);
+  backdrop-filter: blur(10px);
+}
+.game-details-modal {
+  position: relative;
+  width: min(720px, 100%);
+  max-height: min(760px, calc(100vh - 48px));
+  overflow: auto;
+  border: 1px solid var(--panel-border-solid);
+  border-radius: var(--r-2xl);
+  background: var(--panel);
+  box-shadow: var(--shadow-lg), 0 0 48px var(--accent-glow);
+}
+.game-details-close {
+  position: absolute;
+  z-index: 3;
+  top: 14px;
+  right: 14px;
+  width: 34px;
+  height: 34px;
+  display: grid;
+  place-items: center;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 50%;
+  background: rgba(8, 10, 12, 0.72);
+  color: #fff;
+  cursor: pointer;
+}
+.game-details-hero {
+  position: relative;
+  min-height: 260px;
+  overflow: hidden;
+  background: var(--bg-c);
+}
+.game-details-hero > img,
+.game-details-hero-placeholder {
+  width: 100%;
+  height: 100%;
+  min-height: 260px;
+  object-fit: cover;
+}
+.game-details-hero-placeholder {
+  display: grid;
+  place-items: center;
+  color: var(--ink-muted);
+}
+.game-details-hero-shade {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, rgba(0, 0, 0, 0.05) 22%, rgba(0, 0, 0, 0.86) 100%);
+}
+.game-details-heading {
+  position: absolute;
+  left: 28px;
+  right: 72px;
+  bottom: 24px;
+}
+.game-details-kicker {
+  color: var(--accent);
+  font-size: 0.74rem;
+  font-weight: 750;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+}
+.game-details-heading h2 {
+  margin-top: 5px;
+  color: #fff;
+  font-size: clamp(1.7rem, 4vw, 2.5rem);
+  line-height: 1.08;
+}
+.game-details-content {
+  padding: 24px 28px 28px;
+}
+.game-details-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+.game-details-play,
+.game-details-favorite {
+  min-height: 38px;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 0 14px;
+  border-radius: var(--r-full);
+  border: 1px solid var(--panel-border-solid);
+  color: var(--ink);
+  background: var(--chip);
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+}
+.game-details-play {
+  border-color: var(--accent);
+  background: var(--accent);
+  color: var(--accent-on);
+}
+.game-details-favorite.active {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+.game-details-description {
+  margin-top: 20px;
+  color: var(--ink-soft);
+  line-height: 1.7;
+  white-space: pre-line;
+}
+.game-details-meta,
+.game-details-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 18px;
+}
+.game-details-meta span,
+.game-details-tags span {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 5px 9px;
+  border-radius: var(--r-full);
+  background: var(--chip);
+  color: var(--ink-soft);
+  font-size: 0.78rem;
+}
+.game-details-tags span {
+  color: var(--accent);
+  border: 1px solid var(--accent-surface-strong);
+}
 
 .controller-details-panel {
   width: min(760px, calc(100vw - 96px));
@@ -3825,7 +3963,41 @@ body,
   transform: scale(1.1);
   background: var(--accent-press);
 }
-
+.game-card-quick-actions {
+  position: absolute;
+  z-index: 5;
+  top: 10px;
+  right: 10px;
+  display: flex;
+  gap: 6px;
+  opacity: 0;
+  transform: translateY(-4px);
+  transition: opacity var(--t-normal), transform var(--t-normal);
+}
+.game-card:hover .game-card-quick-actions,
+.game-card:focus-within .game-card-quick-actions {
+  opacity: 1;
+  transform: translateY(0);
+}
+.game-card-quick-button {
+  width: 32px;
+  height: 32px;
+  display: grid;
+  place-items: center;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 10px;
+  background: rgba(9, 11, 14, 0.74);
+  color: #fff;
+  cursor: pointer;
+  backdrop-filter: blur(8px);
+  transition: background var(--t-fast), color var(--t-fast), transform var(--t-fast);
+}
+.game-card-quick-button:hover,
+.game-card-quick-button.active {
+  background: var(--accent);
+  color: var(--accent-on);
+  transform: translateY(-1px);
+}
 /* Card info — overlaid at the bottom of the poster */
 .game-card-info {
   position: absolute;
