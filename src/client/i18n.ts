@@ -1,13 +1,13 @@
 import { useMemo, useSyncExternalStore } from "react";
 
-import fallbackTranslations from "../../locales/en.json";
+import fallbackTranslations from "../../locales/ja.json";
 
 type TranslationValue = string | number | boolean | null | undefined;
 type TranslationValues = Record<string, TranslationValue>;
 type TranslationLeaf = string;
 type TranslationTree = { [key: string]: TranslationLeaf | TranslationTree };
 
-const FALLBACK_LOCALE = "en";
+const FALLBACK_LOCALE = "ja";
 const LOCALE_STORAGE_KEY = "opennow.locale";
 
 const localeSources = import.meta.glob<string>("../../locales/*.json", {
@@ -90,7 +90,10 @@ function getBrowserLocaleCandidates(): string[] {
 }
 
 function getInitialLocale(): string {
-  return readStoredLocale() ?? getBrowserLocaleCandidates()[0] ?? FALLBACK_LOCALE;
+  // OpenNOW's web UI is Japanese-first. Keep an explicitly selected locale
+  // available through setLocale(), but do not let browser preferences or an
+  // old English value silently change the initial product language.
+  return FALLBACK_LOCALE;
 }
 
 function parseLocaleJson(locale: string, raw: string): TranslationTree | null {
