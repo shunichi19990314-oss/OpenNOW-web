@@ -21,6 +21,7 @@ import type {
   StreamSettings,
   StreamRegion,
   PrintedWasteQueueData,
+  VideoCodec,
   VideoShaderSettings,
 } from "@shared/gfn";
 import {
@@ -63,7 +64,7 @@ import type {
 import { loadStoredCodecResults, saveStoredCodecResults, testCodecSupport, type CodecTestResult } from "./lib/codecDiagnostics";
 import { clampBitrateForConnection, readNavigatorConnection } from "./lib/connectionBitrate";
 import { ensureNotificationPermission, notifyQueueFailed, notifyStreamReady } from "./lib/queueNotifier";
-import { DEVICE_STREAM_DEFAULTS, fitResolutionToDisplay } from "./webDefaults";
+import { DEVICE_STREAM_DEFAULTS, fitResolutionToDisplay, getAutomaticMaxBitrateMbps } from "./webDefaults";
 import {
   createSyntheticDirectLaunchGame,
   findDirectLaunchTarget,
@@ -87,6 +88,21 @@ import {
 } from "./lib/queueAds";
 import { clearRuntimeSnapshot, loadRuntimeSnapshot, saveRuntimeSnapshot, type RuntimeSnapshot } from "./lib/runtimeSnapshot";
 import { getEnabledSessionProxyUrl } from "./lib/sessionProxy";
+
+function resolveCodecPreference(
+  preference: Settings["codec"],
+  colorQuality: Settings["colorQuality"],
+  results: CodecTestResult[] | null,
+): VideoCodec {
+  if (preference !== "AUTO") return preference;
+  if (!results) return colorQuality === "8bit_420" ? "H264" : "H265";
+  const preferred = colorQuality === "8bit_420" ? ["AV1", "H265", "H264"] : ["AV1", "H265"];
+  for (const candidate of preferred) {
+    const result = results?.find((entry) => entry.codec === candidate);
+    if (result?.decodeSupported || candidate === "H264") return candidate as VideoCodec;
+  }
+  return "H264";
+}
 import {
   getSessionLimitSecondsForTier,
   getLocalSessionTimerWarning,
@@ -738,12 +754,13 @@ export function App(): JSX.Element {
 
   const buildCurrentStreamSettings = useCallback((subscriptionOverride?: SubscriptionInfo | null): StreamSettings => {
     const currentSubscription = subscriptionOverride === undefined ? subscriptionInfo : subscriptionOverride;
+    const requestedResolution = settings.resolution === "auto" ? DEVICE_STREAM_DEFAULTS.resolution : settings.resolution;
     const entitledProfile = resolveEntitledStreamProfile(currentSubscription?.entitledResolutions ?? [], {
       // Fit the request to the active display before entitlement resolution so a
       // stale oversized setting (e.g. 1080p carried onto a 1366x768 panel) does
       // not force the rig to render/encode pixels the screen cannot show. The
       // stored preference is left untouched; this only shapes the launch request.
-      resolution: fitResolutionToDisplay(settings.resolution),
+      resolution: fitResolutionToDisplay(requestedResolution),
       fps: settings.fps,
     });
     const streamProfile = entitledProfile ?? SAFE_FALLBACK_STREAM_PROFILE;
@@ -753,8 +770,13 @@ export function App(): JSX.Element {
       fps: streamProfile.fps,
       // Clamp the encoder ceiling to what the visitor's access link can carry;
       // an oversized request causes bufferbloat stutter, not better quality.
-      maxBitrateMbps: clampBitrateForConnection(settings.maxBitrateMbps, readNavigatorConnection()),
-      codec: settings.codec,
+      maxBitrateMbps: clampBitrateForConnection(
+        settings.maxBitrateMbps === 0
+          ? getAutomaticMaxBitrateMbps(streamProfile.resolution, streamProfile.fps)
+          : settings.maxBitrateMbps,
+        readNavigatorConnection(),
+      ),
+      codec: resolveCodecPreference(settings.codec, settings.colorQuality, codecResults),
       colorQuality: settings.colorQuality,
       keyboardLayout: settings.keyboardLayout,
       gameLanguage: settings.gameLanguage,
@@ -771,6 +793,7 @@ export function App(): JSX.Element {
           : "default",
     };
   }, [
+    codecResults,
     settings.codec,
     settings.colorQuality,
     settings.controllerMode,
@@ -1699,8 +1722,10 @@ export function App(): JSX.Element {
     if (key === "maxBitrateMbps") {
       try {
         const client = clientRef.current as any;
-        client?.setUserBitrateCeilingKbps?.((value as number) * 1000);
-        void client?.setMaxBitrateKbps?.((value as number) * 1000);
+        if ((value as number) > 0) {
+          client?.setUserBitrateCeilingKbps?.((value as number) * 1000);
+          void client?.setMaxBitrateKbps?.((value as number) * 1000);
+        }
       } catch {
         // ignore
       }
@@ -1708,7 +1733,7 @@ export function App(): JSX.Element {
   }, [settingsLoaded]);
 
   useEffect(() => {
-    if (!settingsLoaded || !subscriptionInfo) {
+    if (!settingsLoaded || !subscriptionInfo || settings.resolution === "auto") {
       return;
     }
 
@@ -2271,11 +2296,16 @@ export function App(): JSX.Element {
       client.activateNativeInput(
         protocolVersion,
         {
-          codec: settings.codec,
+          codec: resolveCodecPreference(settings.codec, settings.colorQuality, codecResults),
           colorQuality: settings.colorQuality,
-          resolution: settings.resolution,
+          resolution: settings.resolution === "auto" ? DEVICE_STREAM_DEFAULTS.resolution : settings.resolution,
           fps: settings.fps,
-          maxBitrateKbps: settings.maxBitrateMbps * 1000,
+          maxBitrateKbps: (settings.maxBitrateMbps === 0
+            ? getAutomaticMaxBitrateMbps(
+              settings.resolution === "auto" ? DEVICE_STREAM_DEFAULTS.resolution : settings.resolution,
+              settings.fps,
+            )
+            : settings.maxBitrateMbps) * 1000,
         },
         {
           // Windows internal: RawInput on the child HWND (Electron click-through is flaky).
@@ -2352,11 +2382,19 @@ export function App(): JSX.Element {
 
           if (client) {
             await client.handleOffer(event.sdp, activeSession, {
-              codec: settings.codec,
+              codec: resolveCodecPreference(settings.codec, settings.colorQuality, codecResults),
               colorQuality: settings.colorQuality,
-              resolution: fitResolutionToDisplay(settings.resolution),
+              resolution: fitResolutionToDisplay(settings.resolution === "auto" ? DEVICE_STREAM_DEFAULTS.resolution : settings.resolution),
               fps: settings.fps,
-              maxBitrateKbps: clampBitrateForConnection(settings.maxBitrateMbps, readNavigatorConnection()) * 1000,
+              maxBitrateKbps: clampBitrateForConnection(
+                settings.maxBitrateMbps === 0
+                  ? getAutomaticMaxBitrateMbps(
+                    settings.resolution === "auto" ? DEVICE_STREAM_DEFAULTS.resolution : settings.resolution,
+                    settings.fps,
+                  )
+                  : settings.maxBitrateMbps,
+                readNavigatorConnection(),
+              ) * 1000,
               nativeTransitionDiagnostics: settings.nativeTransitionDiagnostics,
             });
             setLaunchError(null);

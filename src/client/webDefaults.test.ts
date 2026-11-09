@@ -2,7 +2,15 @@ import { describe, expect, it } from "vitest";
 
 import { supportedStreamResolutions } from "@shared/gfn";
 
-import { chooseStreamDefaultsForDevice, fitResolutionToDisplay } from "./webDefaults";
+import { chooseStreamDefaultsForDevice, fitResolutionToDisplay, getAutomaticMaxBitrateMbps } from "./webDefaults";
+
+describe("getAutomaticMaxBitrateMbps", () => {
+  it("scales the ceiling with resolution and high refresh rates", () => {
+    expect(getAutomaticMaxBitrateMbps("1280x720", 60)).toBe(25);
+    expect(getAutomaticMaxBitrateMbps("1920x1080", 144)).toBe(50);
+    expect(getAutomaticMaxBitrateMbps("3840x2160", 60)).toBe(85);
+  });
+});
 
 describe("chooseStreamDefaultsForDevice", () => {
   it("matches small low-power panels (ASUS Chromebook CR11 Flip: 1366x768, N150 4-core)", () => {

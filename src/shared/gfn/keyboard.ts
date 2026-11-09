@@ -17,7 +17,7 @@ export interface KeyboardLayoutOption {
   macValue?: string;
 }
 
-export const DEFAULT_KEYBOARD_LAYOUT: KeyboardLayout = "en-US";
+export const DEFAULT_KEYBOARD_LAYOUT: KeyboardLayout = "ja-JP";
 
 export const keyboardLayoutOptions: readonly KeyboardLayoutOption[] = [
   { value: "en-US", label: "English (US)", macValue: "m-us" },

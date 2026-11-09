@@ -182,6 +182,15 @@ export function fitResolutionToDisplay(
 
 export const DEVICE_STREAM_DEFAULTS = chooseStreamDefaultsForDevice(probeDeviceForStreamDefaults());
 
+/** Choose a sensible encoder ceiling when the visitor selects Auto. */
+export function getAutomaticMaxBitrateMbps(resolution: string, fps: number): number {
+  const [width, height] = resolution.split("x").map((value) => Number.parseInt(value, 10));
+  const pixels = Number.isFinite(width) && Number.isFinite(height) ? width * height : 1920 * 1080;
+  const base = pixels >= 3840 * 2160 ? 85 : pixels >= 2560 * 1440 ? 60 : pixels >= 1920 * 1080 ? 40 : 25;
+  const frameFactor = fps >= 144 ? 1.25 : fps >= 90 ? 1.1 : 1;
+  return Math.min(150, Math.max(10, Math.ceil((base * frameFactor) / 5) * 5));
+}
+
 export const WEB_DEFAULT_SETTINGS: Settings = {
   resolution: DEVICE_STREAM_DEFAULTS.resolution,
   aspectRatio: "16:9",
@@ -239,7 +248,7 @@ export const WEB_DEFAULT_SETTINGS: Settings = {
   windowWidth: 1400,
   windowHeight: 900,
   keyboardLayout: DEFAULT_KEYBOARD_LAYOUT,
-  gameLanguage: "en_US",
+  gameLanguage: "ja_JP",
   enablePersistingInGameSettings: false,
   enableL4S: false,
   enableCloudGsync: false,
