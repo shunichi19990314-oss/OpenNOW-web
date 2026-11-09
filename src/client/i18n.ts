@@ -178,19 +178,13 @@ export function getLocale(): string {
 }
 
 export function getAvailableLocales(): string[] {
-  const locales = new Set<string>([FALLBACK_LOCALE]);
-  for (const path of Object.keys(localeSources)) {
-    const locale = localeFromPath(path);
-    if (locale) locales.add(locale);
-  }
-  return [...locales].sort();
+  return [FALLBACK_LOCALE];
 }
 
-export async function setLocale(locale: string): Promise<void> {
-  const normalized = normalizeLocale(locale);
-  const translations = loadTranslations(normalized);
-  writeStoredLocale(normalized);
-  setActiveTranslations(normalized, translations);
+export async function setLocale(_locale: string): Promise<void> {
+  const translations = loadTranslations(FALLBACK_LOCALE);
+  writeStoredLocale(FALLBACK_LOCALE);
+  setActiveTranslations(FALLBACK_LOCALE, translations);
 }
 
 export async function initializeLocale(): Promise<void> {
