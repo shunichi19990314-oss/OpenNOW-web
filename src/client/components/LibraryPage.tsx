@@ -4,6 +4,7 @@ import type { JSX } from "react";
 import { AnimatePresence, m } from "motion/react";
 import type { CatalogSortOption, GameInfo } from "@shared/gfn";
 import { GameCardListItem, useCatalogCardActionsRef } from "./GameCardListItem";
+import { GameDetailsModal } from "./GameDetailsModal";
 import type { PlaytimeData } from "../lib/gameCatalog";
 import { getControllerFeaturedGames } from "../lib/controllerCatalogUi";
 import {
@@ -34,6 +35,8 @@ export interface LibraryPageProps {
   searchQuery: string;
   onSearchChange: (query: string) => void;
   onPlayGame: (game: GameInfo) => void;
+  favoriteGameIds: string[];
+  onToggleFavorite: (game: GameInfo) => void;
   onBuyGame?: (game: GameInfo, selectedVariantId?: string) => void;
   isLoading: boolean;
   selectedGameId: string;
@@ -58,6 +61,8 @@ export const LibraryPage = memo(function LibraryPage({
   searchQuery,
   onSearchChange,
   onPlayGame,
+  favoriteGameIds,
+  onToggleFavorite,
   onBuyGame,
   isLoading,
   selectedGameId,
@@ -75,13 +80,15 @@ export const LibraryPage = memo(function LibraryPage({
   onNextControllerPage,
 }: LibraryPageProps): JSX.Element {
   const { t } = useTranslation();
+  const [detailsGame, setDetailsGame] = useState<GameInfo | null>(null);
   const catalogActionsRef = useCatalogCardActionsRef({
     onPlayGame,
+    onToggleFavorite,
+    onViewGameDetails: setDetailsGame,
     onSelectGame,
     onSelectGameVariant,
   });
   const [controllerHeroIndex, setControllerHeroIndex] = useState(0);
-  const [detailsGame, setDetailsGame] = useState<GameInfo | null>(null);
   const [controllerStoreFilterId, setControllerStoreFilterId] = useState("library");
   const [controllerStoreFilterOpen, setControllerStoreFilterOpen] = useState(false);
   const [controllerSearchOpen, setControllerSearchOpen] = useState(false);
@@ -478,6 +485,7 @@ export const LibraryPage = memo(function LibraryPage({
         <GameCardListItem
           game={game}
           isSelected={game.id === selectedGameId}
+          isFavorite={favoriteGameIds.includes(game.id)}
           selectedVariantId={selectedVariantByGameId[game.id]}
           actionsRef={catalogActionsRef}
         />
@@ -490,7 +498,7 @@ export const LibraryPage = memo(function LibraryPage({
         </div>
       </div>
     )),
-    [catalogActionsRef, selectedGameId, selectedVariantByGameId, t, visibleLibraryGames],
+    [catalogActionsRef, favoriteGameIds, selectedGameId, selectedVariantByGameId, t, visibleLibraryGames],
   );
 
   if (controllerMode) {
@@ -660,6 +668,15 @@ export const LibraryPage = memo(function LibraryPage({
           </div>
         )}
       </div>
+      {detailsGame && (
+        <GameDetailsModal
+          game={detailsGame}
+          isFavorite={favoriteGameIds.includes(detailsGame.id)}
+          onToggleFavorite={() => onToggleFavorite(detailsGame)}
+          onPlay={() => onPlayGame(detailsGame)}
+          onClose={() => setDetailsGame(null)}
+        />
+      )}
     </div>
   );
 });
