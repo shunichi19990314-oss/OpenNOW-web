@@ -6,6 +6,7 @@ import type {
   NativeVideoBackendCapability,
   NativeVideoBackendPreference,
   VideoCodec,
+  VideoCodecPreference,
   ColorQuality,
   VideoAccelerationPreference,
   MicrophoneMode,
@@ -24,7 +25,7 @@ export const POSTER_SIZE_MIN = 75;
 export const POSTER_SIZE_MAX = 135;
 export const POSTER_SIZE_STEP = 5;
 
-export const codecOptions: VideoCodec[] = [...USER_FACING_VIDEO_CODEC_OPTIONS];
+export const codecOptions: VideoCodecPreference[] = ["AUTO", ...USER_FACING_VIDEO_CODEC_OPTIONS];
 
 export const accelerationOptions: { value: VideoAccelerationPreference; label: string }[] = [
   { value: "auto", label: "Auto" },

@@ -20,6 +20,7 @@ export type AppAccentColor = "green" | "blue" | "violet" | "amber" | "rose";
 export type AppTheme = "light" | "dark" | "auto";
 export type MicrophoneMode = "disabled" | "push-to-talk" | "voice-activity";
 export type AspectRatio = "16:9" | "16:10" | "21:9" | "32:9";
+export type VideoCodecPreference = VideoCodec | "AUTO";
 export type RuntimePlatform =
   | "aix"
   | "android"
@@ -50,6 +51,7 @@ export interface Settings {
   aspectRatio: AspectRatio;
   posterSizeScale: number;
   fps: number;
+  /** 0 means choose a network/display-appropriate ceiling automatically. */
   maxBitrateMbps: number;
   /** Recording video bitrate in Mbps; null means let MediaRecorder choose automatically */
   recordingBitrateMbps: number | null;
@@ -62,7 +64,7 @@ export interface Settings {
   nativeExternalRenderer: boolean;
   transportMode: StreamTransportMode;
   showNativeStreamerStats: boolean;
-  codec: VideoCodec;
+  codec: VideoCodecPreference;
   decoderPreference: VideoAccelerationPreference;
   encoderPreference: VideoAccelerationPreference;
   colorQuality: ColorQuality;
@@ -148,7 +150,7 @@ export interface Settings {
   videoShader: VideoShaderSettings;
 }
 
-export const DEFAULT_STREAM_PREFERENCES: Readonly<Pick<Settings, "codec" | "colorQuality">> = Object.freeze({
+export const DEFAULT_STREAM_PREFERENCES: Readonly<{ codec: VideoCodec; colorQuality: ColorQuality }> = Object.freeze({
   codec: "H264",
   colorQuality: "8bit_420",
 });

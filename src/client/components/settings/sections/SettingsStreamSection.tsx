@@ -8,7 +8,6 @@ import type {
   EntitledResolution,
   Settings,
   StreamRegion,
-  VideoCodec,
 } from "@shared/gfn";
 import {
   colorQualityRequiresHevc,
@@ -281,6 +280,7 @@ export function SettingsStreamSection({
   );
 
   const selectedResolutionLabel = useMemo(() => {
+    if (settings.resolution === "auto") return t("app.labels.auto");
     if (useEntitledStreamOptions) {
       for (const group of resolutionGroups) {
         const found = group.resolutions.find(r => r.value === settings.resolution);
@@ -290,7 +290,7 @@ export function SettingsStreamSection({
     }
     const found = STATIC_RESOLUTION_PRESETS.find(r => r.value === settings.resolution);
     return found ? found.label : settings.resolution || "Select";
-  }, [settings.resolution, useEntitledStreamOptions, resolutionGroups]);
+  }, [settings.resolution, t, useEntitledStreamOptions, resolutionGroups]);
 
   const handleResolutionChange = useCallback((resolution: string) => {
     handleChange("resolution", resolution);
@@ -301,7 +301,7 @@ export function SettingsStreamSection({
   }, [handleChange, settings.aspectRatio]);
 
   useEffect(() => {
-    if (!useEntitledStreamOptions || !resolvedEntitledProfile) {
+    if (settings.resolution === "auto" || !useEntitledStreamOptions || !resolvedEntitledProfile) {
       return;
     }
 
@@ -331,7 +331,7 @@ export function SettingsStreamSection({
   );
 
   const handleCodecChange = useCallback(
-    (codec: VideoCodec) => {
+    (codec: Settings["codec"]) => {
       handleChange("codec", codec);
       if (codec === "H264" && settings.colorQuality !== "8bit_420") {
         handleChange("colorQuality", "8bit_420");
@@ -786,6 +786,14 @@ export function SettingsStreamSection({
             </button>
             {resolutionDropdownOpen && (
               <div className="settings-dropdown-menu settings-dropdown-menu--grouped">
+                <button
+                  type="button"
+                  className={`settings-dropdown-item ${settings.resolution === "auto" ? "active" : ""}`}
+                  onClick={() => { handleResolutionChange("auto"); setResolutionDropdownOpen(false); }}
+                >
+                  <span>{t("app.labels.auto")}</span>
+                  {settings.resolution === "auto" && <Check size={14} className="settings-dropdown-check" />}
+                </button>
                 {(useEntitledStreamOptions ? resolutionGroups : [{ category: "All", resolutions: STATIC_RESOLUTION_PRESETS.map(p => ({ ...p, width: 0, height: 0 })) }]).map(group => (
                   <div key={group.category} className="settings-dropdown-group">
                     <div className="settings-dropdown-group-label">{group.category}</div>
@@ -833,7 +841,15 @@ export function SettingsStreamSection({
             {t("settings.video.codec")}
           </label>
           <div className="settings-chip-row">
+            <button
+              className={`settings-chip settings-chip--codec ${settings.codec === "AUTO" ? "active" : ""}`}
+              onClick={() => handleCodecChange("AUTO")}
+            >
+              <span>{t("app.labels.auto")}</span>
+              {settings.codec === "AUTO" && <Check size={14} />}
+            </button>
             {codecOptions.map((codec) => {
+              if (codec === "AUTO") return null;
               const badgeState = getCodecDecodeBadgeState(codec, codecResults, codecTesting);
               return (
                 <button
@@ -893,7 +909,16 @@ export function SettingsStreamSection({
               <HardDrive size={15} className="settings-label-icon" />
               {t("settings.video.maxBitrate")}
             </label>
-            <span className="settings-value-badge">{settings.maxBitrateMbps} Mbps</span>
+            <span className="settings-value-badge">{settings.maxBitrateMbps === 0 ? t("app.labels.auto") : `${settings.maxBitrateMbps} Mbps`}</span>
+          </div>
+          <div className="settings-chip-row">
+            <button
+              type="button"
+              className={`settings-chip ${settings.maxBitrateMbps === 0 ? "active" : ""}`}
+              onClick={() => handleChange("maxBitrateMbps", 0)}
+            >
+              <span>{t("app.labels.auto")}</span>
+            </button>
           </div>
           <input
             type="range"
@@ -901,7 +926,7 @@ export function SettingsStreamSection({
             min={5}
             max={150}
             step={5}
-            value={settings.maxBitrateMbps}
+            value={settings.maxBitrateMbps === 0 ? 40 : settings.maxBitrateMbps}
             onChange={(e) => handleChange("maxBitrateMbps", parseInt(e.target.value, 10))}
           />
         </div>
