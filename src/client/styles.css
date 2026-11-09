@@ -3978,6 +3978,7 @@ body,
 .game-card:focus-within .game-card-quick-actions {
   opacity: 1;
   transform: translateY(0);
+  pointer-events: auto;
 }
 .game-card-quick-button {
   width: 32px;
@@ -3989,6 +3990,7 @@ body,
   background: rgba(9, 11, 14, 0.74);
   color: #fff;
   cursor: pointer;
+  pointer-events: auto;
   backdrop-filter: blur(8px);
   transition: background var(--t-fast), color var(--t-fast), transform var(--t-fast);
 }
@@ -3997,6 +3999,13 @@ body,
   background: var(--accent);
   color: var(--accent-on);
   transform: translateY(-1px);
+}
+@media (hover: none) {
+  .game-card-quick-actions {
+    opacity: 1;
+    transform: none;
+    pointer-events: auto;
+  }
 }
 /* Card info — overlaid at the bottom of the poster */
 .game-card-info {
