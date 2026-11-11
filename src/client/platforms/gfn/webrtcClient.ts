@@ -375,6 +375,8 @@ export class GfnWebRtcClient {
   private inputProtocolVersion = 2;
   private flushPendingMouseMovement: () => void = () => {};
   private heartbeatTimer: number | null = null;
+  /** Prevents provider-side idle cleanup while the game stream remains open. */
+  private sessionActivityKeepAliveTimer: number | null = null;
   private mouseFlushTimer: number | null = null;
   private statsTimer: number | null = null;
   private statsPollInFlight = false;
@@ -398,6 +400,7 @@ export class GfnWebRtcClient {
   private lastGamepadSendMs = 0;
   // Gamepad keepalive interval: resend last state every 100ms to keep server controller alive
   private static readonly GAMEPAD_KEEPALIVE_MS = 100;
+  private static readonly SESSION_ACTIVITY_KEEPALIVE_MS = 30_000;
   private static readonly NATIVE_INPUT_PROTOCOL_FALLBACK = 3;
   private static readonly MOUSE_FLUSH_FAST_MS = 4;
   private static readonly MOUSE_FLUSH_NORMAL_MS = 8;
@@ -1138,6 +1141,10 @@ export class GfnWebRtcClient {
     if (this.heartbeatTimer !== null) {
       window.clearInterval(this.heartbeatTimer);
       this.heartbeatTimer = null;
+    }
+    if (this.sessionActivityKeepAliveTimer !== null) {
+      window.clearInterval(this.sessionActivityKeepAliveTimer);
+      this.sessionActivityKeepAliveTimer = null;
     }
     if (this.mouseFlushTimer !== null) {
       window.clearTimeout(this.mouseFlushTimer);
@@ -1909,6 +1916,7 @@ export class GfnWebRtcClient {
     );
     this.inputProtocolVersion = nativeProtocolVersion;
     this.inputEncoder.setProtocolVersion(nativeProtocolVersion);
+    this.setupSessionActivityKeepAlive();
     this.diagnostics.connectionState = "connected";
     this.diagnostics.inputReady = true;
     this.diagnostics.nativeRendererActive = true;
@@ -2135,6 +2143,24 @@ export class GfnWebRtcClient {
       const bytes = this.inputEncoder.encodeHeartbeat();
       this.sendReliable(bytes);
     }, 2000);
+    this.setupSessionActivityKeepAlive();
+  }
+
+  private setupSessionActivityKeepAlive(): void {
+    if (this.sessionActivityKeepAliveTimer !== null) {
+      window.clearInterval(this.sessionActivityKeepAliveTimer);
+    }
+    this.sessionActivityKeepAliveTimer = window.setInterval(() => {
+      if (!this.inputReady) return;
+      // A zero-distance relative mouse packet does not move the in-game
+      // cursor or press a key, but is recognized as activity by providers
+      // that close an otherwise healthy stream after prolonged inactivity.
+      this.sendReliable(this.inputEncoder.encodeMouseMove({
+        dx: 0,
+        dy: 0,
+        timestampUs: captureTimestampUs(),
+      }));
+    }, GfnWebRtcClient.SESSION_ACTIVITY_KEEPALIVE_MS);
   }
 
   private setupGamepadPolling(): void {
