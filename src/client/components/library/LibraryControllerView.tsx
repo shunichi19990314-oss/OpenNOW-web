@@ -11,6 +11,7 @@ import {
 } from "../../lib/controllerCatalogUi";
 import type { ControllerStoreFilterItem } from "../../lib/libraryFilters";
 import { useTranslation } from "../../i18n";
+import { getJapaneseGameDescription } from "../../utils/localizedGameText";
 import { ControllerGameCard } from "./ControllerGameCard";
 import { MotionSpinner } from "../MotionSpinner";
 
@@ -229,7 +230,7 @@ export function LibraryControllerView({
               <div className="controller-details-panel">
                 <h3>{detailsGame.title}</h3>
                 <p className="controller-details-store">{t("library.selectedStore", { store: getGameStoreSummary(detailsGame, t("library.storeNotListed")) })}</p>
-                <p className="controller-details-body">{detailsGame.description || detailsGame.longDescription || detailsGame.featureLabels?.join(" / ") || t("library.loadingGameDetails")}</p>
+                <p className="controller-details-body">{getJapaneseGameDescription(detailsGame.longDescription, detailsGame.description, detailsGame.featureLabels?.join(" / ") || t("library.descriptionUnavailable"))}</p>
                 <div className="controller-details-meta">
                   {detailsGame.developerName && <span>{t("library.developer", { developer: detailsGame.developerName })}</span>}
                   {detailsGame.publisherName && <span>{t("library.publisher", { publisher: detailsGame.publisherName })}</span>}
