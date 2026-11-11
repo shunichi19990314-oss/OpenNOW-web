@@ -2,6 +2,7 @@ import { Check, Gamepad2, Heart, Monitor, Play, Users, X } from "lucide-react";
 import type { JSX } from "react";
 import type { GameInfo } from "@shared/gfn";
 import { useTranslation } from "../i18n";
+import { getJapaneseGameDescription } from "../utils/localizedGameText";
 import { getStoreDisplayName } from "./GameCard";
 
 export interface GameDetailsModalProps {
@@ -16,7 +17,7 @@ export function GameDetailsModal({ game, isFavorite, onToggleFavorite, onPlay, o
   const { t } = useTranslation();
   const stores = (game.availableStores ?? []).map(getStoreDisplayName);
   const playerCount = [game.maxLocalPlayers, game.maxOnlinePlayers].filter((value): value is number => typeof value === "number" && value > 0);
-  const description = game.longDescription || game.description || t("library.loadingGameDetails");
+  const description = getJapaneseGameDescription(game.longDescription, game.description, t("library.descriptionUnavailable"));
 
   return (
     <div className="game-details-backdrop" role="presentation" onMouseDown={(event) => { if (event.target === event.currentTarget) onClose(); }}>

@@ -273,7 +273,8 @@
       "noFilteredGames": "No games match those filters",
       "tryAdjustingFilters": "Try clearing a filter or changing your search."
     },
-    "gameDetails": "Game details"
+    "gameDetails": "Game details",
+    "descriptionUnavailable": "A Japanese description for this game is not currently available."
   },
   "gameCard": {
     "selectGame": "Select {{title}}",

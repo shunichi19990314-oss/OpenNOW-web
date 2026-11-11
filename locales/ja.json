@@ -270,7 +270,8 @@
       "played": "プレイ済み",
       "neverPlayed": "未プレイ"
     },
-    "gameDetails": "ゲーム詳細"
+    "gameDetails": "ゲーム詳細",
+    "descriptionUnavailable": "このゲームの日本語説明は現在利用できません。"
   },
   "gameCard": {
     "selectGame": "{{title}}を選択します",
