@@ -14,7 +14,7 @@ import { fetchWithOptionalProxy } from "./proxyFetch";
 import type { AppsPageResponse } from "./paginatedApps";
 
 export const GRAPHQL_URL = "https://games.geforce.com/graphql";
-export const DEFAULT_LOCALE = "en_US";
+export const DEFAULT_LOCALE = "ja_JP";
 export const DEFAULT_CLOUDMATCH_BASE_URL = "https://prod.cloudmatchbeta.nvidiagrid.net/";
 export const GFN_FEATURE_FIELDS = `
               __typename

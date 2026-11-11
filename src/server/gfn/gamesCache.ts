@@ -6,6 +6,7 @@ import type { GameInfo } from "@shared/gfn";
 
 export const LIBRARY_GAMES_CACHE_SCOPE = "library:v2";
 export const CATALOG_GAMES_CACHE_SCOPE = "catalog";
+const CATALOG_LOCALE_CACHE_VERSION = "ja-v1";
 const PUBLIC_GAMES_CACHE_KEY = "games:public:v2";
 
 function addProxyCacheScope(hash: ReturnType<typeof createHash>, proxyUrl?: string): void {
@@ -31,7 +32,7 @@ export function accountScopedGamesCacheKey(scope: string, accountId: string, pro
     .update(providerStreamingBaseUrl ?? "");
   addProxyCacheScope(hash, proxyUrl);
   const digest = hash.digest("hex").slice(0, 16);
-  return `games:${scope}:${digest}`;
+  return `games:${CATALOG_LOCALE_CACHE_VERSION}:${scope}:${digest}`;
 }
 
 export function legacyTokenScopedGamesCacheKey(scope: string, token: string, providerStreamingBaseUrl?: string, proxyUrl?: string): string {
@@ -41,7 +42,7 @@ export function legacyTokenScopedGamesCacheKey(scope: string, token: string, pro
     .update(providerStreamingBaseUrl ?? "");
   addProxyCacheScope(hash, proxyUrl);
   const digest = hash.digest("hex").slice(0, 16);
-  return `games:${scope}:${digest}`;
+  return `games:${CATALOG_LOCALE_CACHE_VERSION}:${scope}:${digest}`;
 }
 
 export function resolveAccountCacheId(accountId: string | undefined, token: string): string {
