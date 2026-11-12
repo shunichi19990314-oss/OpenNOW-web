@@ -6,7 +6,13 @@ import {
   STEAM_DECK_CLIENT_ID,
   TOKEN_ENDPOINT,
 } from "./constants";
-import { buildAuthHeadersForClient, generateDeviceId, toExpiresAt } from "./helpers";
+import {
+  buildAuthHeadersForClient,
+  generateDeviceId,
+  parseExpiresInSeconds,
+  receivedJwtExpiryMs,
+  toExpiresAt,
+} from "./helpers";
 
 interface DeviceAuthorizationResponse {
   device_code?: string;
@@ -125,12 +131,23 @@ export async function exchangeDeviceCode(
     };
   }
 
+  const now = Date.now();
+  const idTokenExpiresAt = receivedJwtExpiryMs(tokenPayload.id_token, now);
+  const explicitSeconds = parseExpiresInSeconds(tokenPayload.expires_in);
+  const expiresAt = explicitSeconds !== undefined
+    ? now + explicitSeconds * 1000
+    : (receivedJwtExpiryMs(tokenPayload.access_token, now) ?? idTokenExpiresAt ?? toExpiresAt(undefined, 86400, now));
+  const clientTokenExpiresAt = receivedJwtExpiryMs(tokenPayload.client_token, now);
+
   return {
     accessToken: tokenPayload.access_token,
     refreshToken: tokenPayload.refresh_token,
     idToken: tokenPayload.id_token,
-    expiresAt: toExpiresAt(tokenPayload.expires_in),
+    idTokenExpiresAt,
+    expiresAt,
     authClientId: STEAM_DECK_CLIENT_ID,
     clientToken: tokenPayload.client_token,
+    clientTokenExpiresAt,
+    clientTokenLifetimeMs: clientTokenExpiresAt !== undefined ? Math.max(0, clientTokenExpiresAt - now) : undefined,
   };
 }
