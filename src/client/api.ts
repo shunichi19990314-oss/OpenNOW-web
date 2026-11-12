@@ -1,5 +1,6 @@
 import type {
   AuthDeviceLoginChallenge,
+  AuthRefreshStatus,
   AuthSession,
   GameInfo,
   IceCandidatePayload,
@@ -206,10 +207,15 @@ async function pingRegionsInBrowser(regions: Parameters<OpenNowApi["pingRegions"
 
 const bridge: OpenNowApi = {
   getAuthSession: async () => {
-    const result = await api<{ session: BrowserSession | null }>("/api/session");
+    const result = await api<{ session: BrowserSession | null; refresh?: AuthRefreshStatus }>("/api/session");
     return {
       session: result.session ? toAuthSession(result.session) : null,
-      refresh: { attempted: false, forced: false, outcome: "not_attempted", message: "Server-managed web session." },
+      refresh: result.refresh ?? {
+        attempted: false,
+        forced: false,
+        outcome: "not_attempted",
+        message: "Server-managed web session.",
+      },
     };
   },
   getLoginProviders: () => api("/api/providers"),
