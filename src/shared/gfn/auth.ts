@@ -10,6 +10,7 @@ export interface AuthTokens {
   accessToken: string;
   refreshToken?: string;
   idToken?: string;
+  idTokenExpiresAt?: number;
   expiresAt: number;
   authClientId?: string;
   clientToken?: string;
@@ -46,6 +47,7 @@ export interface AuthLoginRequest {
 
 export interface AuthDeviceLoginStartRequest {
   providerIdpId?: string;
+  previousAttemptId?: string;
 }
 
 export interface AuthDeviceLoginChallenge {

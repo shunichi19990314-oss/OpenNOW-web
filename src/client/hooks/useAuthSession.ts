@@ -321,11 +321,7 @@ export function useAuthSession({
     setActiveLoginMode("qr");
     setLoginError(null);
     setQrRenewalsUsed(0);
-    if (qrLoginChallenge) {
-      void window.openNow.cancelDeviceLogin({ attemptId: qrLoginChallenge.attemptId }).catch(() => {
-        // Best effort.
-      });
-    }
+    const replacedAttemptId = qrLoginChallenge?.attemptId;
     setQrLoginChallenge(null);
 
     /** True once a newer login attempt (or a cancel) superseded this one. */
@@ -337,7 +333,12 @@ export function useAuthSession({
     };
 
     try {
-      let challenge = await window.openNow.startDeviceLogin({ providerIdpId: providerIdpId || undefined });
+      // Pass previousAttemptId so the server replaces the old challenge in the
+      // same cookie write instead of racing a fire-and-forget /cancel request.
+      let challenge = await window.openNow.startDeviceLogin({
+        providerIdpId: providerIdpId || undefined,
+        previousAttemptId: replacedAttemptId,
+      });
       if (isStale()) {
         cancelQuietly(challenge.attemptId);
         return;
@@ -402,9 +403,12 @@ export function useAuthSession({
         }
         renewalsUsed += 1;
         setQrRenewalsUsed(renewalsUsed);
-        cancelQuietly(challenge.attemptId);
+        const expiredAttemptId = challenge.attemptId;
         setQrLoginChallenge(null);
-        challenge = await window.openNow.startDeviceLogin({ providerIdpId: providerIdpId || undefined });
+        challenge = await window.openNow.startDeviceLogin({
+          providerIdpId: providerIdpId || undefined,
+          previousAttemptId: expiredAttemptId,
+        });
         if (isStale()) {
           cancelQuietly(challenge.attemptId);
           return;
@@ -574,6 +578,42 @@ export function useAuthSession({
     const timer = window.setTimeout(() => setStartupRefreshNotice(null), 7000);
     return () => window.clearTimeout(timer);
   }, [startupRefreshNotice]);
+
+  // Periodically touch /api/session while signed in (including during multi-hour
+  // WebRTC gameplay when the 10 s navbar poll is paused) so the server keeps
+  // rotating short-lived access/ID tokens and sliding the session cookie window.
+  useEffect(() => {
+    if (!authSession) return;
+    const SESSION_KEEP_FRESH_MS = 15 * 60 * 1000;
+    let lastCheckedAt = Date.now();
+    let inFlight = false;
+
+    const keepSessionFresh = (): void => {
+      if (inFlight) return;
+      inFlight = true;
+      lastCheckedAt = Date.now();
+      void window.openNow.getAuthSession()
+        .catch(() => {
+          // Ignore transient network errors; cookie state remains intact.
+        })
+        .finally(() => {
+          inFlight = false;
+        });
+    };
+
+    const timer = window.setInterval(keepSessionFresh, SESSION_KEEP_FRESH_MS);
+    const onVisibilityChange = (): void => {
+      if (document.visibilityState === "visible" && Date.now() - lastCheckedAt >= SESSION_KEEP_FRESH_MS) {
+        keepSessionFresh();
+      }
+    };
+    document.addEventListener("visibilitychange", onVisibilityChange);
+
+    return () => {
+      window.clearInterval(timer);
+      document.removeEventListener("visibilitychange", onVisibilityChange);
+    };
+  }, [authSession]);
 
   return {
     authSession,

@@ -7,15 +7,23 @@ import type { AuthTokens } from "@shared/gfn";
 // from the hoisted vi.mock factory.
 const mocks = vi.hoisted(() => ({
   refreshAuthTokens: vi.fn(),
+  refreshWithClientToken: vi.fn(),
   requestClientToken: vi.fn(),
 }));
 
 vi.mock("./gfn/auth/tokenRefresh", () => ({
   refreshAuthTokens: mocks.refreshAuthTokens,
+  refreshWithClientToken: mocks.refreshWithClientToken,
   requestClientToken: mocks.requestClientToken,
 }));
 
-import { WebAuthSession } from "./webAuth";
+import { WebAuthSession, webAuthInternals } from "./webAuth";
+
+function makeJwt(claims: Record<string, unknown>): string {
+  const header = Buffer.from(JSON.stringify({ alg: "none", typ: "JWT" })).toString("base64url");
+  const payload = Buffer.from(JSON.stringify(claims)).toString("base64url");
+  return `${header}.${payload}.sig`;
+}
 
 describe("WebAuthSession cookie hygiene", () => {
   it("starts clean so empty sessions never overwrite existing cookies", () => {
@@ -63,9 +71,42 @@ describe("WebAuthSession cookie hygiene", () => {
     session.reduceVolatileState();
     expect(session.toSnapshot().activeSessionIds).toEqual(["s-6", "s-7", "s-8", "s-9"]);
   });
+
+  it("ignores stale cancelDeviceLogin calls once authenticated", () => {
+    const session = WebAuthSession.fromSnapshot({
+      version: 1,
+      auth: {
+        provider: {
+          idpId: "nvidiagrid",
+          code: "NVIDIA",
+          displayName: "NVIDIA",
+          streamingServiceUrl: "https://prod.cloudmatchbeta.nvidiagrid.net/",
+          priority: 0,
+        },
+        tokens: { accessToken: "access", expiresAt: Date.now() + 3_600_000 },
+        user: { userId: "u1", displayName: "Player", membershipTier: "FREE" },
+      },
+      attempts: [["stale-attempt", {
+        provider: {
+          idpId: "nvidiagrid",
+          code: "NVIDIA",
+          displayName: "NVIDIA",
+          streamingServiceUrl: "https://prod.cloudmatchbeta.nvidiagrid.net/",
+          priority: 0,
+        },
+        deviceCode: "dc",
+        expiresAt: Date.now() + 60_000,
+      }]],
+      activeSessionIds: [],
+    });
+
+    session.cancelDeviceLogin("stale-attempt");
+    expect(session.isDirty()).toBe(false);
+    expect(session.publicSession()?.user.userId).toBe("u1");
+  });
 });
 
-describe("WebAuthSession.requireAuth token refresh resilience", () => {
+describe("WebAuthSession.requireAuth token refresh & QR client_token renewal", () => {
   const provider = {
     idpId: "nvidiagrid",
     code: "NVIDIA",
@@ -87,10 +128,10 @@ describe("WebAuthSession.requireAuth token refresh resilience", () => {
   }
 
   beforeEach(() => {
+    webAuthInternals.resetRefreshCaches();
     mocks.refreshAuthTokens.mockReset();
+    mocks.refreshWithClientToken.mockReset();
     mocks.requestClientToken.mockReset();
-    // The resilience fix warns on purpose; keep the assertion explicit and the
-    // test output readable.
     warnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
   });
 
@@ -98,9 +139,128 @@ describe("WebAuthSession.requireAuth token refresh resilience", () => {
     warnSpy.mockRestore();
   });
 
-  it("keeps serving with the current token when the refresh fails transiently", async () => {
-    // Still inside its validity window (near expiry, not expired): a dropped
-    // call to NVIDIA's token endpoint must degrade to a warning, not a 502.
+  it("renews QR sessions via client_token when no OAuth refresh_token was issued", async () => {
+    const freshIdJwt = makeJwt({
+      sub: "user-1",
+      iat: Math.floor(Date.now() / 1000),
+      exp: Math.floor(Date.now() / 1000) + 3600,
+    });
+    mocks.refreshWithClientToken.mockResolvedValue({
+      access_token: "access-from-client-token",
+      id_token: freshIdJwt,
+      expires_in: 3600,
+    });
+
+    const session = sessionWithTokens({
+      accessToken: "access-expired",
+      idToken: "id-old",
+      expiresAt: Date.now() - 5_000,
+      authClientId: "steam-deck-client",
+      clientToken: "nvidia-client-token",
+      clientTokenExpiresAt: Date.now() + 86_400_000,
+    });
+
+    const auth = await session.requireAuth();
+
+    expect(mocks.refreshWithClientToken).toHaveBeenCalledWith(
+      "nvidia-client-token",
+      "user-1",
+      "steam-deck-client",
+    );
+    expect(mocks.refreshAuthTokens).not.toHaveBeenCalled();
+    expect(auth.tokens.accessToken).toBe("access-from-client-token");
+    expect(auth.tokens.idToken).toBe(freshIdJwt);
+    expect(auth.tokens.clientToken).toBe("nvidia-client-token");
+    expect(session.isDirty()).toBe(true);
+    expect(session.publicSession()).not.toBeNull();
+  });
+
+  it("falls back to refresh_token when client_token refresh fails", async () => {
+    mocks.refreshWithClientToken.mockRejectedValue(new Error("Client-token refresh failed (400): invalid_grant"));
+    mocks.refreshAuthTokens.mockResolvedValue({
+      accessToken: "access-from-refresh-token",
+      refreshToken: "refresh-rotated",
+      expiresAt: Date.now() + 3_600_000,
+      authClientId: "steam-deck-client",
+    });
+
+    const session = sessionWithTokens({
+      accessToken: "access-expired",
+      idToken: "id-preserved",
+      refreshToken: "refresh-fallback",
+      expiresAt: Date.now() - 1_000,
+      authClientId: "steam-deck-client",
+      clientToken: "expired-client-token",
+      clientTokenExpiresAt: Date.now() + 60_000,
+    });
+
+    const auth = await session.requireAuth();
+
+    expect(mocks.refreshWithClientToken).toHaveBeenCalledTimes(1);
+    expect(mocks.refreshAuthTokens).toHaveBeenCalledWith("refresh-fallback", "steam-deck-client");
+    expect(auth.tokens.accessToken).toBe("access-from-refresh-token");
+    expect(auth.tokens.refreshToken).toBe("refresh-rotated");
+    // Refresh responses that omit id_token must not clobber the existing idToken.
+    expect(auth.tokens.idToken).toBe("id-preserved");
+    expect(session.isDirty()).toBe(true);
+  });
+
+  it("refreshes when the id_token JWT is near expiry even if access_token expires later", async () => {
+    const soonExpiringIdJwt = makeJwt({
+      sub: "user-1",
+      exp: Math.floor((Date.now() + 60_000) / 1000),
+    });
+    const renewedIdJwt = makeJwt({
+      sub: "user-1",
+      iat: Math.floor(Date.now() / 1000),
+      exp: Math.floor(Date.now() / 1000) + 3600,
+    });
+    mocks.refreshWithClientToken.mockResolvedValue({
+      access_token: "access-renewed",
+      id_token: renewedIdJwt,
+      expires_in: 3600,
+    });
+
+    const session = sessionWithTokens({
+      accessToken: "access-long-lived",
+      idToken: soonExpiringIdJwt,
+      expiresAt: Date.now() + 7_200_000,
+      authClientId: "steam-deck-client",
+      clientToken: "client-token-valid",
+      clientTokenExpiresAt: Date.now() + 86_400_000,
+    });
+
+    const auth = await session.requireAuth();
+
+    expect(mocks.refreshWithClientToken).toHaveBeenCalledTimes(1);
+    expect(auth.tokens.idToken).toBe(renewedIdJwt);
+  });
+
+  it("proactively rotates client_token when its own expiry window approaches", async () => {
+    const newClientExpiry = Date.now() + 86_400_000;
+    mocks.requestClientToken.mockResolvedValue({
+      token: "client-token-rotated",
+      expiresAt: newClientExpiry,
+      lifetimeMs: 86_400_000,
+    });
+
+    const session = sessionWithTokens({
+      accessToken: "access-fresh",
+      expiresAt: Date.now() + 3_600_000,
+      authClientId: "steam-deck-client",
+      clientToken: "client-token-expiring",
+      clientTokenExpiresAt: Date.now() + 60_000, // inside 5-minute window
+    });
+
+    const auth = await session.requireAuth();
+
+    expect(mocks.requestClientToken).toHaveBeenCalledWith("access-fresh", "steam-deck-client");
+    expect(auth.tokens.clientToken).toBe("client-token-rotated");
+    expect(auth.tokens.clientTokenExpiresAt).toBe(newClientExpiry);
+    expect(session.isDirty()).toBe(true);
+  });
+
+  it("keeps serving with the current token when the refresh fails transiently before expiry", async () => {
     mocks.refreshAuthTokens.mockRejectedValue(new Error("network unreachable"));
     const session = sessionWithTokens({
       accessToken: "access-current",
@@ -119,16 +279,44 @@ describe("WebAuthSession.requireAuth token refresh resilience", () => {
     );
   });
 
-  it("reports 401 (not a server error) when the refresh fails and the token is already expired", async () => {
-    mocks.refreshAuthTokens.mockRejectedValue(new Error("Token refresh failed (503): upstream"));
+  it("preserves the session cookie on a transient 503 after token expiry and recovers on retry", async () => {
+    mocks.refreshAuthTokens.mockRejectedValueOnce(new Error("Token refresh failed (503): upstream"));
     const session = sessionWithTokens({
       accessToken: "access-expired",
       refreshToken: "refresh-already-expired",
       expiresAt: Date.now() - 1_000,
     });
 
+    await expect(session.requireAuth()).rejects.toMatchObject({ statusCode: 503 });
+    // Crucial: a momentary NVIDIA 503 must NOT wipe the persistent cookie.
+    expect(session.publicSession()).not.toBeNull();
+    expect(session.isDirty()).toBe(false);
+
+    mocks.refreshAuthTokens.mockResolvedValueOnce({
+      accessToken: "access-recovered",
+      refreshToken: "refresh-already-expired",
+      expiresAt: Date.now() + 3_600_000,
+    });
+    const recovered = await session.requireAuth();
+    expect(recovered.tokens.accessToken).toBe("access-recovered");
+    expect(session.isDirty()).toBe(true);
+  });
+
+  it("signs out with 401 when NVIDIA definitively revokes the refresh grant", async () => {
+    mocks.refreshAuthTokens.mockRejectedValue(
+      Object.assign(new Error("Token refresh failed (400): {\"error\":\"invalid_grant\"}"), {
+        definitiveRevocation: true,
+      }),
+    );
+    const session = sessionWithTokens({
+      accessToken: "access-expired",
+      refreshToken: "refresh-revoked",
+      expiresAt: Date.now() - 1_000,
+    });
+
     await expect(session.requireAuth()).rejects.toMatchObject({ statusCode: 401 });
-    expect(session.publicSession()).toBeNull(); // signed out so the client re-authenticates
+    expect(session.publicSession()).toBeNull();
+    expect(session.isDirty()).toBe(true);
     expect(warnSpy).toHaveBeenCalledWith(
       expect.stringContaining("requiring re-sign-in"),
       expect.any(Error),
@@ -149,8 +337,8 @@ describe("WebAuthSession.requireAuth token refresh resilience", () => {
       expiresAt: Date.now() + 60_000,
       authClientId: "client-1",
       clientToken: "client-token-keep",
-      clientTokenExpiresAt: 123,
-      clientTokenLifetimeMs: 456,
+      clientTokenExpiresAt: Date.now() + 86_400_000,
+      clientTokenLifetimeMs: 86_400_000,
     });
 
     const auth = await session.requireAuth();
@@ -172,6 +360,7 @@ describe("WebAuthSession.requireAuth token refresh resilience", () => {
 
     expect(auth.tokens.accessToken).toBe("access-fresh");
     expect(mocks.refreshAuthTokens).not.toHaveBeenCalled();
+    expect(mocks.refreshWithClientToken).not.toHaveBeenCalled();
   });
 
   it("forwards the snapshot authClientId (or undefined) without a cast", async () => {
@@ -181,8 +370,6 @@ describe("WebAuthSession.requireAuth token refresh resilience", () => {
       expiresAt: Date.now() + 3_600_000,
     });
 
-    // Older cookie snapshots predate authClientId: undefined must reach the
-    // helper so its CLIENT_ID default applies.
     const legacy = sessionWithTokens({
       accessToken: "access-current",
       refreshToken: "refresh-legacy-snapshot",
@@ -201,13 +388,54 @@ describe("WebAuthSession.requireAuth token refresh resilience", () => {
     expect(mocks.refreshAuthTokens).toHaveBeenLastCalledWith("refresh-modern-snapshot", "client-42");
   });
 
-  it("requires re-sign-in when a near-expiry token has no refresh token", async () => {
-    const session = sessionWithTokens({
-      accessToken: "access-current",
+  it("keeps serving an unexpired token without a refresh credential, then requires re-sign-in once expired", async () => {
+    const nearExpiryButValid = sessionWithTokens({
+      accessToken: "access-still-valid",
       expiresAt: Date.now() + 60_000,
     });
+    const auth = await nearExpiryButValid.requireAuth();
+    expect(auth.tokens.accessToken).toBe("access-still-valid");
+    expect(nearExpiryButValid.publicSession()).not.toBeNull();
 
-    await expect(session.requireAuth()).rejects.toMatchObject({ statusCode: 401 });
-    expect(mocks.refreshAuthTokens).not.toHaveBeenCalled();
+    const trulyExpired = sessionWithTokens({
+      accessToken: "access-expired",
+      expiresAt: Date.now() - 1_000,
+    });
+    await expect(trulyExpired.requireAuth()).rejects.toMatchObject({ statusCode: 401 });
+    expect(trulyExpired.publicSession()).toBeNull();
+  });
+
+  it("resolveBrowserSession refreshes expired tokens on /api/session boot and clears revoked sessions cleanly", async () => {
+    mocks.refreshWithClientToken.mockResolvedValueOnce({
+      access_token: "boot-renewed-access",
+      expires_in: 3600,
+    });
+    const active = sessionWithTokens({
+      accessToken: "boot-stale-access",
+      expiresAt: Date.now() - 10_000,
+      clientToken: "boot-client-token",
+      clientTokenExpiresAt: Date.now() + 86_400_000,
+    });
+
+    const renewed = await active.resolveBrowserSession();
+    expect(renewed.session?.user.userId).toBe("user-1");
+    expect(renewed.refresh.outcome).toBe("refreshed");
+    expect(active.isDirty()).toBe(true);
+
+    webAuthInternals.resetRefreshCaches();
+    mocks.refreshWithClientToken.mockRejectedValueOnce(
+      Object.assign(new Error("invalid_grant"), { definitiveRevocation: true }),
+    );
+    const revoked = sessionWithTokens({
+      accessToken: "boot-stale-access",
+      expiresAt: Date.now() - 10_000,
+      clientToken: "revoked-client-token",
+      clientTokenExpiresAt: Date.now() + 86_400_000,
+    });
+
+    const cleared = await revoked.resolveBrowserSession();
+    expect(cleared.session).toBeNull();
+    expect(cleared.refresh.outcome).toBe("failed");
+    expect(revoked.isDirty()).toBe(true);
   });
 });
