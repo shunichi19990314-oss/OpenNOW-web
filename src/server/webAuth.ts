@@ -1,15 +1,31 @@
 import { createHash, randomBytes } from "node:crypto";
 
-import type { AuthSession, AuthTokens, LoginProvider } from "@shared/gfn";
+import type { AuthRefreshStatus, AuthSession, AuthTokens, LoginProvider } from "@shared/gfn";
 import { buildGfnLcarsHeaders, GFN_USER_AGENT } from "./gfn/clientHeaders";
 import {
+  CLIENT_ID,
+  CLIENT_TOKEN_REFRESH_WINDOW_MS,
   DEFAULT_IDP_ID,
   SERVICE_URLS_ENDPOINT,
+  TOKEN_REFRESH_WINDOW_MS,
 } from "./gfn/auth/constants";
 import { exchangeDeviceCode, requestDeviceAuthorization } from "./gfn/auth/deviceLogin";
-import { isExpired, isNearExpiry } from "./gfn/auth/helpers";
+import {
+  effectiveTokenExpiryMs,
+  isExpired,
+  isNearExpiry,
+  jwtExpiryMs,
+  parseExpiresInSeconds,
+  receivedJwtExpiryMs,
+  toExpiresAt,
+} from "./gfn/auth/helpers";
 import { fetchUserInfo } from "./gfn/auth/userInfo";
-import { refreshAuthTokens, requestClientToken } from "./gfn/auth/tokenRefresh";
+import {
+  refreshAuthTokens,
+  refreshWithClientToken,
+  requestClientToken,
+  type TokenResponse,
+} from "./gfn/auth/tokenRefresh";
 import { fetchDynamicRegions, fetchSubscription } from "./gfn/subscription";
 
 interface DeviceAttempt {
@@ -18,38 +34,229 @@ interface DeviceAttempt {
   expiresAt: number;
 }
 
-// Single-flight + short reuse window for token refresh. A page reload fires
-// several authorized requests concurrently; independent refreshes against a
-// rotating-refresh-token endpoint consume each other's tokens and can leave
-// the browser holding an already-invalidated refresh token — a self-inflicted
-// logout on the next reload. Concurrent callers sharing the same refresh
-// token now await one NVIDIA call and reuse its result briefly.
-// (Per-process only; a single Railway replica covers the common case.)
+// Single-flight + reuse window for token refresh. A page reload or multi-tab
+// visit fires several authorized requests carrying the same pre-refresh cookie
+// snapshot; sharing one in-flight refresh and briefly caching its result keeps
+// rotating tokens from invalidating each other across concurrent requests.
 interface RefreshCacheEntry {
   tokens: AuthTokens;
   atMs: number;
 }
 const refreshInFlight = new Map<string, Promise<AuthTokens>>();
 const refreshRecentlyCompleted = new Map<string, RefreshCacheEntry>();
-const REFRESH_REUSE_WINDOW_MS = 30_000;
-/** Refresh this long before expiry so a request never races the deadline. */
-const REFRESH_AHEAD_MS = 10 * 60 * 1000;
+const clientTokenRetryAfter = new Map<string, number>();
 
-function refreshTokenKey(refreshToken: string): string {
-  return createHash("sha256").update(refreshToken).digest("hex").slice(0, 32);
+const REFRESH_REUSE_WINDOW_MS = 2 * 60 * 1000;
+const REFRESH_AHEAD_MS = TOKEN_REFRESH_WINDOW_MS;
+const CLIENT_TOKEN_FAILURE_BACKOFF_MS = 30_000;
+
+function sessionRefreshKey(userId: string, tokens: AuthTokens): string {
+  const material = `${userId}:${tokens.clientToken ?? ""}:${tokens.refreshToken ?? ""}`;
+  return createHash("sha256").update(material).digest("hex").slice(0, 32);
 }
 
-async function refreshAuthTokensShared(
-  refreshToken: string,
-  authClientId: string | undefined,
+function isDefinitiveRevocation(error: unknown): boolean {
+  if (
+    typeof error === "object"
+    && error !== null
+    && "definitiveRevocation" in error
+    && typeof (error as { definitiveRevocation?: unknown }).definitiveRevocation === "boolean"
+  ) {
+    return (error as { definitiveRevocation: boolean }).definitiveRevocation;
+  }
+  const message = (error instanceof Error ? error.message : String(error)).toLowerCase();
+  return (
+    message.includes("invalid_grant")
+    || message.includes("invalid_token")
+    || message.includes("token_revoked")
+    || message.includes("unauthorized_client")
+  );
+}
+
+function mergeFromTokenResponse(previous: AuthTokens, refreshed: TokenResponse): AuthTokens {
+  const now = Date.now();
+  const nextIdToken = refreshed.id_token ?? previous.idToken;
+  const nextIdTokenExpiresAt = refreshed.id_token
+    ? receivedJwtExpiryMs(refreshed.id_token, now)
+    : (previous.idTokenExpiresAt ?? jwtExpiryMs(previous.idToken));
+  const explicitSeconds = parseExpiresInSeconds(refreshed.expires_in);
+  const expiresAt = explicitSeconds !== undefined
+    ? now + explicitSeconds * 1000
+    : (receivedJwtExpiryMs(refreshed.access_token, now) ?? nextIdTokenExpiresAt ?? toExpiresAt(undefined, 86400, now));
+  const clientTokenRotated = Boolean(refreshed.client_token && refreshed.client_token !== previous.clientToken);
+  const rotatedClientExpiry = clientTokenRotated ? receivedJwtExpiryMs(refreshed.client_token, now) : undefined;
+
+  return {
+    ...previous,
+    accessToken: refreshed.access_token,
+    refreshToken: refreshed.refresh_token ?? previous.refreshToken,
+    idToken: nextIdToken,
+    idTokenExpiresAt: nextIdTokenExpiresAt,
+    expiresAt,
+    authClientId: previous.authClientId ?? CLIENT_ID,
+    clientToken: refreshed.client_token ?? previous.clientToken,
+    clientTokenExpiresAt: clientTokenRotated ? rotatedClientExpiry : previous.clientTokenExpiresAt,
+    clientTokenLifetimeMs: clientTokenRotated
+      ? (rotatedClientExpiry !== undefined ? Math.max(0, rotatedClientExpiry - now) : undefined)
+      : previous.clientTokenLifetimeMs,
+  };
+}
+
+function mergeFromAuthTokens(previous: AuthTokens, refreshed: AuthTokens): AuthTokens {
+  const now = Date.now();
+  const nextIdToken = refreshed.idToken ?? previous.idToken;
+  const nextIdTokenExpiresAt = refreshed.idToken
+    ? (refreshed.idTokenExpiresAt ?? receivedJwtExpiryMs(refreshed.idToken, now))
+    : (previous.idTokenExpiresAt ?? jwtExpiryMs(previous.idToken));
+  const clientTokenRotated = Boolean(refreshed.clientToken && refreshed.clientToken !== previous.clientToken);
+  const rotatedClientExpiry = clientTokenRotated
+    ? (refreshed.clientTokenExpiresAt ?? receivedJwtExpiryMs(refreshed.clientToken, now))
+    : undefined;
+
+  return {
+    ...previous,
+    ...refreshed,
+    refreshToken: refreshed.refreshToken ?? previous.refreshToken,
+    idToken: nextIdToken,
+    idTokenExpiresAt: nextIdTokenExpiresAt,
+    authClientId: refreshed.authClientId ?? previous.authClientId,
+    clientToken: refreshed.clientToken ?? previous.clientToken,
+    clientTokenExpiresAt: clientTokenRotated ? rotatedClientExpiry : previous.clientTokenExpiresAt,
+    clientTokenLifetimeMs: clientTokenRotated
+      ? (rotatedClientExpiry !== undefined ? Math.max(0, rotatedClientExpiry - now) : undefined)
+      : previous.clientTokenLifetimeMs,
+  };
+}
+
+function shouldRotateClientToken(tokens: AuthTokens, now = Date.now()): boolean {
+  if (isExpired(tokens.expiresAt, now)) {
+    return false;
+  }
+  if (!tokens.clientToken) {
+    // Only bootstrap a missing client token when no standard refresh token is
+    // available either (e.g. initial /client_token call failed transiently).
+    return !tokens.refreshToken;
+  }
+  if (tokens.clientTokenExpiresAt === undefined) {
+    return false;
+  }
+  return isNearExpiry(tokens.clientTokenExpiresAt, CLIENT_TOKEN_REFRESH_WINDOW_MS, now);
+}
+
+async function ensureFreshClientToken(
+  userId: string,
+  tokens: AuthTokens,
+  options?: { forceWhenUnstamped?: boolean },
 ): Promise<AuthTokens> {
-  const key = refreshTokenKey(refreshToken);
+  const now = Date.now();
+  if (isExpired(tokens.expiresAt, now)) {
+    return tokens;
+  }
+  const needsUpdate = options?.forceWhenUnstamped && tokens.clientToken && tokens.clientTokenExpiresAt === undefined
+    ? true
+    : shouldRotateClientToken(tokens, now);
+  if (!needsUpdate) {
+    return tokens;
+  }
+
+  const backoffUntil = clientTokenRetryAfter.get(userId) ?? 0;
+  if (now < backoffUntil) {
+    return tokens;
+  }
+
+  try {
+    const issued = await requestClientToken(tokens.accessToken, tokens.authClientId);
+    if (!issued?.token) {
+      return tokens;
+    }
+    clientTokenRetryAfter.delete(userId);
+    return {
+      ...tokens,
+      clientToken: issued.token,
+      clientTokenExpiresAt: issued.expiresAt,
+      clientTokenLifetimeMs: issued.lifetimeMs,
+    };
+  } catch (error) {
+    clientTokenRetryAfter.set(userId, Date.now() + CLIENT_TOKEN_FAILURE_BACKOFF_MS);
+    console.warn("[Auth] Client token renewal failed; keeping existing session tokens.", error);
+    return tokens;
+  }
+}
+
+async function refreshSessionTokens(userId: string, previous: AuthTokens): Promise<AuthTokens> {
+  const errors: unknown[] = [];
+  const now = Date.now();
+
+  // 1. Primary path (matches desktop OpenNOW): NVIDIA QR/device sign-in uses
+  //    the `tk_client` scope and renews via `urn:ietf:params:oauth:grant-type:client_token`
+  //    rather than issuing a standard OAuth `refresh_token`.
+  //    Attempt the client_token grant whenever it has not locally expired, or
+  //    as a last resort when no `refresh_token` fallback exists.
+  const canTryClientToken = Boolean(
+    previous.clientToken
+    && (
+      previous.clientTokenExpiresAt === undefined
+      || previous.clientTokenExpiresAt > now
+      || !previous.refreshToken
+    ),
+  );
+
+  if (canTryClientToken && previous.clientToken) {
+    try {
+      const response = await refreshWithClientToken(
+        previous.clientToken,
+        userId,
+        previous.authClientId,
+      );
+      const merged = mergeFromTokenResponse(previous, response);
+      // If the token endpoint rotated client_token without an embedded expiry,
+      // or the existing client_token is nearing expiry, refresh /client_token too.
+      return await ensureFreshClientToken(userId, merged, {
+        forceWhenUnstamped: Boolean(response.client_token && response.client_token !== previous.clientToken),
+      });
+    } catch (error) {
+      errors.push(error);
+    }
+  }
+
+  // 2. Fallback path: standard OAuth refresh_token grant when present.
+  if (previous.refreshToken) {
+    try {
+      const refreshed = await refreshAuthTokens(previous.refreshToken, previous.authClientId);
+      const merged = mergeFromAuthTokens(previous, refreshed);
+      return await ensureFreshClientToken(userId, merged);
+    } catch (error) {
+      errors.push(error);
+    }
+  }
+
+  const allDefinitive = errors.length > 0 && errors.every(isDefinitiveRevocation);
+  const primaryError = errors[errors.length - 1];
+  const combinedMessage = errors
+    .map((entry) => (entry instanceof Error ? entry.message : String(entry)))
+    .join(" | ") || "Session has no usable refresh mechanism.";
+  throw Object.assign(
+    new Error(combinedMessage, primaryError instanceof Error ? { cause: primaryError } : undefined),
+    { definitiveRevocation: allDefinitive },
+  );
+}
+
+async function refreshSessionTokensShared(
+  userId: string,
+  previous: AuthTokens,
+): Promise<AuthTokens> {
+  const key = sessionRefreshKey(userId, previous);
   const now = Date.now();
 
   const recent = refreshRecentlyCompleted.get(key);
-  if (recent && now - recent.atMs <= REFRESH_REUSE_WINDOW_MS) {
+  if (
+    recent
+    && now - recent.atMs <= REFRESH_REUSE_WINDOW_MS
+    && !isNearExpiry(effectiveTokenExpiryMs(recent.tokens), REFRESH_AHEAD_MS, now)
+  ) {
     return recent.tokens;
   }
+
   const inFlight = refreshInFlight.get(key);
   if (inFlight) {
     return inFlight;
@@ -57,21 +264,19 @@ async function refreshAuthTokensShared(
 
   const promise = (async (): Promise<AuthTokens> => {
     try {
-      // `authClientId` is optional on purpose: older cookie snapshots predate the
-      // field, and refreshAuthTokens already falls back to CLIENT_ID when it is
-      // undefined. Passing it through uncast keeps that fallback type-honest.
-      const tokens = await refreshAuthTokens(refreshToken, authClientId);
+      const refreshed = await refreshSessionTokens(userId, previous);
       for (const [cachedKey, entry] of refreshRecentlyCompleted) {
-        if (now - entry.atMs > REFRESH_REUSE_WINDOW_MS * 4) {
+        if (now - entry.atMs > REFRESH_REUSE_WINDOW_MS * 2) {
           refreshRecentlyCompleted.delete(cachedKey);
         }
       }
-      refreshRecentlyCompleted.set(key, { tokens, atMs: Date.now() });
-      return tokens;
+      refreshRecentlyCompleted.set(key, { tokens: refreshed, atMs: Date.now() });
+      return refreshed;
     } finally {
       refreshInFlight.delete(key);
     }
   })();
+
   refreshInFlight.set(key, promise);
   return promise;
 }
@@ -163,6 +368,7 @@ export async function getLoginProviders(): Promise<LoginProvider[]> {
 export class WebAuthSession {
   /** FIFO bound so the encrypted cookie snapshot cannot grow without limit. */
   private static readonly MAX_ACTIVE_SESSION_IDS = 16;
+  private static readonly MAX_DEVICE_ATTEMPTS = 4;
 
   private auth: AuthSession | null = null;
   private readonly attempts = new Map<string, DeviceAttempt>();
@@ -194,7 +400,9 @@ export class WebAuthSession {
 
   toSnapshot(): WebAuthSessionSnapshot {
     const now = Date.now();
-    const attempts = [...this.attempts.entries()].filter(([, attempt]) => attempt?.expiresAt > now);
+    const attempts = [...this.attempts.entries()]
+      .filter(([, attempt]) => attempt?.expiresAt > now)
+      .slice(-WebAuthSession.MAX_DEVICE_ATTEMPTS);
     const activeSessionIds = [...this.activeSessionIds].slice(-WebAuthSession.MAX_ACTIVE_SESSION_IDS);
     return {
       version: 1,
@@ -250,8 +458,8 @@ export class WebAuthSession {
   addActiveSession(sessionId: string): void {
     if (!this.activeSessionIds.has(sessionId)) {
       // Bound growth: abandoned sessions (tab closed without stop) would
-      // otherwise accumulate for the cookie's 30-day lifetime and push the
-      // encrypted snapshot toward the chunk/header limits.
+      // otherwise accumulate for the cookie's lifetime and push the encrypted
+      // snapshot toward the chunk/header limits.
       while (this.activeSessionIds.size >= WebAuthSession.MAX_ACTIVE_SESSION_IDS) {
         const oldest = this.activeSessionIds.values().next().value;
         if (oldest === undefined) break;
@@ -274,7 +482,22 @@ export class WebAuthSession {
     return this.auth ? { provider: this.auth.provider, user: this.auth.user } : null;
   }
 
-  async startDeviceLogin(providerIdpId?: string): Promise<BrowserChallenge> {
+  async startDeviceLogin(providerIdpId?: string, previousAttemptId?: string): Promise<BrowserChallenge> {
+    if (previousAttemptId) {
+      this.attempts.delete(previousAttemptId);
+    }
+    const now = Date.now();
+    for (const [id, attempt] of this.attempts) {
+      if (!attempt || attempt.expiresAt <= now) {
+        this.attempts.delete(id);
+      }
+    }
+    while (this.attempts.size >= WebAuthSession.MAX_DEVICE_ATTEMPTS) {
+      const oldest = this.attempts.keys().next().value;
+      if (oldest === undefined) break;
+      this.attempts.delete(oldest);
+    }
+
     const providers = await getLoginProviders();
     const provider = providers.find((item) => item.idpId === providerIdpId) ?? providers[0] ?? defaultProvider();
     const challenge = await requestDeviceAuthorization(provider);
@@ -296,6 +519,9 @@ export class WebAuthSession {
   }
 
   cancelDeviceLogin(attemptId: string): void {
+    // Once signed in, never rewrite the cookie for a stale cancel request that
+    // raced with login completion.
+    if (this.auth !== null) return;
     if (this.attempts.delete(attemptId)) this.dirty = true;
   }
 
@@ -345,7 +571,7 @@ export class WebAuthSession {
     }
 
     this.auth = { provider: normalizeProvider(attempt.provider), tokens, user };
-    this.attempts.delete(attemptId);
+    this.attempts.clear();
     this.dirty = true;
     try {
       const token = this.tokenFrom(this.auth);
@@ -371,40 +597,156 @@ export class WebAuthSession {
 
   async requireAuth(): Promise<AuthSession> {
     if (!this.auth) throw Object.assign(new Error("Sign in with the QR code first."), { statusCode: 401 });
-    if (isNearExpiry(this.auth.tokens.expiresAt, REFRESH_AHEAD_MS)) {
-      const refreshToken = this.auth.tokens.refreshToken;
-      if (!refreshToken) {
+
+    const previous = this.auth.tokens;
+    const effectiveExpiry = effectiveTokenExpiryMs(previous);
+
+    if (isNearExpiry(effectiveExpiry, REFRESH_AHEAD_MS)) {
+      const hasRefreshMechanism = Boolean(previous.clientToken || previous.refreshToken);
+      if (!hasRefreshMechanism) {
+        if (!isExpired(effectiveExpiry)) {
+          // No refresh credential is available, but the current access/id token
+          // is still valid — keep serving until it genuinely expires rather
+          // than wiping the session cookie 10 minutes early.
+          return this.auth;
+        }
         this.logout();
         throw Object.assign(new Error("Your NVIDIA session expired. Sign in again."), { statusCode: 401 });
       }
-      const previous = this.auth.tokens;
+
       try {
-        const refreshed = await refreshAuthTokensShared(refreshToken, previous.authClientId);
-        this.auth.tokens = {
-          ...previous,
-          ...refreshed,
-          clientToken: previous.clientToken,
-          clientTokenExpiresAt: previous.clientTokenExpiresAt,
-          clientTokenLifetimeMs: previous.clientTokenLifetimeMs,
-        };
+        const refreshed = await refreshSessionTokensShared(this.auth.user.userId, previous);
+        this.auth.tokens = refreshed;
         this.dirty = true;
+        return this.auth;
       } catch (error) {
-        // A transient NVIDIA/network failure while refreshing must not turn every
-        // authorized API call into a 502. While the current access token is still
-        // inside its validity window we keep serving with it — the refresh is
-        // simply retried by the next request — so one dropped call to the token
-        // endpoint degrades to a warning instead of breaking the whole session.
-        if (isExpired(previous.expiresAt)) {
-          // Nothing safe left to fall back on: this is an auth failure, not a
-          // server error, so the client gets its "sign in again" path (401).
-          console.warn("[Auth] Token refresh failed and the access token has expired; requiring re-sign-in.", error);
+        // While the current token is still within its validity window, keep
+        // serving with it and retry on the next request.
+        if (!isExpired(effectiveExpiry)) {
+          console.warn(
+            "[Auth] Token refresh failed; continuing with the current token and retrying on the next request.",
+            error,
+          );
+          return this.auth;
+        }
+        // Only wipe the persistent session cookie when NVIDIA definitively
+        // rejected the refresh grant (e.g. invalid_grant / revoked). On a
+        // transient network or 5xx failure, preserve the cookie so the next
+        // request or boot retry can recover automatically.
+        if (isDefinitiveRevocation(error)) {
+          console.warn("[Auth] Token refresh was rejected by NVIDIA; requiring re-sign-in.", error);
           this.logout();
           throw Object.assign(new Error("Your NVIDIA session expired. Sign in again."), { statusCode: 401 });
         }
-        console.warn("[Auth] Token refresh failed; continuing with the current token and retrying on the next request.", error);
+        console.warn(
+          "[Auth] Token refresh failed due to a transient error after token expiry; preserving session cookie for retry.",
+          error,
+        );
+        throw Object.assign(
+          new Error("NVIDIA authentication service is temporarily unavailable. Retrying shortly."),
+          { statusCode: 503 },
+        );
       }
     }
+
+    // Access/ID tokens are still fresh, so rotate `client_token` proactively if
+    // its own expiry window is approaching (or bootstrap it if initial sign-in
+    // missed it).
+    if (shouldRotateClientToken(previous)) {
+      const updated = await ensureFreshClientToken(this.auth.user.userId, previous);
+      if (updated !== previous) {
+        this.auth.tokens = updated;
+        this.dirty = true;
+      }
+    }
+
     return this.auth;
+  }
+
+  /**
+   * Used by `GET /api/session` during app boot and background session checks.
+   * Refreshes near-expiry or expired tokens up front in a single request so the
+   * browser receives updated session cookies before firing parallel catalog/API
+   * requests, while resolving cleanly to `{ session: null }` if the session was
+   * definitively revoked.
+   */
+  async resolveBrowserSession(): Promise<{
+    session: BrowserSession | null;
+    refresh: AuthRefreshStatus;
+  }> {
+    if (!this.auth) {
+      return {
+        session: null,
+        refresh: {
+          attempted: false,
+          forced: false,
+          outcome: "not_attempted",
+          message: "No saved session found.",
+        },
+      };
+    }
+
+    const previousAccess = this.auth.tokens.accessToken;
+    const previousId = this.auth.tokens.idToken;
+    const previousClient = this.auth.tokens.clientToken;
+    const wasNearExpiry = isNearExpiry(effectiveTokenExpiryMs(this.auth.tokens), REFRESH_AHEAD_MS);
+
+    try {
+      await this.requireAuth();
+      const changed = this.auth.tokens.accessToken !== previousAccess
+        || this.auth.tokens.idToken !== previousId
+        || this.auth.tokens.clientToken !== previousClient;
+      if (changed) {
+        return {
+          session: this.publicSession(),
+          refresh: {
+            attempted: true,
+            forced: false,
+            outcome: "refreshed",
+            message: "Saved session token refreshed.",
+          },
+        };
+      }
+      if (wasNearExpiry) {
+        const missingRefresh = !this.auth.tokens.clientToken && !this.auth.tokens.refreshToken;
+        return {
+          session: this.publicSession(),
+          refresh: {
+            attempted: !missingRefresh,
+            forced: false,
+            outcome: missingRefresh ? "missing_refresh_token" : "failed",
+            message: missingRefresh
+              ? "Session has no refresh credential; continuing with current token."
+              : "Token refresh failed; continuing with unexpired token.",
+          },
+        };
+      }
+      return {
+        session: this.publicSession(),
+        refresh: {
+          attempted: false,
+          forced: false,
+          outcome: "not_attempted",
+          message: "Session token is still valid.",
+        },
+      };
+    } catch (error) {
+      const status = typeof error === "object" && error && "statusCode" in error
+        ? (error as { statusCode?: number }).statusCode
+        : undefined;
+      if (status === 401) {
+        return {
+          session: null,
+          refresh: {
+            attempted: true,
+            forced: false,
+            outcome: "failed",
+            message: error instanceof Error ? error.message : "Saved session expired.",
+          },
+        };
+      }
+      throw error;
+    }
   }
 
   async token(): Promise<string> {
@@ -416,6 +758,14 @@ export class WebAuthSession {
     return fetchDynamicRegions(this.tokenFrom(auth), auth.provider.streamingServiceUrl);
   }
 }
+
+export const webAuthInternals = {
+  resetRefreshCaches(): void {
+    refreshInFlight.clear();
+    refreshRecentlyCompleted.clear();
+    clientTokenRetryAfter.clear();
+  },
+};
 
 export function buildAuthenticatedHeaders(session: AuthSession): Record<string, string> {
   return buildGfnLcarsHeaders({

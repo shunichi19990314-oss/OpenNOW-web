@@ -89,11 +89,14 @@ export function registerApi(app: Express): void {
 
   app.get("/api/session", asyncRoute(async (request, response) => {
     response.setHeader("Cache-Control", "no-store");
-    response.json({ session: getSession(request, response).publicSession() });
+    response.json(await getSession(request, response).resolveBrowserSession());
   }));
 
   app.post("/api/auth/qr/start", asyncRoute(async (request, response) => {
-    const challenge = await getSession(request, response).startDeviceLogin(request.body?.providerIdpId);
+    const challenge = await getSession(request, response).startDeviceLogin(
+      request.body?.providerIdpId,
+      typeof request.body?.previousAttemptId === "string" ? request.body.previousAttemptId : undefined,
+    );
     response.json(challenge);
   }));
 
