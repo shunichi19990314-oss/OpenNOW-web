@@ -3016,11 +3016,6 @@ body,
   color: var(--ink-soft);
 }
 
-.library-playtime-last {
-  font-weight: 500;
-  color: var(--ink-muted);
-}
-
 .library-last-played {
   display: flex;
   align-items: center;
@@ -11548,6 +11543,73 @@ body {
 .home-hero-slide {
   position: absolute;
   inset: 0;
+}
+
+/* Placeholder shown while the hero's featured request is in flight. It shares
+   `.home-hero`'s box so nothing below moves when the real slide appears. */
+.home-hero-skeleton {
+  display: flex;
+  align-items: flex-end;
+  padding: 24px;
+  background: linear-gradient(120deg, var(--bg-c), color-mix(in srgb, var(--bg-c) 80%, #000));
+}
+
+.home-hero-skeleton-shine {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    100deg,
+    transparent 20%,
+    color-mix(in srgb, var(--ink) 7%, transparent) 45%,
+    transparent 70%
+  );
+  background-size: 220% 100%;
+  animation: home-hero-skeleton-sweep 1.5s ease-in-out infinite;
+}
+
+@keyframes home-hero-skeleton-sweep {
+  from { background-position: 130% 0; }
+  to { background-position: -30% 0; }
+}
+
+.home-hero-skeleton-body {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  width: min(420px, 70%);
+}
+
+.home-hero-skeleton-logo {
+  width: 46%;
+  height: 46px;
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--ink) 10%, transparent);
+}
+
+.home-hero-skeleton-line {
+  width: 62%;
+  height: 12px;
+  border-radius: 6px;
+  background: color-mix(in srgb, var(--ink) 8%, transparent);
+}
+
+.home-hero-skeleton-line--short {
+  width: 38%;
+}
+
+.home-hero-skeleton-actions {
+  width: 168px;
+  height: 40px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--accent) 26%, transparent);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .home-hero-skeleton-shine {
+    animation: none;
+  }
 }
 
 .home-hero-bg {

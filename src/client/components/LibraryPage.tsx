@@ -19,6 +19,7 @@ import {
 } from "../lib/libraryFilters";
 import { useTranslation } from "../i18n";
 import { formatCatalogLastPlayed } from "../utils/lastPlayedFormat";
+import { gameActivityTimestamp } from "../lib/localPreferences";
 import { controllerButton, readControllerGamepadButtons } from "../utils/controllerGamepad";
 import { pageTransition } from "./MotionProvider";
 import { SelectDropdown } from "./ui/SelectDropdown";
@@ -486,7 +487,10 @@ export const LibraryPage = memo(function LibraryPage({
       const record = playtimeData[game.id];
       const isFavorite = favoriteIdSet.has(game.id);
       const totalPlaytime = record?.totalSeconds ?? 0;
-      const lastPlayedMs = record?.lastPlayedAt ? Date.parse(record.lastPlayedAt) : 0;
+      // Same source as the rail and the hero: newest of local tracker and
+      // catalog. Reading only `game.lastPlayed` here made a game show
+      // "3日前" in one column and "未プレイ" in the next.
+      const lastPlayedMs = gameActivityTimestamp(game, playtimeData);
       return (
         <div key={game.id} className={`library-game-wrapper${isFavorite ? " is-favorite" : ""}`}>
           {isFavorite && (
@@ -502,16 +506,17 @@ export const LibraryPage = memo(function LibraryPage({
             actionsRef={catalogActionsRef}
           />
           <div
-            className={`library-last-played${game.lastPlayed ? "" : " library-last-played--empty"}`}
-            aria-hidden={game.lastPlayed ? undefined : true}
+            className={`library-last-played${lastPlayedMs > 0 ? "" : " library-last-played--empty"}`}
+            aria-hidden={lastPlayedMs > 0 ? undefined : true}
           >
             <Clock size={12} />
-            <span>{game.lastPlayed ? formatCatalogLastPlayed(t, game.lastPlayed) : "—"}</span>
+            <span>{lastPlayedMs > 0 ? formatCatalogLastPlayed(t, new Date(lastPlayedMs).toISOString()) : "—"}</span>
           </div>
           {totalPlaytime > 0 && (
+            // One row only: the relative time already appears above, repeating
+            // it next to the total made the card look inconsistent.
             <div className="library-playtime" title={t("library.totalPlaytime")}>
               <span>{formatTotalPlaytime(totalPlaytime, t("home.continuePlaying.neverPlayed"))}</span>
-              {lastPlayedMs > 0 && <span className="library-playtime-last">{formatCatalogLastPlayed(t, new Date(lastPlayedMs).toISOString())}</span>}
             </div>
           )}
         </div>

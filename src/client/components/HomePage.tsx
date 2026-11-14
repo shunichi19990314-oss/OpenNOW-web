@@ -9,7 +9,7 @@ import { formatCatalogLastPlayed } from "../utils/lastPlayedFormat";
 import { GameCardListItem, useCatalogCardActionsRef } from "./GameCardListItem";
 import { GameDetailsModal } from "./GameDetailsModal";
 import { appendImageType, appendUnique, gameMatchesActiveSession } from "../lib/controllerCatalogUi";
-import { summarizeRecentActivity } from "../lib/localPreferences";
+import { gameActivityTimestamp, summarizeRecentActivity } from "../lib/localPreferences";
 import type { PlaytimeData } from "../lib/gameCatalog";
 import { ContinuePlayingRail } from "./ContinuePlayingRail";
 import { useTranslation } from "../i18n";
@@ -72,6 +72,12 @@ export interface HomePageProps {
   onNextControllerPage?: () => void;
   /** Local playtime + activity data, used by the "Continue playing" rail. */
   playtimeData?: PlaytimeData;
+  /**
+   * True while the featured/hero request is in flight. The hero needs its own
+   * request, so without this the page showed no hero and then inserted one
+   * later, pushing the rows down.
+   */
+  isHeroPending?: boolean;
 }
 
 function getSteamHeaderUrl(game: GameInfo): string | undefined {
@@ -260,6 +266,7 @@ export const HomePage = memo(function HomePage({
   onPreviousControllerPage,
   onNextControllerPage,
   playtimeData = {},
+  isHeroPending = false,
 }: HomePageProps): JSX.Element {
   const { t } = useTranslation();
   const [detailsGame, setDetailsGame] = useState<GameInfo | null>(null);
@@ -518,23 +525,26 @@ export const HomePage = memo(function HomePage({
 
   // "Continue playing" hero: most recently played owned game, hidden while
   // searching so results stay the focus.
+  //
+  // The local tracker is read as well as the catalog, so a game played in this
+  // browser fills the hero immediately — even before the server reports
+  // `lastPlayed` — and the hero cannot disagree with the rail below it.
   const continueGame = useMemo(() => {
     if (searchQuery.trim()) return null;
     let best: GameInfo | null = null;
     let bestTime = 0;
     for (const game of games) {
-      if (!game.lastPlayed) continue;
       const owned = game.isInLibrary === true
         || (game.variants ?? []).some((variant) => isOwnedLibraryStatus(variant.libraryStatus));
       if (!owned) continue;
-      const time = new Date(game.lastPlayed).getTime();
-      if (Number.isFinite(time) && time > bestTime) {
+      const time = gameActivityTimestamp(game, playtimeData);
+      if (time > bestTime) {
         bestTime = time;
         best = game;
       }
     }
     return best;
-  }, [games, searchQuery]);
+  }, [games, playtimeData, searchQuery]);
 
   // Full "Continue playing" rail: hero resurfaces only the single newest game,
   // this lists the rest with playtime totals so resuming needs no search.
@@ -563,6 +573,10 @@ export const HomePage = memo(function HomePage({
 
   const browsingCatalog = searchQuery.trim().length === 0 && selectedFilterIds.length === 0;
   const showHero = browsingCatalog && heroSlides.length > 0;
+  // Reserve the hero's box while its data is still loading so the rows below
+  // do not jump down when it appears. Once loading finishes with no slides
+  // (no featured games, nothing played yet) the placeholder disappears.
+  const showHeroPlaceholder = browsingCatalog && !showHero && (isHeroPending || games.length === 0);
   const [heroIndex, setHeroIndex] = useState(0);
   const [heroPaused, setHeroPaused] = useState(false);
   const safeHeroIndex = showHero ? heroIndex % heroSlides.length : 0;
@@ -813,7 +827,9 @@ export const HomePage = memo(function HomePage({
           <div className="home-continue-info">
             <span className="home-continue-kicker">{t("home.continuePlaying.kicker")}</span>
             <span className="home-continue-title">{continueGame.title}</span>
-            <span className="home-continue-meta">{formatCatalogLastPlayed(t, continueGame.lastPlayed)}</span>
+            <span className="home-continue-meta">
+              {formatCatalogLastPlayed(t, new Date(gameActivityTimestamp(continueGame, playtimeData)).toISOString())}
+            </span>
           </div>
           <button
             type="button"
@@ -907,6 +923,23 @@ export const HomePage = memo(function HomePage({
       </header>
 
       <div className="home-grid-area">
+        {showHeroPlaceholder && (
+          // Same box as `.home-hero`, so the rail and grid below stay put when
+          // the real hero replaces it.
+          <section
+            className="home-hero home-hero-skeleton"
+            aria-hidden="true"
+            data-hero-placeholder="true"
+          >
+            <div className="home-hero-skeleton-shine" />
+            <div className="home-hero-skeleton-body">
+              <span className="home-hero-skeleton-logo" />
+              <span className="home-hero-skeleton-line" />
+              <span className="home-hero-skeleton-line home-hero-skeleton-line--short" />
+              <span className="home-hero-skeleton-actions" />
+            </div>
+          </section>
+        )}
         {showHero && (() => {
           const slide = heroSlides[safeHeroIndex];
           if (!slide) return null;
@@ -936,6 +969,12 @@ export const HomePage = memo(function HomePage({
                       src={heroImage}
                       alt=""
                       draggable={false}
+                      // The hero is the first thing on the page: decode it
+                      // eagerly and at high priority so inserting the slide is
+                      // not followed by another visible wait for the artwork.
+                      loading="eager"
+                      decoding="async"
+                      fetchPriority="high"
                       onError={(event) => {
                         // Dead CDN URLs must not show a broken-image glyph in
                         // the hero; the gradient scrim alone still looks fine.
@@ -964,9 +1003,12 @@ export const HomePage = memo(function HomePage({
                     <div className="home-hero-meta">
                       <span className="home-hero-chip">{getPrimaryGenre(slide.game)}</span>
                       <span className="home-hero-chip">{heroStore}</span>
-                      {slide.isResume && slide.game.lastPlayed && (
-                        <span className="home-hero-chip">{formatCatalogLastPlayed(t, slide.game.lastPlayed)}</span>
-                      )}
+                      {slide.isResume && (() => {
+                        const lastPlayedMs = gameActivityTimestamp(slide.game, playtimeData);
+                        return lastPlayedMs > 0
+                          ? <span className="home-hero-chip">{formatCatalogLastPlayed(t, new Date(lastPlayedMs).toISOString())}</span>
+                          : null;
+                      })()}
                     </div>
                     <div className="home-hero-actions">
                       <button
