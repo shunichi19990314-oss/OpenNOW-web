@@ -335,8 +335,13 @@ export function LoginScreen({
                       <p className="login-qr-renewed">{t("auth.qr.renewed")}</p>
                     )}
                     {remainingMs !== null && (
-                      <span className="login-qr-countdown">
-                        {t("auth.qr.expiresIn", { time: formatCodeCountdown(remainingMs) })}
+                      // A code that ran out used to keep showing "残り 0:00",
+                      // which reads like a live countdown instead of telling the
+                      // visitor the code must be replaced.
+                      <span className={`login-qr-countdown${remainingMs <= 0 ? " is-expired" : ""}`}>
+                        {remainingMs > 0
+                          ? t("auth.qr.expiresIn", { time: formatCodeCountdown(remainingMs) })
+                          : t("auth.qr.codeExpired")}
                       </span>
                     )}
                     {qrLoginChallenge.verificationUri && (

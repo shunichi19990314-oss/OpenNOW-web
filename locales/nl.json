@@ -130,6 +130,9 @@
       "sessionRestored": "Sessie hersteld.",
       "noSavedSessionFound": "Geen opgeslagen sessie gevonden.",
       "sessionRestoreFailed": "Sessieherstel is mislukt. Meld u opnieuw aan."
+    },
+    "qr": {
+      "codeExpired": "Deze code is verlopen. Start een nieuwe aanmelding."
     }
   },
   "navigation": {

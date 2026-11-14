@@ -118,6 +118,7 @@
       "copyCode": "Copy code",
       "codeCopied": "Copied",
       "expiresIn": "Expires in {{time}}",
+      "codeExpired": "This code expired. Start a new sign-in to continue.",
       "enterCodeHint": "Or enter the code manually at {{uri}}",
       "expired": "Sign-in did not complete after several codes. Start a new sign-in to try again."
     },

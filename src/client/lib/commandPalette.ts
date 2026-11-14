@@ -44,6 +44,17 @@ export type CommandPaletteTranslate = (
 
 export const DEFAULT_GAME_LIMIT = 12;
 
+/**
+ * Upper bound on how many game entries the palette ever builds.
+ *
+ * The list is filtered *after* it is built, so capping at the first N games
+ * would make every title below that cut-off unsearchable even though the
+ * palette is the fastest way to reach them. Building a few hundred entries is
+ * cheap (strings only) and `filterCommandPaletteEntries` still limits what is
+ * rendered.
+ */
+export const MAX_GAME_LIMIT = 300;
+
 const PAGE_ICON_KEYWORDS: Record<string, string[]> = {
   home: ["home", "store", "catalog", "ホーム", "ストア"],
   library: ["library", "collection", "owned", "ライブラリ"],
@@ -70,7 +81,9 @@ export function buildCommandPaletteEntries(
 
   const ranked = rankGamesForPalette(context.games, context.playtime, context.favoriteIds);
   const favorites = new Set(context.favoriteIds);
-  for (const game of ranked.slice(0, Math.max(0, gameLimit))) {
+  // `gameLimit` is a search corpus bound, not a display limit: see MAX_GAME_LIMIT.
+  const corpusSize = Math.min(MAX_GAME_LIMIT, Math.max(0, gameLimit));
+  for (const game of ranked.slice(0, corpusSize)) {
     const lastPlayed = context.playtime[game.id]?.lastPlayedAt;
     const hintParts: string[] = [];
     if (favorites.has(game.id)) hintParts.push(t("commandPalette.hints.favorite"));
@@ -81,7 +94,7 @@ export function buildCommandPaletteEntries(
       group: gameGroup,
       label: game.title,
       hint: hintParts.length > 0 ? hintParts.join(" · ") : t("commandPalette.hints.play"),
-      keywords: [game.title.toLowerCase(), t("commandPalette.keywords.play"), "play", "起動"],
+      keywords: [foldForSearch(game.title), t("commandPalette.keywords.play"), "play", "起動"],
     });
   }
 
@@ -129,13 +142,29 @@ export function buildCommandPaletteEntries(
   return entries;
 }
 
+/**
+ * Lowercase for search comparisons.
+ *
+ * `toLowerCase` alone does not fold Turkish dotted/dotless i or the wider
+ * Latin-1 case pairs, and GFN titles are largely accented Latin, so a
+ * locale-aware fold keeps e.g. `Æther` findable by typing "æther". Engines
+ * without full ICU can throw on some locales, hence the fallback.
+ */
+export function foldForSearch(value: string): string {
+  try {
+    return value.toLocaleLowerCase();
+  } catch {
+    return value.toLowerCase();
+  }
+}
+
 function scoreEntry(entry: CommandPaletteEntry, query: string): number {
-  const label = entry.label.toLowerCase();
+  const label = foldForSearch(entry.label);
   if (label === query) return 100;
   if (label.startsWith(query)) return 80;
   if (label.includes(query)) return 60;
-  if (entry.keywords.some((keyword) => keyword.toLowerCase().startsWith(query))) return 40;
-  if (entry.keywords.some((keyword) => keyword.toLowerCase().includes(query))) return 20;
+  if (entry.keywords.some((keyword) => foldForSearch(keyword).startsWith(query))) return 40;
+  if (entry.keywords.some((keyword) => foldForSearch(keyword).includes(query))) return 20;
   return 0;
 }
 
@@ -149,7 +178,7 @@ export function filterCommandPaletteEntries(
   query: string,
   limit = 40,
 ): CommandPaletteEntry[] {
-  const normalized = query.trim().toLowerCase();
+  const normalized = foldForSearch(query.trim());
   if (!normalized) return entries.slice(0, limit);
 
   const scored = entries

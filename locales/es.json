@@ -130,6 +130,9 @@
       "sessionRestored": "Sesión restablecida.",
       "noSavedSessionFound": "No se encontró ninguna sesión guardada.",
       "sessionRestoreFailed": "Error al restaurar la sesión. Por favor inicia sesión nuevamente."
+    },
+    "qr": {
+      "codeExpired": "Este código ha caducado. Inicia un nuevo inicio de sesión."
     }
   },
   "navigation": {
