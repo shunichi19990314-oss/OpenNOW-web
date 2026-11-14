@@ -1,0 +1,114 @@
+name: Verify Render deploy
+
+# Confirms that a merge to main actually reached the Render service.
+#
+# Why not rely on the deploy hook alone: `render.yaml` already has
+# `autoDeploy: true`, so Render builds on every push to main. What is missing is
+# a *verification* step — nothing tells you when a deploy failed or when the
+# live service is still serving an older commit.
+#
+# This workflow asks the Render API (https://api.render.com/v1) which deploy
+# shipped the pushed commit, waits for it to finish, and then compares the live
+# `/api/health` commit against the pushed SHA. It fails loudly on drift.
+#
+# Required repository secrets (Settings -> Secrets and variables -> Actions):
+#   RENDER_API_KEY     Render API key (https://dashboard.render.com/u/settings?add-api-key)
+#   RENDER_SERVICE_ID  `srv-...` id, or a dashboard URL containing it
+# Optional repository variables:
+#   RENDER_HEALTH_URL  full health URL (defaults to the service URL reported by
+#                      the Render API, so usually unnecessary)
+#
+# Without RENDER_API_KEY the workflow exits successfully (skipped) instead of
+# failing every push, so forks and pre-setup clones stay green.
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      commit:
+        description: "Commit SHA to verify (defaults to the current main HEAD)"
+        required: false
+        type: string
+      wait:
+        description: "Wait for the deploy to finish"
+        required: false
+        default: true
+        type: boolean
+
+concurrency:
+  group: render-deploy-verify
+  cancel-in-progress: false
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Check configuration
+        id: config
+        env:
+          RENDER_API_KEY: ${{ secrets.RENDER_API_KEY }}
+          RENDER_SERVICE_ID: ${{ secrets.RENDER_SERVICE_ID }}
+        run: |
+          if [ -z "$RENDER_API_KEY" ] || [ -z "$RENDER_SERVICE_ID" ]; then
+            echo "::notice title=Render verification skipped::Set the RENDER_API_KEY and RENDER_SERVICE_ID repository secrets to enable deploy verification."
+            echo "configured=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          echo "configured=true" >> "$GITHUB_OUTPUT"
+
+      # The verification script only uses Node built-ins, so no `npm ci` is
+      # needed and the check stays fast (no dependency install on every merge).
+      - uses: actions/setup-node@v4
+        if: steps.config.outputs.configured == 'true'
+        with:
+          node-version: "22"
+
+      - name: Resolve target commit
+        if: steps.config.outputs.configured == 'true'
+        id: target
+        env:
+          INPUT_COMMIT: ${{ inputs.commit }}
+        run: |
+          COMMIT="${INPUT_COMMIT:-${GITHUB_SHA}}"
+          echo "commit=$COMMIT" >> "$GITHUB_OUTPUT"
+          echo "Verifying commit $COMMIT" >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Verify deploy reached production
+        if: steps.config.outputs.configured == 'true'
+        env:
+          RENDER_API_KEY: ${{ secrets.RENDER_API_KEY }}
+          RENDER_SERVICE_ID: ${{ secrets.RENDER_SERVICE_ID }}
+          RENDER_HEALTH_URL: ${{ vars.RENDER_HEALTH_URL }}
+          TARGET_COMMIT: ${{ steps.target.outputs.commit }}
+          SHOULD_WAIT: ${{ github.event_name == 'push' && 'yes' || inputs.wait }}
+        run: |
+          ARGS="--commit $TARGET_COMMIT"
+          if [ "$SHOULD_WAIT" = "yes" ] || [ "$SHOULD_WAIT" = "true" ]; then
+            ARGS="$ARGS --wait"
+          fi
+          # Tee to both the job log and the run summary so a failed build is
+          # readable from the PR/commit page without opening the Render dashboard.
+          set +e
+          node scripts/render-status.mjs $ARGS 2>&1 | tee render-verify.log
+          STATUS=${PIPESTATUS[0]}
+          set -e
+          {
+            echo '### Render deploy verification'
+            echo '```'
+            tail -n 40 render-verify.log
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+          exit $STATUS
+
+      - name: Upload verification log
+        if: always() && steps.config.outputs.configured == 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: render-verify-log
+          path: render-verify.log
+          retention-days: 7
+          if-no-files-found: ignore
