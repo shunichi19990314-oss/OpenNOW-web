@@ -168,6 +168,11 @@
       "playNow": "Play Now",
       "variant": "{{variant}}",
       "storeCount": "{{count}} stores"
+    },
+    "continuePlaying": {
+      "railTitle": "继续游玩",
+      "neverPlayed": "从未游玩",
+      "sessionCount": "{{count}} 次会话"
     }
   },
   "library": {
@@ -207,7 +212,11 @@
       "ownedGamesAppearHere": "您拥有的游戏将出现在这里。浏览目录查找游戏。",
       "noGamesFound": "没有找到游戏",
       "noGamesMatch": "没有游戏匹配“{{query}}”"
-    }
+    },
+    "filterOptions": {
+      "favorite": "收藏"
+    },
+    "totalPlaytime": "总游玩时间"
   },
   "gameCard": {
     "selectGame": "选择 {{title}}",
@@ -671,5 +680,92 @@
     "queueAdPlayTimeout": "广告播放超时",
     "queueAdVideoStuck": "广告视频卡住了",
     "queueAdUrlLoad": "加载网址时出错"
+  },
+  "commandPalette": {
+    "title": "命令面板",
+    "placeholder": "搜索游戏和命令…",
+    "clear": "清除搜索",
+    "close": "关闭命令面板",
+    "noResults": "没有匹配项",
+    "noResultsHint": "试试游戏名称、页面或命令名称。",
+    "groups": {
+      "games": "游戏",
+      "navigate": "导航",
+      "stream": "串流中",
+      "actions": "操作"
+    },
+    "pages": {
+      "home": "前往主页",
+      "library": "前往库",
+      "settings": "打开设置"
+    },
+    "stream": {
+      "toggleStats": "切换性能统计",
+      "toggleMicrophone": "切换麦克风",
+      "toggleFullscreen": "切换全屏",
+      "toggleAntiAfk": "切换防挂机",
+      "stop": "结束串流"
+    },
+    "actions": {
+      "captureMouse": "捕获鼠标",
+      "captureMouseHint": "锁定指针以便游戏输入"
+    },
+    "hints": {
+      "play": "启动",
+      "favorite": "收藏",
+      "recent": "最近游玩"
+    },
+    "keywords": {
+      "play": "启动"
+    },
+    "footer": {
+      "navigate": "移动",
+      "run": "执行",
+      "close": "关闭"
+    }
+  },
+  "streamTuning": {
+    "title": "自动画质调优",
+    "description": "测量网络、屏幕和编解码器支持，并应用合适的配置。",
+    "run": "分析连接",
+    "rerun": "重新分析",
+    "running": "正在分析…",
+    "failed": "测量失败，请检查网络后重试。",
+    "score": "{{score}} / 100",
+    "unavailable": "不可用",
+    "udpOk": "UDP 可用",
+    "udpTcpFallback": "仅 TCP 回退",
+    "limiting": "瓶颈",
+    "changesTitle": "建议的更改",
+    "apply": "应用",
+    "applied": "已应用",
+    "applyHint": "将更改 {{count}} 项设置。",
+    "appliedHint": "串流设置已更新。",
+    "alreadyOptimal": "当前设置已适合此连接。",
+    "howItWorks": "工作原理",
+    "howItWorksBody": "浏览器会测量延迟、下载速度、WebRTC 候选和编解码器支持。分辨率和帧率取屏幕与网络两者中较低的一方，只有在浏览器能够解码时才会推荐相应编解码器。",
+    "currentProfile": "当前：{{resolution}} · {{fps}} fps · {{bitrate}} Mbps · {{codec}}",
+    "fields": {
+      "resolution": "分辨率",
+      "fps": "帧率",
+      "maxBitrateMbps": "码率",
+      "codec": "编解码器",
+      "colorQuality": "色彩质量"
+    },
+    "grade": {
+      "excellent": "极佳",
+      "good": "良好",
+      "fair": "一般",
+      "weak": "较弱",
+      "poor": "很差",
+      "unknown": "未测量"
+    },
+    "limitingFactor": {
+      "none": "没有明显瓶颈",
+      "latency": "延迟",
+      "throughput": "下载速度",
+      "network": "网络路径",
+      "unknown": "未知"
+    }
   }
 }

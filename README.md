@@ -15,6 +15,9 @@ The client UI is the official OpenNOW renderer copied from `OpenNOW/opennow-stab
 - The session layer is stateless: any server instance can handle any visitor when every instance uses the same `SESSION_SECRET`.
 - Game video, audio, keyboard, mouse, and controller input use browser WebRTC.
 - Region latency is measured from each visitor's browser with bounded HTTPS checks; unreachable regions remain selectable and show a neutral unavailable state.
+- A command palette (`Ctrl`/`⌘` + `K`) launches games and navigates without leaving the keyboard, and works mid-stream; game input is paused while it is open.
+- The home page resumes play quickly: a "Continue playing" rail lists recently played games with total playtime, and favorites stay pinned to the front of the library grid.
+- "Automatic quality tuning" in the video settings reuses the connection test to measure latency, throughput, WebRTC candidates and codec support, then proposes a full profile (resolution, fps, bitrate, codec, color quality) and applies it on review.
 - NVIDIA signaling is relayed through an ownership-checked same-origin WebSocket.
 - Electron updates, native streaming, local media recording, Discord RPC, and desktop window controls are not part of the web app.
 

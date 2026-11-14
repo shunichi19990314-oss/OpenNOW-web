@@ -168,6 +168,11 @@
       "playNow": "Play Now",
       "variant": "{{variant}}",
       "storeCount": "{{count}} stores"
+    },
+    "continuePlaying": {
+      "railTitle": "Reprendre une partie",
+      "neverPlayed": "Jamais joué",
+      "sessionCount": "{{count}} sessions"
     }
   },
   "library": {
@@ -207,7 +212,11 @@
       "ownedGamesAppearHere": "Les jeux que vous possédez apparaîtront ici. Parcourez le catalogue pour trouver des jeux.",
       "noGamesFound": "Aucun jeu trouvé",
       "noGamesMatch": "Aucun jeu ne correspond à \"{{query}}\""
-    }
+    },
+    "filterOptions": {
+      "favorite": "Favoris"
+    },
+    "totalPlaytime": "Temps de jeu total"
   },
   "gameCard": {
     "selectGame": "Sélectionnez {{title}}",
@@ -671,5 +680,92 @@
     "queueAdPlayTimeout": "Délai d'expiration de la diffusion de l'annonce",
     "queueAdVideoStuck": "La vidéo publicitaire est bloquée",
     "queueAdUrlLoad": "Erreur de chargement de l'URL"
+  },
+  "commandPalette": {
+    "title": "Palette de commandes",
+    "placeholder": "Rechercher jeux et commandes…",
+    "clear": "Effacer la recherche",
+    "close": "Fermer la palette",
+    "noResults": "Aucun résultat",
+    "noResultsHint": "Essayez un titre de jeu, une page ou une commande.",
+    "groups": {
+      "games": "Jeux",
+      "navigate": "Navigation",
+      "stream": "En session",
+      "actions": "Actions"
+    },
+    "pages": {
+      "home": "Aller à l’accueil",
+      "library": "Aller à la bibliothèque",
+      "settings": "Ouvrir les réglages"
+    },
+    "stream": {
+      "toggleStats": "Basculer les statistiques",
+      "toggleMicrophone": "Basculer le micro",
+      "toggleFullscreen": "Basculer le plein écran",
+      "toggleAntiAfk": "Basculer l’anti-AFK",
+      "stop": "Terminer la session"
+    },
+    "actions": {
+      "captureMouse": "Capturer la souris",
+      "captureMouseHint": "Verrouille le pointeur pour le jeu"
+    },
+    "hints": {
+      "play": "Lancer",
+      "favorite": "Favori",
+      "recent": "Joué récemment"
+    },
+    "keywords": {
+      "play": "lancer"
+    },
+    "footer": {
+      "navigate": "naviguer",
+      "run": "exécuter",
+      "close": "fermer"
+    }
+  },
+  "streamTuning": {
+    "title": "Réglage automatique de la qualité",
+    "description": "Mesure la connexion, l’écran et la prise en charge des codecs, puis applique un profil adapté.",
+    "run": "Analyser la connexion",
+    "rerun": "Analyser à nouveau",
+    "running": "Analyse…",
+    "failed": "La mesure a échoué. Vérifiez votre réseau.",
+    "score": "{{score}} / 100",
+    "unavailable": "Indisponible",
+    "udpOk": "UDP disponible",
+    "udpTcpFallback": "Repli TCP uniquement",
+    "limiting": "Facteur limitant",
+    "changesTitle": "Modifications suggérées",
+    "apply": "Appliquer",
+    "applied": "Appliqué",
+    "applyHint": "{{count}} réglages vont changer.",
+    "appliedHint": "Vos réglages de diffusion ont été mis à jour.",
+    "alreadyOptimal": "Vos réglages correspondent déjà à cette connexion.",
+    "howItWorks": "Comment ça marche",
+    "howItWorksBody": "La latence, le débit descendant, les candidats WebRTC et la prise en charge des codecs sont mesurés dans votre navigateur. La résolution et les FPS suivent le plus faible de l’écran ou de la connexion, et un codec n’est proposé que si ce navigateur peut le décoder.",
+    "currentProfile": "Actuel : {{resolution}} · {{fps}} fps · {{bitrate}} Mbps · {{codec}}",
+    "fields": {
+      "resolution": "Résolution",
+      "fps": "Fréquence d’images",
+      "maxBitrateMbps": "Débit",
+      "codec": "Codec",
+      "colorQuality": "Qualité des couleurs"
+    },
+    "grade": {
+      "excellent": "Excellente",
+      "good": "Bonne",
+      "fair": "Moyenne",
+      "weak": "Faible",
+      "poor": "Mauvaise",
+      "unknown": "Non mesurée"
+    },
+    "limitingFactor": {
+      "none": "Rien d’important",
+      "latency": "Latence",
+      "throughput": "Débit descendant",
+      "network": "Chemin réseau",
+      "unknown": "Inconnu"
+    }
   }
 }

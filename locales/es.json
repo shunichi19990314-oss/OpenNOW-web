@@ -168,6 +168,11 @@
       "playNow": "Play Now",
       "variant": "{{variant}}",
       "storeCount": "{{count}} stores"
+    },
+    "continuePlaying": {
+      "railTitle": "Continuar jugando",
+      "neverPlayed": "Nunca jugado",
+      "sessionCount": "{{count}} sesiones"
     }
   },
   "library": {
@@ -207,7 +212,11 @@
       "ownedGamesAppearHere": "Los juegos que posees aparecerán aquí. Explora el catálogo para encontrar juegos.",
       "noGamesFound": "No se encontraron juegos",
       "noGamesMatch": "Ningún juego coincide con \"{{query}}\""
-    }
+    },
+    "filterOptions": {
+      "favorite": "Favoritos"
+    },
+    "totalPlaytime": "Tiempo total jugado"
   },
   "gameCard": {
     "selectGame": "Seleccione {{title}}",
@@ -671,5 +680,92 @@
     "queueAdPlayTimeout": "Tiempo de espera de reproducción de anuncios",
     "queueAdVideoStuck": "El vídeo del anuncio está bloqueado.",
     "queueAdUrlLoad": "Error al cargar la URL"
+  },
+  "commandPalette": {
+    "title": "Paleta de comandos",
+    "placeholder": "Buscar juegos y comandos…",
+    "clear": "Borrar búsqueda",
+    "close": "Cerrar la paleta de comandos",
+    "noResults": "Sin resultados",
+    "noResultsHint": "Prueba con un título, una página o un comando.",
+    "groups": {
+      "games": "Juegos",
+      "navigate": "Navegación",
+      "stream": "En la sesión",
+      "actions": "Acciones"
+    },
+    "pages": {
+      "home": "Ir al inicio",
+      "library": "Ir a la biblioteca",
+      "settings": "Abrir ajustes"
+    },
+    "stream": {
+      "toggleStats": "Alternar estadísticas",
+      "toggleMicrophone": "Alternar micrófono",
+      "toggleFullscreen": "Alternar pantalla completa",
+      "toggleAntiAfk": "Alternar anti-AFK",
+      "stop": "Finalizar sesión"
+    },
+    "actions": {
+      "captureMouse": "Capturar el ratón",
+      "captureMouseHint": "Bloquea el puntero para jugar"
+    },
+    "hints": {
+      "play": "Jugar",
+      "favorite": "Favorito",
+      "recent": "Jugado recientemente"
+    },
+    "keywords": {
+      "play": "jugar"
+    },
+    "footer": {
+      "navigate": "navegar",
+      "run": "ejecutar",
+      "close": "cerrar"
+    }
+  },
+  "streamTuning": {
+    "title": "Ajuste automático de calidad",
+    "description": "Mide la conexión, la pantalla y la compatibilidad de códecs y aplica un perfil adecuado.",
+    "run": "Analizar conexión",
+    "rerun": "Analizar de nuevo",
+    "running": "Analizando…",
+    "failed": "La medición falló. Revisa tu red e inténtalo otra vez.",
+    "score": "{{score}} / 100",
+    "unavailable": "No disponible",
+    "udpOk": "UDP disponible",
+    "udpTcpFallback": "Solo reserva TCP",
+    "limiting": "Limitante",
+    "changesTitle": "Cambios sugeridos",
+    "apply": "Aplicar",
+    "applied": "Aplicado",
+    "applyHint": "Se cambiarán {{count}} ajustes.",
+    "appliedHint": "Se actualizaron tus ajustes de transmisión.",
+    "alreadyOptimal": "Tus ajustes actuales ya coinciden con esta conexión.",
+    "howItWorks": "Cómo funciona",
+    "howItWorksBody": "Se miden la latencia, la velocidad de descarga, los candidatos WebRTC y la compatibilidad de códecs en tu navegador. La resolución y los FPS siguen el valor más bajo entre tu pantalla y tu conexión, y solo se recomienda un códec que este navegador pueda decodificar.",
+    "currentProfile": "Actual: {{resolution}} · {{fps}} fps · {{bitrate}} Mbps · {{codec}}",
+    "fields": {
+      "resolution": "Resolución",
+      "fps": "Fotogramas",
+      "maxBitrateMbps": "Tasa de bits",
+      "codec": "Códec",
+      "colorQuality": "Calidad de color"
+    },
+    "grade": {
+      "excellent": "Excelente",
+      "good": "Buena",
+      "fair": "Normal",
+      "weak": "Débil",
+      "poor": "Mala",
+      "unknown": "Sin medir"
+    },
+    "limitingFactor": {
+      "none": "Nada importante",
+      "latency": "Latencia",
+      "throughput": "Velocidad de descarga",
+      "network": "Ruta de red",
+      "unknown": "Desconocido"
+    }
   }
 }
