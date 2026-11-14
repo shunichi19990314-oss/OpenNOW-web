@@ -139,11 +139,30 @@ function gameHasLibraryActivity(game: GameInfo, playtimeData: PlaytimeData): boo
   return Boolean(record.lastPlayedAt) || (record.totalSeconds ?? 0) > 0 || (record.sessionCount ?? 0) > 0;
 }
 
-export function getLibraryFilterGroups(games: GameInfo[], playtimeData: PlaytimeData, t: LibraryTranslation): LibraryFilterGroup[] {
+export const FAVORITE_ACTIVITY_FILTER_ID = "activity:favorite";
+
+export function getLibraryFilterGroups(
+  games: GameInfo[],
+  playtimeData: PlaytimeData,
+  t: LibraryTranslation,
+  favoriteIds: readonly string[] = [],
+): LibraryFilterGroup[] {
   const playTypeOptions = new Map<string, LibraryFilterOption>();
   const platformOptions = new Map<string, LibraryFilterOption>();
   const controlOptions = new Map<string, LibraryFilterOption>();
   const activityOptions = new Map<string, LibraryFilterOption>();
+
+  const favorites = new Set(favoriteIds);
+  const favoriteCount = favoriteIds.length > 0
+    ? games.filter((game) => favorites.has(game.id)).length
+    : 0;
+  if (favoriteCount > 0) {
+    activityOptions.set(FAVORITE_ACTIVITY_FILTER_ID, {
+      id: FAVORITE_ACTIVITY_FILTER_ID,
+      label: t("library.filterOptions.favorite"),
+      count: favoriteCount,
+    });
+  }
 
   for (const game of games) {
     const playTypeOption = getGamePlayTypeFilter(game, t);
@@ -178,7 +197,13 @@ function getLibraryFilterGroupId(filterId: string): string {
   return separatorIndex >= 0 ? filterId.slice(0, separatorIndex) : filterId;
 }
 
-export function gameMatchesLibraryFilter(game: GameInfo, filterId: string, playtimeData: PlaytimeData, t: LibraryTranslation): boolean {
+export function gameMatchesLibraryFilter(
+  game: GameInfo,
+  filterId: string,
+  playtimeData: PlaytimeData,
+  t: LibraryTranslation,
+  favoriteIds: readonly string[] = [],
+): boolean {
   const [groupId, value] = filterId.split(":");
   if (!value) return true;
 
@@ -195,6 +220,7 @@ export function gameMatchesLibraryFilter(game: GameInfo, filterId: string, playt
   }
 
   if (groupId === "activity") {
+    if (value === "favorite") return favoriteIds.includes(game.id);
     const hasActivity = gameHasLibraryActivity(game, playtimeData);
     return value === "played" ? hasActivity : !hasActivity;
   }
@@ -202,7 +228,13 @@ export function gameMatchesLibraryFilter(game: GameInfo, filterId: string, playt
   return true;
 }
 
-export function gameMatchesLibraryFilters(game: GameInfo, selectedFilterIds: string[], playtimeData: PlaytimeData, t: LibraryTranslation): boolean {
+export function gameMatchesLibraryFilters(
+  game: GameInfo,
+  selectedFilterIds: string[],
+  playtimeData: PlaytimeData,
+  t: LibraryTranslation,
+  favoriteIds: readonly string[] = [],
+): boolean {
   if (selectedFilterIds.length === 0) return true;
   const selectedByGroup = new Map<string, string[]>();
   for (const filterId of selectedFilterIds) {
@@ -210,7 +242,7 @@ export function gameMatchesLibraryFilters(game: GameInfo, selectedFilterIds: str
     selectedByGroup.set(groupId, [...(selectedByGroup.get(groupId) ?? []), filterId]);
   }
   for (const groupFilterIds of selectedByGroup.values()) {
-    if (!groupFilterIds.some((filterId) => gameMatchesLibraryFilter(game, filterId, playtimeData, t))) return false;
+    if (!groupFilterIds.some((filterId) => gameMatchesLibraryFilter(game, filterId, playtimeData, t, favoriteIds))) return false;
   }
   return true;
 }

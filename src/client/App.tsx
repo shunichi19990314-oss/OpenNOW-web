@@ -35,6 +35,8 @@ import {
 } from "@shared/gfn";
 import { GfnWebRtcClient, type VirtualGamepadFrame } from "./platforms/gfn/webrtcClient";
 import { formatShortcutForDisplay, isShortcutMatch, normalizeShortcut } from "./shortcuts";
+import { isCommandPaletteShortcut } from "./lib/commandPaletteShortcut";
+import type { CommandPaletteEntry } from "./lib/commandPalette";
 import { dispatchStreamShortcutAction } from "./streamShortcutActions";
 import { useElapsedSeconds } from "./utils/useElapsedSeconds";
 import { useAuthSession } from "./hooks/useAuthSession";
@@ -134,6 +136,7 @@ import { SettingsModalHost } from "./components/SettingsModalHost";
 import { StreamLoading } from "./components/StreamLoading";
 import { StreamView } from "./components/StreamView";
 import { QueueServerSelectModal } from "./components/QueueServerSelectModal";
+import { CommandPalette } from "./components/CommandPalette";
 import { ReleaseHighlightsModal } from "./components/ReleaseHighlightsModal";
 import { overlayMotion, pageTransition, standardEase } from "./components/MotionProvider";
 import { LazyShaderAtmosphere } from "./components/LazyShaderAtmosphere";
@@ -190,6 +193,12 @@ export function App(): JSX.Element {
   const [currentPage, setCurrentPage] = useState<AppPage>("home");
   const [pageBeforeSettings, setPageBeforeSettings] = useState<AppPage>("home");
   const [settingsMounted, setSettingsMounted] = useState(false);
+  // Ctrl/⌘+K command palette
+  const [commandPaletteOpen, setCommandPaletteOpen] = useState(false);
+  // The palette can also be summoned mid-stream. The in-game keyboard handler
+  // forwards every key to the remote rig, so streaming input is paused while
+  // the palette is open and restored to its previous state on close.
+  const streamInputPausedForPaletteRef = useRef<{ wasPaused: boolean } | null>(null);
   const [sessionFullscreen, setSessionFullscreenState] = useState(false);
 
   // Settings State
@@ -3650,6 +3659,22 @@ export function App(): JSX.Element {
   // Keyboard shortcuts
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
+      // The command palette shortcut must work from any focus position,
+      // including search fields, so it is checked before the typing guard.
+      if (isCommandPaletteShortcut(e)) {
+        e.preventDefault();
+        e.stopPropagation();
+        e.stopImmediatePropagation();
+        if (streamStatus === "idle" || Boolean(sessionRef.current)) {
+          setCommandPaletteOpen(true);
+        }
+        return;
+      }
+      if (commandPaletteOpen) {
+        // The palette owns its own keys (arrows, Enter, Escape).
+        return;
+      }
+
       const target = e.target as HTMLElement | null;
       const isTyping = !!target && (
         target.tagName === "INPUT" ||
@@ -3750,6 +3775,7 @@ export function App(): JSX.Element {
     window.addEventListener("keydown", handleKeyDown, true);
     return () => window.removeEventListener("keydown", handleKeyDown, true);
   }, [
+    commandPaletteOpen,
     exitPrompt.open,
     handleExitPromptCancel,
     handleExitPromptConfirm,
@@ -3813,6 +3839,99 @@ export function App(): JSX.Element {
     setCurrentPage(pageBeforeSettings);
   }, [pageBeforeSettings]);
 
+  // Command palette: available on every catalog page, never inside a launch
+  // overlay or the login screen (both render an early return above).
+  const commandPalettePages = useMemo(
+    () => ["home", "library", "settings"] as const,
+    [],
+  );
+  const commandPaletteContext = useMemo(() => ({
+    games: allKnownGames,
+    playtime,
+    favoriteIds: settings.favoriteGameIds,
+    canStream: streamStatus === "connecting" || streamStatus === "streaming",
+    isStreaming: streamStatus === "streaming",
+    pages: commandPalettePages,
+  }), [
+    allKnownGames,
+    commandPalettePages,
+    playtime,
+    settings.favoriteGameIds,
+    streamStatus,
+  ]);
+
+  const handleRunCommandPaletteEntry = useCallback((entry: CommandPaletteEntry): void => {
+    if (entry.kind === "page") {
+      const page = entry.id.slice("page:".length) as AppPage;
+      handleNavigate(page);
+      return;
+    }
+    if (entry.kind === "game") {
+      const gameId = entry.id.slice("game:".length);
+      const game = allKnownGames.find((candidate) => candidate.id === gameId);
+      if (!game) return;
+      setSelectedGameId(game.id);
+      void handleInitiatePlay(game);
+      return;
+    }
+    if (entry.kind === "action") {
+      if (entry.id === "action:resumePointerLock") {
+        handleRequestPointerLock();
+      }
+      return;
+    }
+    // Stream commands map onto the same actions the in-stream shortcuts use,
+    // so the palette can never drift from keyboard behavior.
+    const command = entry.id.slice("stream:".length);
+    switch (command) {
+      case "toggleStats":
+        handleStreamShortcutAction("toggleStats");
+        return;
+      case "toggleMicrophone":
+        handleStreamShortcutAction("toggleMicrophone");
+        return;
+      case "toggleFullscreen":
+        handleStreamShortcutAction("toggleFullscreen");
+        return;
+      case "toggleAntiAfk":
+        handleStreamShortcutAction("toggleAntiAfk");
+        return;
+      case "stop":
+        void handlePromptedStopStream();
+        return;
+      default:
+        return;
+    }
+  }, [
+    allKnownGames,
+    handleInitiatePlay,
+    handleNavigate,
+    handlePromptedStopStream,
+    handleRequestPointerLock,
+    handleStreamShortcutAction,
+  ]);
+
+  // While the palette is open the remote game must not receive the keys the
+  // visitor types into it. GfnWebRtcClient exposes `inputPaused` for exactly
+  // this overlay case, so we borrow it and restore whatever it was before.
+  useEffect(() => {
+    const client = clientRef.current;
+    if (!client) return undefined;
+    if (commandPaletteOpen) {
+      if (streamInputPausedForPaletteRef.current === null) {
+        streamInputPausedForPaletteRef.current = { wasPaused: client.inputPaused };
+        client.inputPaused = true;
+      }
+      return undefined;
+    }
+    const previous = streamInputPausedForPaletteRef.current;
+    streamInputPausedForPaletteRef.current = null;
+    if (previous) {
+      client.inputPaused = previous.wasPaused;
+    }
+    return undefined;
+  }, [commandPaletteOpen]);
+
   const handleOpenWhatsNew = useCallback((): void => {
     // Fetch current-version highlights and open modal in manual mode (no auto-ack)
     void window.openNow.getReleaseHighlights()
@@ -3875,6 +3994,16 @@ export function App(): JSX.Element {
       </>
     );
   }
+
+  // Rendered in both shells (catalog and stream) so Ctrl/⌘+K works mid-session.
+  const commandPaletteElement = (
+    <CommandPalette
+      open={commandPaletteOpen}
+      onClose={() => setCommandPaletteOpen(false)}
+      context={commandPaletteContext}
+      onRun={handleRunCommandPaletteEntry}
+    />
+  );
 
   const showLaunchOverlay = streamStatus !== "idle" || launchError !== null;
   const hasActiveStreamView = streamStatus !== "idle";
@@ -3969,6 +4098,7 @@ export function App(): JSX.Element {
             onVideoShaderChange={handleVideoShaderChange}
           />
         )}
+        {commandPaletteElement}
         <AnimatePresence>
           {showDesktopLaunchLoading && (
             <m.div
@@ -4103,6 +4233,7 @@ export function App(): JSX.Element {
                 sortOptions={catalogSortOptions}
                 selectedSortId={catalogSelectedSortId}
                 onSortChange={setCatalogSelectedSortId}
+                playtimeData={playtime}
                 totalCount={catalogTotalCount}
                 supportedCount={catalogSupportedCount}
                 controllerMode={effectiveControllerMode}
@@ -4169,6 +4300,7 @@ export function App(): JSX.Element {
           />
         )}
       </SettingsModalHost>
+      {commandPaletteElement}
       {logoutConfirmModal}
       {removeAccountConfirmModal}
       {queueModalGame && streamStatus === "idle" && (

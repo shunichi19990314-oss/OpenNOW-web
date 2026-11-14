@@ -19,6 +19,7 @@ import {
 import { isZortosCommunityProxyUrl, ZORTOS_GITHUB_SPONSORS_URL } from "@shared/communityProxy";
 import { getCodecDecodeBadgeState, shouldShowLinuxHardwareCodecHint, type CodecTestResult } from "../../../lib/codecDiagnostics";
 import { runConnectionTest, type ConnectionTestReport, type ConnectionTestStatus } from "../../../lib/connectionTest";
+import { StreamAutoTunePanel } from "../../StreamAutoTunePanel";
 import { useTranslation } from "../../../i18n";
 import {
   clearStoredRegionPingResults,
@@ -676,6 +677,43 @@ export function SettingsStreamSection({
                 <span className="settings-toggle-track" />
               </label>
             </div>
+
+            {showStreamVideo && (
+              <div className="settings-row settings-row--column">
+                <StreamAutoTunePanel
+                  regions={regions}
+                  selectedRegionUrl={settings.region.trim() || null}
+                  codecResults={codecResults}
+                  current={{
+                    resolution: settings.resolution,
+                    fps: settings.fps,
+                    maxBitrateMbps: settings.maxBitrateMbps,
+                    codec: settings.codec,
+                    colorQuality: settings.colorQuality,
+                  }}
+                  onApply={(changes) => {
+                    for (const change of changes) {
+                      if (change.key === "resolution") {
+                        handleResolutionChange(String(change.to));
+                      } else if (change.key === "fps") {
+                        handleChange("fps", Number(change.to));
+                      } else if (change.key === "maxBitrateMbps") {
+                        handleChange("maxBitrateMbps", Number(change.to));
+                      } else if (change.key === "codec") {
+                        const nextCodec = change.to as Settings["codec"];
+                        handleChange("codec", nextCodec);
+                        // H.264 cannot carry 4:4:4 / 10-bit modes; keep the pair valid.
+                        if (nextCodec === "H264" && settings.colorQuality !== "8bit_420") {
+                          handleChange("colorQuality", "8bit_420");
+                        }
+                      } else if (change.key === "colorQuality") {
+                        handleChange("colorQuality", change.to as ColorQuality);
+                      }
+                    }
+                  }}
+                />
+              </div>
+            )}
 
             <div className="settings-row settings-row--column settings-row--connection-test">
               <label className="settings-label settings-label--with-icon">

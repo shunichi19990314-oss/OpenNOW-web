@@ -197,7 +197,10 @@
     },
     "continuePlaying": {
       "kicker": "Continue playing",
-      "play": "Play"
+      "play": "Play",
+      "railTitle": "Continue playing",
+      "neverPlayed": "Never played",
+      "sessionCount": "{{count}} sessions"
     },
     "hero": {
       "play": "Play",
@@ -254,7 +257,8 @@
       "controller": "Controller",
       "touch": "Touch",
       "played": "Played",
-      "neverPlayed": "Never Played"
+      "neverPlayed": "Never Played",
+      "favorite": "Favorites"
     },
     "lastPlayed": {
       "never": "Never played",
@@ -274,7 +278,8 @@
       "tryAdjustingFilters": "Try clearing a filter or changing your search."
     },
     "gameDetails": "Game details",
-    "descriptionUnavailable": "A Japanese description for this game is not currently available."
+    "descriptionUnavailable": "A Japanese description for this game is not currently available.",
+    "totalPlaytime": "Total playtime"
   },
   "gameCard": {
     "selectGame": "Select {{title}}",
@@ -1142,6 +1147,93 @@
       "error": "Playback error",
       "errorMsg": "Media failed to load.",
       "titleAdvertisement": "{{title}} advertisement"
+    }
+  },
+  "commandPalette": {
+    "title": "Command palette",
+    "placeholder": "Search games and commands…",
+    "clear": "Clear search",
+    "close": "Close command palette",
+    "noResults": "No matches",
+    "noResultsHint": "Try a game title, page or command name.",
+    "groups": {
+      "games": "Games",
+      "navigate": "Navigate",
+      "stream": "In-stream",
+      "actions": "Actions"
+    },
+    "pages": {
+      "home": "Go to Home",
+      "library": "Go to Library",
+      "settings": "Open Settings"
+    },
+    "stream": {
+      "toggleStats": "Toggle performance stats",
+      "toggleMicrophone": "Toggle microphone",
+      "toggleFullscreen": "Toggle fullscreen",
+      "toggleAntiAfk": "Toggle anti-AFK",
+      "stop": "End stream"
+    },
+    "actions": {
+      "captureMouse": "Capture mouse",
+      "captureMouseHint": "Lock the pointer for game input"
+    },
+    "hints": {
+      "play": "Play",
+      "favorite": "Favorite",
+      "recent": "Recently played"
+    },
+    "keywords": {
+      "play": "play"
+    },
+    "footer": {
+      "navigate": "navigate",
+      "run": "run",
+      "close": "close"
+    }
+  },
+  "streamTuning": {
+    "title": "Automatic quality tuning",
+    "description": "Measure your connection, panel and codec support, then apply a profile that fits them.",
+    "run": "Analyze connection",
+    "rerun": "Analyze again",
+    "running": "Analyzing…",
+    "failed": "The measurement failed. Check your network and try again.",
+    "score": "{{score}} / 100",
+    "unavailable": "Unavailable",
+    "udpOk": "UDP available",
+    "udpTcpFallback": "TCP fallback only",
+    "limiting": "Limiting factor",
+    "changesTitle": "Suggested changes",
+    "apply": "Apply",
+    "applied": "Applied",
+    "applyHint": "{{count}} settings will change.",
+    "appliedHint": "Your stream settings were updated.",
+    "alreadyOptimal": "Your current settings already match this connection.",
+    "howItWorks": "How this works",
+    "howItWorksBody": "Latency, download speed, WebRTC candidates and codec support are measured in your browser. Resolution and frame rate follow the weaker of your panel and your link, and a codec is only recommended when this browser can decode it.",
+    "currentProfile": "Current: {{resolution}} · {{fps}} fps · {{bitrate}} Mbps · {{codec}}",
+    "fields": {
+      "resolution": "Resolution",
+      "fps": "Frame rate",
+      "maxBitrateMbps": "Bitrate",
+      "codec": "Codec",
+      "colorQuality": "Color quality"
+    },
+    "grade": {
+      "excellent": "Excellent",
+      "good": "Good",
+      "fair": "Fair",
+      "weak": "Weak",
+      "poor": "Poor",
+      "unknown": "Not measured"
+    },
+    "limitingFactor": {
+      "none": "Nothing significant",
+      "latency": "Latency",
+      "throughput": "Download speed",
+      "network": "Network path",
+      "unknown": "Unknown"
     }
   }
 }
