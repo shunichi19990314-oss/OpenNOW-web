@@ -27,8 +27,12 @@ export function SettingsInterfaceSection({ settings, showAll, handleChange, onSa
   const accentColorDropdownRef = useRef<HTMLDivElement | null>(null);
   const posterSizePercent = Math.round(settings.posterSizeScale * 100);
 
+  // Sort by the endonym the visitor actually reads, not by locale code: the
+  // previous order interleaved scripts (日本語, 한국어 before Nederlands).
   const appLanguageOptions = useMemo(
-    () => availableLocales.map((value) => ({ value, label: getAppLanguageLabel(value) })),
+    () => availableLocales
+      .map((value) => ({ value, label: getAppLanguageLabel(value) }))
+      .sort((left, right) => left.label.localeCompare(right.label)),
     [availableLocales],
   );
 

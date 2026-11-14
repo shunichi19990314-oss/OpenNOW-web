@@ -89,11 +89,25 @@ function getBrowserLocaleCandidates(): string[] {
     .map(normalizeLocale);
 }
 
+/**
+ * Decide the locale for the first paint.
+ *
+ * OpenNOW's web UI is Japanese-first, so the browser language is deliberately
+ * ignored. But an explicit choice made in Settings must survive a reload —
+ * otherwise the language dropdown silently resets to Japanese on every visit.
+ * Unknown or removed locales fall back instead of leaving the UI half-translated.
+ */
+export function resolveInitialLocale(
+  storedRaw: string | null,
+  available: readonly string[] = getAvailableLocales(),
+): string {
+  if (!storedRaw) return FALLBACK_LOCALE;
+  const normalized = normalizeLocale(storedRaw);
+  return available.includes(normalized) ? normalized : FALLBACK_LOCALE;
+}
+
 function getInitialLocale(): string {
-  // OpenNOW's web UI is Japanese-first. Keep an explicitly selected locale
-  // available through setLocale(), but do not let browser preferences or an
-  // old English value silently change the initial product language.
-  return FALLBACK_LOCALE;
+  return resolveInitialLocale(readStoredLocale());
 }
 
 function parseLocaleJson(locale: string, raw: string): TranslationTree | null {
@@ -177,14 +191,33 @@ export function getLocale(): string {
   return activeLocale;
 }
 
+/**
+ * Locales that ship a translation file, ordered by display label (the settings
+ * formatter supplies the endonyms). Derived from the same glob the loader uses,
+ * so adding `locales/xx.json` is enough to make it selectable.
+ */
 export function getAvailableLocales(): string[] {
-  return [FALLBACK_LOCALE];
+  const locales = new Set<string>([FALLBACK_LOCALE]);
+  for (const path of Object.keys(localeSources)) {
+    const locale = localeFromPath(path);
+    if (locale) locales.add(locale);
+  }
+  return [...locales].sort((left, right) => left.localeCompare(right));
 }
 
-export async function setLocale(_locale: string): Promise<void> {
-  const translations = loadTranslations(FALLBACK_LOCALE);
-  writeStoredLocale(FALLBACK_LOCALE);
-  setActiveTranslations(FALLBACK_LOCALE, translations);
+export async function setLocale(locale: string): Promise<void> {
+  const normalized = normalizeLocale(locale);
+  const translations = loadTranslations(normalized);
+  // An unknown locale (hand-edited storage, removed file) must not leave the UI
+  // half-translated: fall back to the default and remember that instead.
+  if (translations === null && normalized !== FALLBACK_LOCALE) {
+    console.warn(`[i18n] Locale "${locale}" has no translation file; keeping ${FALLBACK_LOCALE}.`);
+    writeStoredLocale(FALLBACK_LOCALE);
+    setActiveTranslations(FALLBACK_LOCALE, fallbackTree);
+    return;
+  }
+  writeStoredLocale(normalized);
+  setActiveTranslations(normalized, translations);
 }
 
 export async function initializeLocale(): Promise<void> {

@@ -7,6 +7,7 @@ import {
   buildCommandPaletteEntries,
   filterCommandPaletteEntries,
   groupCommandPaletteEntries,
+  MAX_GAME_LIMIT,
   type CommandPaletteContext,
   type CommandPaletteEntry,
 } from "../lib/commandPalette";
@@ -27,6 +28,25 @@ const KIND_ICONS = {
   action: Sparkles,
 } as const;
 
+const FOCUSABLE_SELECTOR = [
+  "button:not([disabled]):not([tabindex='-1'])",
+  "input:not([disabled])",
+  "[href]",
+  "[tabindex]:not([tabindex='-1'])",
+].join(",");
+
+/**
+ * True while an IME composition is in progress.
+ *
+ * This app is Japanese-first and the palette input is a normal text field, so
+ * Enter is used to *commit* a conversion. Without this guard, picking a
+ * candidate among search results would launch a game or stop the stream.
+ */
+function isComposing(event: ReactKeyboardEvent<HTMLElement>): boolean {
+  const native = event.nativeEvent as unknown as { isComposing?: boolean; keyCode?: number } | undefined;
+  return Boolean(native?.isComposing) || native?.keyCode === 229;
+}
+
 /**
  * Ctrl/⌘+K command palette.
  *
@@ -40,9 +60,15 @@ export function CommandPalette({ open, onClose, context, onRun }: CommandPalette
   const [activeIndex, setActiveIndex] = useState(0);
   const inputRef = useRef<HTMLInputElement | null>(null);
   const listRef = useRef<HTMLDivElement | null>(null);
+  const panelRef = useRef<HTMLDivElement | null>(null);
+  // Whatever had focus before the palette opened; restored on close so a
+  // keyboard or screen-reader visitor is not dumped back at <body>.
+  const restoreFocusRef = useRef<HTMLElement | null>(null);
 
+  // Build the full searchable corpus (bounded by MAX_GAME_LIMIT inside the
+  // builder); the render list is still capped by `filterCommandPaletteEntries`.
   const entries = useMemo(
-    () => buildCommandPaletteEntries(context, t),
+    () => buildCommandPaletteEntries(context, t, MAX_GAME_LIMIT),
     [context, t],
   );
   const filtered = useMemo(
@@ -59,9 +85,20 @@ export function CommandPalette({ open, onClose, context, onRun }: CommandPalette
   }, [open]);
 
   useEffect(() => {
-    if (!open) return;
+    if (!open) return undefined;
+    const previouslyFocused = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+    restoreFocusRef.current = previouslyFocused;
     const frame = window.requestAnimationFrame(() => inputRef.current?.focus());
-    return () => window.cancelAnimationFrame(frame);
+    return () => {
+      window.cancelAnimationFrame(frame);
+      const target = restoreFocusRef.current;
+      restoreFocusRef.current = null;
+      // The row that ran a command may have unmounted (page change), so only
+      // restore a target that is still in the document and still focusable.
+      if (target && target.isConnected && typeof target.focus === "function") {
+        target.focus({ preventScroll: true });
+      }
+    };
   }, [open]);
 
   useEffect(() => {
@@ -82,6 +119,24 @@ export function CommandPalette({ open, onClose, context, onRun }: CommandPalette
   };
 
   const handleKeyDown = (event: ReactKeyboardEvent<HTMLDivElement>): void => {
+    // Never let an IME conversion keystroke act as a command.
+    if (isComposing(event)) return;
+    if (event.key === "Tab") {
+      // The dialog is aria-modal, so Tab must not reach the page behind it.
+      const focusable = panelRef.current?.querySelectorAll<HTMLElement>(FOCUSABLE_SELECTOR);
+      if (!focusable || focusable.length === 0) return;
+      const first = focusable[0];
+      const last = focusable[focusable.length - 1];
+      const activeEl = document.activeElement;
+      if (!event.shiftKey && activeEl === last) {
+        event.preventDefault();
+        first.focus();
+      } else if (event.shiftKey && activeEl === first) {
+        event.preventDefault();
+        last.focus();
+      }
+      return;
+    }
     if (event.key === "Escape") {
       event.preventDefault();
       event.stopPropagation();
@@ -115,7 +170,16 @@ export function CommandPalette({ open, onClose, context, onRun }: CommandPalette
   };
 
   const shortcutHint = typeof navigator !== "undefined" && /mac/i.test(navigator.platform) ? "⌘K" : "Ctrl K";
-  let runningIndex = -1;
+  // Flat position of each entry, matching the order the rows are rendered in,
+  // so keyboard selection, ARIA and mouse hover all agree without relying on a
+  // counter mutated during render.
+  const indexById = useMemo(() => {
+    const map = new Map<string, number>();
+    groups.forEach((group) => {
+      group.entries.forEach((entry) => map.set(entry.id, map.size));
+    });
+    return map;
+  }, [groups]);
 
   return (
     <AnimatePresence>
@@ -135,6 +199,7 @@ export function CommandPalette({ open, onClose, context, onRun }: CommandPalette
             tabIndex={-1}
           />
           <m.div
+            ref={panelRef}
             className="command-palette-panel"
             onKeyDown={handleKeyDown}
             initial={{ opacity: 0, y: 12, scale: 0.99 }}
@@ -160,8 +225,10 @@ export function CommandPalette({ open, onClose, context, onRun }: CommandPalette
                   setActiveIndex(0);
                 }}
                 onKeyDown={(event) => {
-                  // Let the panel handler own navigation keys even though the
-                  // input itself never receives Enter/Arrow defaults it needs.
+                  // Navigation keys are handled by the panel; stopping here keeps
+                  // the browser from acting on them (e.g. ArrowUp moving the
+                  // caret) before our handler runs.
+                  if (isComposing(event)) return;
                   if (event.key === "Enter" || event.key === "ArrowDown" || event.key === "ArrowUp") {
                     event.stopPropagation();
                   }
@@ -199,8 +266,7 @@ export function CommandPalette({ open, onClose, context, onRun }: CommandPalette
                   <div key={group.group} className="command-palette-group">
                     <div className="command-palette-group-label">{group.group}</div>
                     {group.entries.map((entry) => {
-                      runningIndex += 1;
-                      const index = runningIndex;
+                      const index = indexById.get(entry.id) ?? 0;
                       const isActive = index === activeIndex;
                       const Icon = KIND_ICONS[entry.kind];
                       return (

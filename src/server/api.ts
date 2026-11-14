@@ -22,6 +22,42 @@ const SPEED_TEST_MAX_BYTES = 24 * 1024 * 1024;
 const SPEED_TEST_DEFAULT_BYTES = 8 * 1024 * 1024;
 const SPEED_TEST_CHUNK_BYTES = 64 * 1024;
 
+/**
+ * Per-session cap on the throughput probe.
+ *
+ * `/api/speedtest` is a metered-egress endpoint: 24 MiB per call is fine once
+ * per launch, but a stuck retry loop (or a signed-in visitor on the free plan)
+ * would bill the operator for the same download in a tight loop. The pre-launch
+ * connection test only runs a handful of probes, so a short cooldown is
+ * invisible in normal use while bounding worst-case egress.
+ */
+const SPEED_TEST_MIN_INTERVAL_MS = 5_000;
+const speedTestLastCallBySession = new Map<string, number>();
+const SPEED_TEST_TRACKED_SESSIONS_LIMIT = 256;
+
+function claimSpeedTestSlot(sessionKey: string, nowMs: number = Date.now()): number | null {
+  // A missing entry means "never measured", not "measured at epoch 0": the
+  // latter would deny the very first request on a clock near zero.
+  const lastCall = speedTestLastCallBySession.get(sessionKey);
+  if (lastCall !== undefined) {
+    const elapsed = nowMs - lastCall;
+    if (elapsed < SPEED_TEST_MIN_INTERVAL_MS) {
+      return Math.max(1, Math.ceil((SPEED_TEST_MIN_INTERVAL_MS - elapsed) / 1000));
+    }
+  }
+  // Refresh insertion order so the oldest entry is evicted first (FIFO ring).
+  speedTestLastCallBySession.delete(sessionKey);
+  speedTestLastCallBySession.set(sessionKey, nowMs);
+  while (speedTestLastCallBySession.size > SPEED_TEST_TRACKED_SESSIONS_LIMIT) {
+    const oldest = speedTestLastCallBySession.keys().next();
+    if (oldest.done) break;
+    speedTestLastCallBySession.delete(oldest.value);
+  }
+  return null;
+}
+
+export const speedTestInternals = { claimSpeedTestSlot, SPEED_TEST_MIN_INTERVAL_MS };
+
 function resolveSpeedTestByteCount(raw: unknown): number {
   const parsed = Number.parseInt(typeof raw === "string" ? raw : "", 10);
   if (!Number.isFinite(parsed)) {
@@ -51,7 +87,18 @@ export function registerApi(app: Express): void {
    * metered egress, and an open endpoint would be an amplification target.
    */
   app.get("/api/speedtest", asyncRoute(async (request, response) => {
-    await getSession(request, response).requireAuth();
+    const session = getSession(request, response);
+    await session.requireAuth();
+
+    // Cooldown keyed by the session, so one visitor cannot exhaust the
+    // instance's egress while other visitors keep their measurements.
+    const retryAfterSec = claimSpeedTestSlot(session.accountingKey());
+    if (retryAfterSec !== null) {
+      response.setHeader("Retry-After", String(retryAfterSec));
+      response.setHeader("Cache-Control", "no-store");
+      response.status(429).json({ error: "Too many speed tests. Try again in a few seconds." });
+      return;
+    }
 
     const total = resolveSpeedTestByteCount(request.query.bytes);
     // Repeating a fixed 64 KiB pattern keeps allocations flat while defeating

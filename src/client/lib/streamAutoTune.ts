@@ -1,6 +1,7 @@
 import type { ColorQuality, StreamRegion, VideoCodec, VideoCodecPreference } from "@shared/gfn";
 
 import type { NetworkConnectionEstimate } from "./connectionBitrate";
+import { supportedStreamResolutions } from "@shared/gfn";
 import { getAutomaticMaxBitrateMbps as automaticCeiling } from "../webDefaults";
 import type { CodecTestSummary, LatencyTestResult, ThroughputTestResult, WebRtcTestResult } from "./connectionTest";
 
@@ -202,6 +203,41 @@ function fitsPanel(width: number, height: number, panelLong: number, panelShort:
   return Math.max(width, height) <= panelLong && Math.min(width, height) <= panelShort;
 }
 
+/**
+ * Stream modes GeForce NOW accepts, from the same source of truth the
+ * entitlement layer matches against (`resolveEntitledStreamProfile` requires an
+ * exact width/height match and otherwise rebinds to the LARGEST entitled mode,
+ * so an invented size such as 1024x576 would upgrade the stream instead of
+ * downgrading it).
+ */
+const SUPPORTED_MODES = supportedStreamResolutions()
+  .map((value) => parseResolutionSize(value))
+  .filter((size): size is { width: number; height: number } => size !== null);
+
+/**
+ * Largest supported mode that fits the panel, preferring the aspect ratio of
+ * the mode we wanted to send so a downgrade never silently changes framing.
+ * Returns null when the panel is too small for every supported mode.
+ */
+function largestModeForPanel(
+  preferred: { width: number; height: number },
+  panelLong: number,
+  panelShort: number,
+): string | null {
+  const fitting = SUPPORTED_MODES.filter((size) => fitsPanel(size.width, size.height, panelLong, panelShort));
+  if (fitting.length === 0) return null;
+  const preferredRatio = Math.max(preferred.width, preferred.height) / Math.min(preferred.width, preferred.height);
+  const sameRatio = fitting.filter(
+    (size) => Math.abs(Math.max(size.width, size.height) / Math.min(size.width, size.height) - preferredRatio) < 0.02,
+  );
+  const pool = sameRatio.length > 0 ? sameRatio : fitting;
+  let best = pool[0];
+  for (const size of pool) {
+    if (size.width * size.height > best.width * best.height) best = size;
+  }
+  return `${best.width}x${best.height}`;
+}
+
 function pickCodec(support: TuningCodecSupport): VideoCodec {
   // HEVC first: it is the best-supported hardware decode path on GeForce NOW
   // and needs less bandwidth than H.264 for the same picture. AV1 only when
@@ -254,7 +290,11 @@ function chooseResolution(
 
   const size = parseResolutionSize(target);
   if (size !== null && panelLong > 0 && panelShort > 0 && !fitsPanel(size.width, size.height, panelLong, panelShort)) {
-    return "1280x720";
+    // The fallback must itself fit the panel: 1280x720 does not fit a 4:3
+    // 1024x768 or 1112x834 display, and 1920x1080 does not fit 1680x1050.
+    // Pick the largest supported mode that does, and keep the request when
+    // nothing fits (never invent an unsupported resolution).
+    return largestModeForPanel(size, panelLong, panelShort) ?? target;
   }
   return target;
 }
@@ -268,6 +308,10 @@ function chooseFps(quality: ConnectionQualitySummary, device: TuningDeviceProbe,
   if (quality.grade === "weak") return 30;
   const mbps = quality.throughputMbps;
   if (mbps !== null && mbps < 15 && pixels >= 1920 * 1080) return 30;
+  // 1080p60 does not fit a link measured at ~25 Mbps or less *after* the 0.7
+  // headroom factor, and the extra frames make frame pacing worse than a clean
+  // 30. Only ask for 60 when the link can actually carry it.
+  if (mbps !== null && mbps < 35) return 30;
   if (lowPowerCpu && pixels > 1920 * 1080) return 30;
   return 60;
 }

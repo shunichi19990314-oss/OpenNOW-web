@@ -34,11 +34,17 @@ function emptyRecord(): PlaytimeRecord {
 }
 
 export function formatPlaytime(totalSeconds: number): string {
-  if (totalSeconds < 60) {
-    return totalSeconds <= 0 ? "Never played" : "< 1 min";
+  // localStorage is visitor-editable, so guard against NaN/Infinity here too:
+  // `Math.floor(Infinity / 3600)` used to render "Infinity h".
+  if (!Number.isFinite(totalSeconds) || totalSeconds <= 0) {
+    return "Never played";
   }
-  const h = Math.floor(totalSeconds / 3600);
-  const m = Math.floor((totalSeconds % 3600) / 60);
+  const wholeSeconds = Math.floor(totalSeconds);
+  if (wholeSeconds < 60) {
+    return "< 1 min";
+  }
+  const h = Math.floor(wholeSeconds / 3600);
+  const m = Math.floor((wholeSeconds % 3600) / 60);
   if (h === 0) return `${m} m`;
   if (m === 0) return `${h} h`;
   return `${h} h ${m} m`;
@@ -76,8 +82,20 @@ export interface UsePlaytimeReturn {
 export function usePlaytime(): UsePlaytimeReturn {
   const [playtime, setPlaytime] = useState<PlaytimeStore>(loadStore);
   const sessionStartRef = useRef<Record<string, number>>({});
+  // Elapsed seconds from an abandoned session, folded in on the next end.
+  const pendingElapsedRef = useRef<Record<string, number>>({});
 
   const startSession = useCallback((gameId: string): void => {
+    // A session that is started twice without an end (reconnect, a launch that
+    // ends before /api/stream/stop ran, a crash) would otherwise overwrite the
+    // original start time and silently drop the elapsed time.
+    const previousStart = sessionStartRef.current[gameId];
+    if (previousStart != null) {
+      const elapsedSeconds = Math.max(0, Math.floor((Date.now() - previousStart) / 1000));
+      if (elapsedSeconds > 0) {
+        pendingElapsedRef.current[gameId] = (pendingElapsedRef.current[gameId] ?? 0) + elapsedSeconds;
+      }
+    }
     sessionStartRef.current[gameId] = Date.now();
     setPlaytime((prev) => {
       const existing = prev[gameId] ?? emptyRecord();
@@ -96,10 +114,13 @@ export function usePlaytime(): UsePlaytimeReturn {
 
   const endSession = useCallback((gameId: string): void => {
     const startMs = sessionStartRef.current[gameId];
-    if (startMs == null) return;
+    const carriedSeconds = pendingElapsedRef.current[gameId] ?? 0;
+    if (startMs == null && carriedSeconds === 0) return;
     delete sessionStartRef.current[gameId];
+    delete pendingElapsedRef.current[gameId];
 
-    const elapsedSeconds = Math.max(0, Math.floor((Date.now() - startMs) / 1000));
+    const currentSeconds = startMs == null ? 0 : Math.max(0, Math.floor((Date.now() - startMs) / 1000));
+    const elapsedSeconds = currentSeconds + carriedSeconds;
     if (elapsedSeconds === 0) return;
 
     setPlaytime((prev) => {
