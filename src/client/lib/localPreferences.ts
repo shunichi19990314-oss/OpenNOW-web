@@ -141,8 +141,28 @@ export function summarizeRecentActivity(
   return entries.sort((left, right) => {
     if (left.lastPlayedMs !== right.lastPlayedMs) return right.lastPlayedMs - left.lastPlayedMs;
     if (left.totalSeconds !== right.totalSeconds) return right.totalSeconds - left.totalSeconds;
-    return left.game.title.localeCompare(right.game.title);
+    return compareGameTitles(left.game.title, right.game.title);
   });
+}
+
+/**
+ * Locale-aware title ordering for the rail and the palette.
+ *
+ * A bare `localeCompare` uses the runtime default locale, so the same catalog
+ * can order "Ångström" before/after "Zebra" depending on the browser's OS
+ * language — and the rail and the grid would then disagree. Pinning the
+ * comparison to the active UI language keeps every list consistent, and
+ * `sensitivity: "base"` keeps the order stable across platforms.
+ */
+export function compareGameTitles(left: string, right: string): number {
+  const locale = typeof document !== "undefined" && document.documentElement.lang
+    ? document.documentElement.lang
+    : undefined;
+  try {
+    return left.localeCompare(right, locale, { sensitivity: "base", numeric: true });
+  } catch {
+    return left.localeCompare(right);
+  }
 }
 
 /** Human readable total playtime, matching the desktop client's compact style. */
@@ -175,6 +195,6 @@ export function rankGamesForPalette(
     const leftActivity = activity.get(left.id) ?? 0;
     const rightActivity = activity.get(right.id) ?? 0;
     if (leftActivity !== rightActivity) return rightActivity - leftActivity;
-    return left.title.localeCompare(right.title);
+    return compareGameTitles(left.title, right.title);
   });
 }

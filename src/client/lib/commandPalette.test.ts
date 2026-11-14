@@ -104,4 +104,28 @@ describe("filterCommandPaletteEntries", () => {
   it("returns nothing for an unmatched query", () => {
     expect(filterCommandPaletteEntries(entries, "zzzzzz", 10)).toEqual([]);
   });
+
+  it("keeps titles beyond the display limit searchable", () => {
+    // The builder's limit is a corpus bound, not what gets rendered: capping at
+    // the first 12 games made every other title unsearchable.
+    const games = Array.from({ length: 120 }, (_, index) => game(String(index), `Title ${index}`));
+    const entries = buildCommandPaletteEntries({ ...baseContext, games }, t, 120);
+    const matched = filterCommandPaletteEntries(entries, "title 119", 10);
+    expect(matched.map((entry) => entry.id)).toEqual(["game:119"]);
+  });
+
+  it("caps the corpus no matter what the caller asks for", () => {
+    const games = Array.from({ length: 900 }, (_, index) => game(String(index), `Game ${index}`));
+    const entries = buildCommandPaletteEntries({ ...baseContext, games }, t, 10_000);
+    expect(entries.filter((entry) => entry.kind === "game").length).toBeLessThanOrEqual(300);
+  });
+
+  it("matches case-folded titles in non-ASCII scripts", () => {
+    const entries = buildCommandPaletteEntries(
+      { ...baseContext, games: [game("1", "Æther"), game("2", "Приключение")] },
+      t,
+    );
+    expect(filterCommandPaletteEntries(entries, "æther", 10).map((entry) => entry.id)).toEqual(["game:1"]);
+    expect(filterCommandPaletteEntries(entries, "приключение", 10).map((entry) => entry.id)).toEqual(["game:2"]);
+  });
 });

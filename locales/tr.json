@@ -130,6 +130,9 @@
       "sessionRestored": "Oturum geri yüklendi.",
       "noSavedSessionFound": "Kayıtlı oturum bulunamadı.",
       "sessionRestoreFailed": "Oturum geri yükleme başarısız oldu. Lütfen tekrar oturum açın."
+    },
+    "qr": {
+      "codeExpired": "Bu kodun süresi doldu. Yeni bir oturum açma başlatın."
     }
   },
   "navigation": {

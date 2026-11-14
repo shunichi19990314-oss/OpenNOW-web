@@ -3915,18 +3915,22 @@ export function App(): JSX.Element {
   // visitor types into it. GfnWebRtcClient exposes `inputPaused` for exactly
   // this overlay case, so we borrow it and restore whatever it was before.
   useEffect(() => {
-    const client = clientRef.current;
-    if (!client) return undefined;
     if (commandPaletteOpen) {
-      if (streamInputPausedForPaletteRef.current === null) {
-        streamInputPausedForPaletteRef.current = { wasPaused: client.inputPaused };
-        client.inputPaused = true;
-      }
+      const client = clientRef.current;
+      // Opening the palette on a catalog page has no client; nothing to pause.
+      if (!client || streamInputPausedForPaletteRef.current !== null) return undefined;
+      streamInputPausedForPaletteRef.current = { wasPaused: client.inputPaused };
+      client.inputPaused = true;
       return undefined;
     }
+    // Clear the saved state even when the client is already gone (running the
+    // "stop stream" command closes the palette and disposes the client in the
+    // same tick). Keeping the stale entry would make the next session skip the
+    // pause entirely, leaking every keystroke into the remote game.
     const previous = streamInputPausedForPaletteRef.current;
     streamInputPausedForPaletteRef.current = null;
-    if (previous) {
+    const client = clientRef.current;
+    if (previous && client) {
       client.inputPaused = previous.wasPaused;
     }
     return undefined;

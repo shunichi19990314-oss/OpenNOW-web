@@ -130,6 +130,9 @@
       "sessionRestored": "Sesja przywrócona.",
       "noSavedSessionFound": "Nie znaleziono zapisanej sesji.",
       "sessionRestoreFailed": "Przywrócenie sesji się nie powiodło. Proszę, zaloguj się ponownie."
+    },
+    "qr": {
+      "codeExpired": "Ten kod wygasł. Rozpocznij nowe logowanie."
     }
   },
   "navigation": {

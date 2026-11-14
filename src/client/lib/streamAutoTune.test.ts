@@ -2,12 +2,16 @@ import { describe, expect, it } from "vitest";
 
 import type { StreamRegion } from "@shared/gfn";
 
+import { supportedStreamResolutions } from "@shared/gfn";
+
 import {
   buildStreamTuningPlan,
   describeTuningChange,
   summarizeConnectionQuality,
   type TuningDeviceProbe,
 } from "./streamAutoTune";
+
+const SUPPORTED_RESOLUTIONS = supportedStreamResolutions();
 
 const probe: TuningDeviceProbe = {
   screenWidth: 1920,
@@ -163,5 +167,69 @@ describe("buildStreamTuningPlan", () => {
     expect(resolutionChange).toBeDefined();
     expect(describeTuningChange(resolutionChange!)).toContain("1920x1080");
     expect(describeTuningChange(resolutionChange!)).toContain("1280x720");
+  });
+
+  it("never recommends a mode wider or taller than the panel", () => {
+    // 4:3 panel: the old fallback returned 1280x720, which is wider than the
+    // glass, so the "tuning" made the stream *not* fit.
+    const fourByThree = buildStreamTuningPlan({
+      device: { screenWidth: 1024, screenHeight: 768, devicePixelRatio: 1, hardwareConcurrency: 8 },
+      quality: { grade: "good", score: 70, limitingFactor: "none", latencyMs: 30, throughputMbps: 60, packetLossPct: null, udpAvailable: true },
+      codec: { h264: true, h264Hardware: true, hevc: false, av1: false },
+      current: { resolution: "1920x1080", fps: 60, maxBitrateMbps: 40, codec: "H264", colorQuality: "8bit_420" },
+    });
+    expect(fourByThree.recommended.resolution).toBe("1024x768");
+  });
+
+  it("downgrades a 1680x1050 panel instead of recommending 1080p", () => {
+    const plan = buildStreamTuningPlan({
+      device: { screenWidth: 1680, screenHeight: 1050, devicePixelRatio: 1, hardwareConcurrency: 8 },
+      quality: { grade: "excellent", score: 92, limitingFactor: "none", latencyMs: 20, throughputMbps: 150, packetLossPct: null, udpAvailable: true },
+      codec: { h264: true, h264Hardware: true, hevc: true, av1: false },
+      current: { resolution: "1920x1080", fps: 60, maxBitrateMbps: 40, codec: "H265", colorQuality: "8bit_420" },
+    });
+    // 16:9 is preferred over the larger 1680x1050 16:10 mode, so the framing
+    // does not silently change aspect ratio during a downgrade.
+    expect(plan.recommended.resolution).toBe("1600x900");
+  });
+
+  it("only recommends resolution strings the service accepts", () => {
+    for (const probe of [
+      { screenWidth: 1024, screenHeight: 768, devicePixelRatio: 1, hardwareConcurrency: 8 },
+      { screenWidth: 1112, screenHeight: 834, devicePixelRatio: 2, hardwareConcurrency: 4 },
+      { screenWidth: 1366, screenHeight: 768, devicePixelRatio: 1, hardwareConcurrency: 2 },
+      { screenWidth: 1920, screenHeight: 1080, devicePixelRatio: 2, hardwareConcurrency: 16 },
+    ]) {
+      const plan = buildStreamTuningPlan({
+        device: probe,
+        quality: { grade: "good", score: 65, limitingFactor: "none", latencyMs: 35, throughputMbps: 50, packetLossPct: null, udpAvailable: true },
+        codec: { h264: true, h264Hardware: true, hevc: true, av1: true },
+        current: { resolution: "1920x1080", fps: 60, maxBitrateMbps: 40, codec: "H265", colorQuality: "8bit_420" },
+      });
+      expect(SUPPORTED_RESOLUTIONS).toContain(plan.recommended.resolution);
+    }
+  });
+
+  it("does not ask for 60 fps on a link that cannot carry 1080p60", () => {
+    // 25 Mbps is below the 40 Mbps the encoder needs for 1080p60, so a "good"
+    // grade must still settle on 30 fps rather than trading frame pacing for a
+    // frame counter.
+    const plan = buildStreamTuningPlan({
+      device: probe,
+      quality: { grade: "good", score: 66, limitingFactor: "none", latencyMs: 40, throughputMbps: 25, packetLossPct: null, udpAvailable: true },
+      codec: { h264: true, h264Hardware: true, hevc: true, av1: false },
+      current: { resolution: "1920x1080", fps: 60, maxBitrateMbps: 40, codec: "H265", colorQuality: "8bit_420" },
+    });
+    expect(plan.recommended.fps).toBe(30);
+  });
+
+  it("keeps 60 fps when the link has the headroom", () => {
+    const plan = buildStreamTuningPlan({
+      device: probe,
+      quality: { grade: "excellent", score: 90, limitingFactor: "none", latencyMs: 20, throughputMbps: 150, packetLossPct: null, udpAvailable: true },
+      codec: { h264: true, h264Hardware: true, hevc: true, av1: false },
+      current: { resolution: "1920x1080", fps: 60, maxBitrateMbps: 40, codec: "H265", colorQuality: "8bit_420" },
+    });
+    expect(plan.recommended.fps).toBe(60);
   });
 });

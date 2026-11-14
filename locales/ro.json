@@ -130,6 +130,9 @@
       "sessionRestored": "Sesiune restabilită.",
       "noSavedSessionFound": "Nu a fost găsită nicio sesiune salvată.",
       "sessionRestoreFailed": "Restaurarea sesiunii a eșuat. Vă rugăm să vă conectați din nou."
+    },
+    "qr": {
+      "codeExpired": "Acest cod a expirat. Începe o autentificare nouă."
     }
   },
   "navigation": {

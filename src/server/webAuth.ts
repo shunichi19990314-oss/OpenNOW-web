@@ -584,6 +584,19 @@ export class WebAuthSession {
     return { status: "authorized", session: this.publicSession() ?? undefined };
   }
 
+  /**
+   * Stable per-account key for request accounting (rate limits, egress
+   * budgets). Falls back to the client token when a snapshot predates the
+   * user object, and to "anonymous" for a signed-out session.
+   */
+  accountingKey(): string {
+    if (!this.auth) return "anonymous";
+    return this.auth.user.userId
+      || this.auth.tokens.clientToken
+      || this.tokenFrom(this.auth)
+      || "anonymous";
+  }
+
   logout(): void {
     this.auth = null;
     this.attempts.clear();
