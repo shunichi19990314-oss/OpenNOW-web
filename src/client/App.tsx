@@ -571,6 +571,7 @@ export function App(): JSX.Element {
   const {
     games,
     featuredGames,
+    isLoadingFeaturedGames,
     storePanels,
     libraryGames,
     searchQuery,
@@ -4243,6 +4244,7 @@ export function App(): JSX.Element {
                 controllerMode={effectiveControllerMode}
                 storePanels={storePanels}
                 storeHeroGames={featuredGames}
+                isHeroPending={isLoadingFeaturedGames}
                 activeSessionAppIds={activeSessionAppIds}
                 onBuyGame={handleBuyGame}
                 onMarkGameOwned={handleMarkGameOwned}
