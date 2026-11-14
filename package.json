@@ -22,7 +22,8 @@
     "start": "tsx src/server/index.ts",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
-    "test:load": "node scripts/load-test.mjs"
+    "test:load": "node scripts/load-test.mjs",
+    "render:status": "node scripts/render-status.mjs"
   },
   "dependencies": {
     "@react-three/fiber": "^9.6.1",

@@ -138,6 +138,84 @@ Node バージョンは `package.json` の `engines.node: "22"` で両プラッ�
 GitHub Actions を使わない場合は [UptimeRobot](https://uptimerobot.com) や
 [cron-job.org](https://cron-job.org) 等で同じ URL を 5〜10 分間隔で監視しても同効果です。
 
+## Render API 連携(デプロイの自動検証)
+
+`render.yaml` の `autoDeploy: true` により、`main` への push で Render が自動ビルドします。
+ここに **「本当に本番へ反映されたか」を自動で確認する仕組み**を追加しました。
+Render API キーを使うため、ダッシュボードを見に行かなくても失敗に気づけます。
+
+### 仕組み
+
+| 構成要素 | 役割 |
+|---|---|
+| `.github/workflows/render-deploy.yml` | `main` への push ごとに、その commit のデプロイを Render API で特定 → 完了まで待機 → 本番 `/api/health` の `commit` と突き合わせ |
+| `scripts/render-status.mjs` | 上記の実処理。ローカルからも同じコマンドで状態確認・再デプロイが可能 |
+| `scripts/render-api.mjs` | Render API クライアント(依存パッケージなし・Node 標準の `fetch` のみ) |
+| `scripts/render-api.test.mjs` | API 応答形状・SHA 照合・キー漏えい防止のユニットテスト |
+
+検証は 3 段階です。
+
+1. **デプロイの存在**: その commit に対するデプロイが作られたか
+2. **結果**: `live` で終わったか(失敗時はジョブが赤くなり、`build_failed` 等を表示)
+3. **本番の同一性**: `https://<service>/api/health` の `commit` がその SHA と一致するか
+   (古いビルドが残っている「反映されていないのに緑」を防ぐ)
+
+### セットアップ(GitHub に 2 つの Secret を登録するだけ)
+
+1. Render ダッシュボード → 右上アカウント → **Account Settings** →
+   [API Keys](https://dashboard.render.com/u/settings?add-api-key) → **Create API Key**
+   (表示は作成時のみ。必ずパスワードマネージャー等に保管)
+2. 対象サービスの URL から **サービス ID(`srv-...`)** を控える
+   (例: `https://dashboard.render.com/web/srv-cuk123abc` の `srv-cuk123abc`)
+3. GitHub リポジトリ → Settings → Secrets and variables → **Actions** →
+   **Secrets** タブで 2 件登録:
+   - `RENDER_API_KEY` … 手順 1 のキー
+   - `RENDER_SERVICE_ID` … 手順 2 の `srv-...`
+     (ダッシュボード URL をそのまま貼っても `srv-...` を自動抽出します)
+4.(任意)Variables タブに `RENDER_HEALTH_URL`
+   (`https://<service>/api/health`)。未設定でも Render API が返す公開 URL から自動決定されます。
+
+> **重要**: API キーは「全ワークスペースにアクセスできる秘密情報」です。
+> リポジトリへのコミット・Issue/PR への貼り付け・チャットへの投稿はしないでください
+> (漏えいした場合はダッシュボードから即 Revoke)。
+
+Secret 未設定のフォークや初期状態では、ワークフローは**失敗せずスキップ**します。
+
+### ローカルでの使い方
+
+```bash
+# 直近デプロイの状態を表示
+RENDER_API_KEY=rnd_xxx RENDER_SERVICE_ID=srv-xxxxx npm run render:status
+
+# 特定コミットのデプロイを完了まで追跡し、本番の health まで検証
+RENDER_API_KEY=rnd_xxx RENDER_SERVICE_ID=srv-xxxxx \
+  npm run render:status -- --commit $(git rev-parse HEAD) --wait
+
+# そのコミットを明示的に再デプロイ(自動デプロイが無効な場合の保険)
+RENDER_API_KEY=rnd_xxx RENDER_SERVICE_ID=srv-xxxxx \
+  npm run render:status -- --deploy --commit $(git rev-parse HEAD) --wait
+
+# ビルドキャッシュを捨てて再デプロイ(依存関係が壊れたとき)
+RENDER_API_KEY=rnd_xxx RENDER_SERVICE_ID=srv-xxxxx \
+  npm run render:status -- --deploy --commit HEAD --clear-cache --wait
+```
+
+終了コードは `0`=検証成功 / `1`=失敗・未反映 / `2`=設定不足(キーや ID の欠落)。
+そのまま CI のゲートとして使えます。
+
+### できること・できないこと
+
+**できること**
+- マージ → 本番反映の確認を自動化(失敗時は GitHub の通知メール/画面で分かる)
+- 任意コミットの再デプロイ・再起動・キャッシュクリアを CLI から実行
+- サービスの設定(ブランチ・自動デプロイ有無・`suspended` 状態・公開 URL)を JSON で取得
+
+**このリポジトリからは行わないこと(意図的)**
+- 環境変数(`SESSION_SECRET` / `OPENNOW_ORIGIN` など)の読み書き
+  — 秘密情報が CI ログや Artifact に残るリスクを避けるため、設定はダッシュボードで管理します
+- API キーをアプリの実行時環境に置くこと
+  — キーは CI 専用です。Web アプリ本体は Render API を一切呼びません
+
 ## トラブルシュート(Render で「Request failed (500)」等)
 
 1. **Render ダッシュボード → 対象サービス → Logs** を開き、失敗時刻の前後を確認:
