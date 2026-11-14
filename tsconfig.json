@@ -21,7 +21,6 @@
   },
   "include": ["src/client/**/*.ts", "src/client/**/*.tsx", "src/server/**/*.ts", "src/shared/**/*.ts"],
   "exclude": [
-    "src/**/*.test.ts",
     "src/server/gfn/auth.ts",
     "src/server/gfn/accountConnections.ts",
     "src/server/gfn/auth/oauthFlow.ts",

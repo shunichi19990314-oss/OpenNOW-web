@@ -6,6 +6,7 @@ import type { CatalogSortOption, GameInfo } from "@shared/gfn";
 import { GameCardListItem, useCatalogCardActionsRef } from "./GameCardListItem";
 import { GameDetailsModal } from "./GameDetailsModal";
 import type { PlaytimeData } from "../lib/gameCatalog";
+import { formatTotalPlaytime, toFavoriteSet } from "../lib/localPreferences";
 import { getControllerFeaturedGames } from "../lib/controllerCatalogUi";
 import {
   gameMatchesLibraryFilters,
@@ -139,13 +140,14 @@ export const LibraryPage = memo(function LibraryPage({
   }, []);
 
   const librarySearchHasQuery = searchQuery.trim().length > 0;
+  const favoriteIdSet = useMemo(() => toFavoriteSet(favoriteGameIds), [favoriteGameIds]);
   const libraryFilterGroups = useMemo(
-    () => getLibraryFilterGroups(allGames, playtimeData, t),
-    [allGames, playtimeData, t],
+    () => getLibraryFilterGroups(allGames, playtimeData, t, favoriteGameIds),
+    [allGames, favoriteGameIds, playtimeData, t],
   );
   const visibleLibraryGames = useMemo(
-    () => games.filter((game) => gameMatchesLibraryFilters(game, selectedLibraryFilterIds, playtimeData, t)),
-    [games, playtimeData, selectedLibraryFilterIds, t],
+    () => games.filter((game) => gameMatchesLibraryFilters(game, selectedLibraryFilterIds, playtimeData, t, favoriteGameIds)),
+    [favoriteGameIds, games, playtimeData, selectedLibraryFilterIds, t],
   );
   const activeLibraryFilterOptions = useMemo(
     () => selectedLibraryFilterIds
@@ -480,25 +482,42 @@ export const LibraryPage = memo(function LibraryPage({
   }, [controllerMode, controllerSearchOpen, onNextControllerPage, onPreviousControllerPage]);
 
   const libraryGridItems = useMemo(
-    () => visibleLibraryGames.map((game) => (
-      <div key={game.id} className="library-game-wrapper">
-        <GameCardListItem
-          game={game}
-          isSelected={game.id === selectedGameId}
-          isFavorite={favoriteGameIds.includes(game.id)}
-          selectedVariantId={selectedVariantByGameId[game.id]}
-          actionsRef={catalogActionsRef}
-        />
-        <div
-          className={`library-last-played${game.lastPlayed ? "" : " library-last-played--empty"}`}
-          aria-hidden={game.lastPlayed ? undefined : true}
-        >
-          <Clock size={12} />
-          <span>{game.lastPlayed ? formatCatalogLastPlayed(t, game.lastPlayed) : "—"}</span>
+    () => visibleLibraryGames.map((game) => {
+      const record = playtimeData[game.id];
+      const isFavorite = favoriteIdSet.has(game.id);
+      const totalPlaytime = record?.totalSeconds ?? 0;
+      const lastPlayedMs = record?.lastPlayedAt ? Date.parse(record.lastPlayedAt) : 0;
+      return (
+        <div key={game.id} className={`library-game-wrapper${isFavorite ? " is-favorite" : ""}`}>
+          {isFavorite && (
+            <span className="library-favorite-pin" title={t("library.filterOptions.favorite")}>
+              ★
+            </span>
+          )}
+          <GameCardListItem
+            game={game}
+            isSelected={game.id === selectedGameId}
+            isFavorite={isFavorite}
+            selectedVariantId={selectedVariantByGameId[game.id]}
+            actionsRef={catalogActionsRef}
+          />
+          <div
+            className={`library-last-played${game.lastPlayed ? "" : " library-last-played--empty"}`}
+            aria-hidden={game.lastPlayed ? undefined : true}
+          >
+            <Clock size={12} />
+            <span>{game.lastPlayed ? formatCatalogLastPlayed(t, game.lastPlayed) : "—"}</span>
+          </div>
+          {totalPlaytime > 0 && (
+            <div className="library-playtime" title={t("library.totalPlaytime")}>
+              <span>{formatTotalPlaytime(totalPlaytime, t("home.continuePlaying.neverPlayed"))}</span>
+              {lastPlayedMs > 0 && <span className="library-playtime-last">{formatCatalogLastPlayed(t, new Date(lastPlayedMs).toISOString())}</span>}
+            </div>
+          )}
         </div>
-      </div>
-    )),
-    [catalogActionsRef, favoriteGameIds, selectedGameId, selectedVariantByGameId, t, visibleLibraryGames],
+      );
+    }),
+    [catalogActionsRef, favoriteIdSet, playtimeData, selectedGameId, selectedVariantByGameId, t, visibleLibraryGames],
   );
 
   if (controllerMode) {
