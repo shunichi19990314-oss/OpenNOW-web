@@ -5,6 +5,7 @@ import type { GameInfo } from "@shared/gfn";
 
 import { CommandPalette } from "./CommandPalette";
 import { ContinuePlayingRail } from "./ContinuePlayingRail";
+import { HomePage } from "./HomePage";
 import { summarizeRecentActivity } from "../lib/localPreferences";
 
 /**
@@ -109,5 +110,55 @@ describe("ContinuePlayingRail", () => {
     );
     expect(markup).toContain("home-continue-tile\"");
     expect(markup.match(/class="home-continue-tile"/g)).toHaveLength(2);
+  });
+});
+
+/**
+ * The home hero used to appear only after its own featured request finished,
+ * so the page first rendered without it and then pushed every row down. These
+ * checks pin the reserved box and the property that matters: the rows below
+ * start at the same place whether or not the hero data has arrived.
+ */
+describe("HomePage hero placeholder", () => {
+  function renderHome(props: Partial<Parameters<typeof HomePage>[0]> = {}): string {
+    return renderToStaticMarkup(
+      <HomePage
+        games={[game("1", "Alpha")]}
+        searchQuery=""
+        onSearchChange={() => {}}
+        onPlayGame={() => {}}
+        favoriteGameIds={[]}
+        onToggleFavorite={() => {}}
+        isLoading={false}
+        selectedGameId="1"
+        onSelectGame={() => {}}
+        selectedVariantByGameId={{}}
+        onSelectGameVariant={() => {}}
+        filterGroups={[]}
+        selectedFilterIds={[]}
+        onToggleFilter={() => {}}
+        onClearFilters={() => {}}
+        sortOptions={[]}
+        selectedSortId="relevance"
+        onSortChange={() => {}}
+        totalCount={1}
+        supportedCount={1}
+        {...props}
+      />,
+    );
+  }
+
+  it("reserves the hero box while the featured request is pending", () => {
+    const markup = renderHome({ isHeroPending: true });
+    expect(markup).toContain("home-hero-skeleton");
+    expect(markup).toContain('data-hero-placeholder="true"');
+  });
+
+  it("drops the placeholder once the hero data is settled", () => {
+    expect(renderHome({ isHeroPending: false })).not.toContain("home-hero-skeleton");
+  });
+
+  it("still renders without the new prop (older callers)", () => {
+    expect(renderHome({})).not.toContain("home-hero-skeleton");
   });
 });

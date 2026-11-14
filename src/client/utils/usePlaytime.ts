@@ -1,43 +1,57 @@
-import { useCallback, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
-const STORAGE_KEY = "opennow:playtime";
+import {
+  beginSession,
+  checkpointSession,
+  finishSession,
+  liveSessionSeconds,
+  loadPlaytimeSnapshot,
+  loadPlaytimeStore,
+  PLAYTIME_CHECKPOINT_MS,
+  PLAYTIME_STORAGE_KEY,
+  recoverAbandonedSession,
+  savePlaytimeSnapshot,
+  type PlaytimeRecord,
+  type PlaytimeSnapshot,
+  type PlaytimeStore,
+} from "../lib/playtimeStore";
 
-export interface PlaytimeRecord {
-  totalSeconds: number;
-  lastPlayedAt: string | null;
-  sessionCount: number;
-}
+export { PLAYTIME_STORAGE_KEY };
+export type { PlaytimeRecord, PlaytimeStore };
 
-export type PlaytimeStore = Record<string, PlaytimeRecord>;
-
+/**
+ * Playtime tracking hook.
+ *
+ * The elapsed time of a running session is flushed to storage every
+ * `PLAYTIME_CHECKPOINT_MS` and again on `pagehide`/`visibilitychange`, and a
+ * session that never reported its end is reclaimed on the next launch. Before
+ * that, closing or reloading the tab mid-game discarded the whole session, so
+ * the rail could show ten-plus launches next to barely an hour of playtime.
+ */
 function loadStore(): PlaytimeStore {
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    if (raw) {
-      const parsed = JSON.parse(raw);
-      if (parsed && typeof parsed === "object") return parsed as PlaytimeStore;
-    }
-  } catch {
-  }
-  return {};
+  return loadPlaytimeStore();
 }
 
 function saveStore(store: PlaytimeStore): void {
-  try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(store));
-  } catch {
-  }
+  savePlaytimeSnapshot({ store, active: null });
 }
 
 function emptyRecord(): PlaytimeRecord {
   return { totalSeconds: 0, lastPlayedAt: null, sessionCount: 0 };
 }
 
-export function formatPlaytime(totalSeconds: number): string {
+/**
+ * Human-readable total playtime.
+ *
+ * `< 1 min` and "Never played" are deliberately different: a launch that has
+ * been recorded but has not reached a minute yet is not the same as a game the
+ * visitor has never touched.
+ */
+export function formatPlaytime(totalSeconds: number, neverLabel = "Never played"): string {
   // localStorage is visitor-editable, so guard against NaN/Infinity here too:
   // `Math.floor(Infinity / 3600)` used to render "Infinity h".
   if (!Number.isFinite(totalSeconds) || totalSeconds <= 0) {
-    return "Never played";
+    return neverLabel;
   }
   const wholeSeconds = Math.floor(totalSeconds);
   if (wholeSeconds < 60) {
@@ -79,63 +93,67 @@ export interface UsePlaytimeReturn {
   endSession: (gameId: string) => void;
 }
 
+/**
+ * Initial snapshot: reclaim time from a session the last visit never closed and
+ * persist the result straight away, so a second tab cannot fold it in again.
+ */
+function loadInitialSnapshot(): PlaytimeSnapshot {
+  const loaded = loadPlaytimeSnapshot();
+  const recovered = recoverAbandonedSession(loaded);
+  if (recovered !== loaded) {
+    savePlaytimeSnapshot(recovered);
+  }
+  return recovered;
+}
+
 export function usePlaytime(): UsePlaytimeReturn {
-  const [playtime, setPlaytime] = useState<PlaytimeStore>(loadStore);
-  const sessionStartRef = useRef<Record<string, number>>({});
-  // Elapsed seconds from an abandoned session, folded in on the next end.
-  const pendingElapsedRef = useRef<Record<string, number>>({});
+  const [snapshot, setSnapshot] = useState<PlaytimeSnapshot>(loadInitialSnapshot);
+  const snapshotRef = useRef(snapshot);
+  snapshotRef.current = snapshot;
+
+  const commit = useCallback((next: PlaytimeSnapshot): void => {
+    snapshotRef.current = next;
+    savePlaytimeSnapshot(next);
+    setSnapshot(next);
+  }, []);
 
   const startSession = useCallback((gameId: string): void => {
-    // A session that is started twice without an end (reconnect, a launch that
-    // ends before /api/stream/stop ran, a crash) would otherwise overwrite the
-    // original start time and silently drop the elapsed time.
-    const previousStart = sessionStartRef.current[gameId];
-    if (previousStart != null) {
-      const elapsedSeconds = Math.max(0, Math.floor((Date.now() - previousStart) / 1000));
-      if (elapsedSeconds > 0) {
-        pendingElapsedRef.current[gameId] = (pendingElapsedRef.current[gameId] ?? 0) + elapsedSeconds;
-      }
-    }
-    sessionStartRef.current[gameId] = Date.now();
-    setPlaytime((prev) => {
-      const existing = prev[gameId] ?? emptyRecord();
-      const next: PlaytimeStore = {
-        ...prev,
-        [gameId]: {
-          ...existing,
-          lastPlayedAt: new Date().toISOString(),
-          sessionCount: existing.sessionCount + 1,
-        },
-      };
-      saveStore(next);
-      return next;
-    });
-  }, []);
+    commit(beginSession(snapshotRef.current, gameId));
+  }, [commit]);
 
   const endSession = useCallback((gameId: string): void => {
-    const startMs = sessionStartRef.current[gameId];
-    const carriedSeconds = pendingElapsedRef.current[gameId] ?? 0;
-    if (startMs == null && carriedSeconds === 0) return;
-    delete sessionStartRef.current[gameId];
-    delete pendingElapsedRef.current[gameId];
+    const current = snapshotRef.current;
+    if (!current.active || current.active.gameId !== gameId) return;
+    commit(finishSession(current, gameId));
+  }, [commit]);
 
-    const currentSeconds = startMs == null ? 0 : Math.max(0, Math.floor((Date.now() - startMs) / 1000));
-    const elapsedSeconds = currentSeconds + carriedSeconds;
-    if (elapsedSeconds === 0) return;
+  // Periodic checkpoint while a session is running. This is what makes tab
+  // closes, reloads and crashes recoverable: at most one interval is lost.
+  useEffect(() => {
+    if (!snapshot.active) return undefined;
+    const tick = (): void => {
+      const current = snapshotRef.current;
+      if (!current.active) return;
+      // Sub-second sessions are not worth a write; skip until there is progress.
+      if (liveSessionSeconds(current.active) < 1) return;
+      commit(checkpointSession(current));
+    };
+    const timer = window.setInterval(tick, PLAYTIME_CHECKPOINT_MS);
+    const flush = (): void => tick();
+    window.addEventListener("pagehide", flush);
+    document.addEventListener("visibilitychange", flush);
+    return () => {
+      window.clearInterval(timer);
+      window.removeEventListener("pagehide", flush);
+      document.removeEventListener("visibilitychange", flush);
+    };
+  }, [commit, snapshot.active]);
 
-    setPlaytime((prev) => {
-      const existing = prev[gameId] ?? emptyRecord();
-      const next: PlaytimeStore = {
-        ...prev,
-        [gameId]: {
-          ...existing,
-          totalSeconds: existing.totalSeconds + elapsedSeconds,
-        },
-      };
-      saveStore(next);
-      return next;
-    });
-  }, []);
-
-  return { playtime, startSession, endSession };
+  return { playtime: snapshot.store, startSession, endSession };
 }
+
+export const playtimeInternals = {
+  loadStore,
+  saveStore,
+  emptyRecord,
+};

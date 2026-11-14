@@ -1,6 +1,7 @@
 import type { GameInfo } from "@shared/gfn";
 
 import type { PlaytimeData } from "./gameCatalog";
+import { gameActivityMs } from "./playtimeStore";
 
 /**
  * Small, dependency-free persistence + derivation helpers shared by the
@@ -93,23 +94,15 @@ export function loadPlaytimeStore(storage?: KeyValueStorage | null): PlaytimeSto
 }
 
 /** Absolute epoch ms of the newest activity signal we have for a game. */
+/**
+ * Newest activity signal for a game (local tracker or catalog).
+ *
+ * Delegates to `playtimeStore.gameActivityMs` so the rail, the hero and the
+ * library all agree on "last played" — they previously used different sources
+ * and could show "3日前" next to "未プレイ" for the same game.
+ */
 export function gameActivityTimestamp(game: GameInfo, playtime: PlaytimeData): number {
-  let newest = 0;
-  const localLastPlayed = playtime[game.id]?.lastPlayedAt;
-  if (localLastPlayed) {
-    const ms = Date.parse(localLastPlayed);
-    if (Number.isFinite(ms)) newest = Math.max(newest, ms);
-  }
-  if (game.lastPlayed) {
-    const ms = Date.parse(game.lastPlayed);
-    if (Number.isFinite(ms)) newest = Math.max(newest, ms);
-  }
-  for (const variant of game.variants ?? []) {
-    if (!variant.lastPlayedDate) continue;
-    const ms = Date.parse(variant.lastPlayedDate);
-    if (Number.isFinite(ms)) newest = Math.max(newest, ms);
-  }
-  return newest;
+  return gameActivityMs(game, playtime);
 }
 
 export interface RecentActivityEntry {

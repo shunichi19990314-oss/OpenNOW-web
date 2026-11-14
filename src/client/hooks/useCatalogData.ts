@@ -58,6 +58,7 @@ export interface UseCatalogDataInput {
 export interface CatalogData {
   games: GameInfo[];
   featuredGames: GameInfo[];
+  isLoadingFeaturedGames: boolean;
   storePanels: GamePanelResult[];
   libraryGames: GameInfo[];
   searchQuery: string;
@@ -114,6 +115,16 @@ export function useCatalogData({
 }: UseCatalogDataInput): CatalogData {
   const [games, setGames] = useState<GameInfo[]>([]);
   const [featuredGames, setFeaturedGames] = useState<GameInfo[]>([]);
+  /**
+   * True while the featured/hero request is still in flight.
+   *
+   * The home hero is built from `featuredGames` plus the resume slot, and that
+   * request finishes independently of the catalog. Without this flag the page
+   * rendered "no hero" first and then inserted one above the content when the
+   * request landed, pushing every row down (the reported "バーが出てくるのに
+   * 時間がかかる" / content jump).
+   */
+  const [isLoadingFeaturedGames, setIsLoadingFeaturedGames] = useState(false);
   const [storePanels, setStorePanels] = useState<GamePanelResult[]>([]);
   const [libraryGames, setLibraryGames] = useState<GameInfo[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
@@ -320,6 +331,7 @@ export function useCatalogData({
       if (isCurrentLoad() && !background) setIsLoadingLibrary(false);
     });
 
+    setIsLoadingFeaturedGames(true);
     void window.openNow.fetchFeaturedGames({
       token,
       userId,
@@ -330,6 +342,9 @@ export function useCatalogData({
     }).catch((error) => {
       console.warn("Featured games load failed:", error);
       if (isCurrentLoad()) setFeaturedGames([]);
+    }).finally(() => {
+      // Always clear: a background reload must not leave the skeleton up.
+      if (isCurrentLoad()) setIsLoadingFeaturedGames(false);
     });
   }, [
     activeSessionProxyUrl,
@@ -646,6 +661,7 @@ export function useCatalogData({
   return {
     games,
     featuredGames,
+    isLoadingFeaturedGames,
     storePanels,
     libraryGames,
     searchQuery,
