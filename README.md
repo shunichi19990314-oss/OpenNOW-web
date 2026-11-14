@@ -66,6 +66,13 @@ npm test
 npm run build
 ```
 
+Deployment to Render can be verified from CI or locally with the Render API
+(see `DEPLOY_GUIDE.md` → "Render API 連携"):
+
+```bash
+RENDER_API_KEY=... RENDER_SERVICE_ID=srv-... npm run render:status -- --wait
+```
+
 With the development server running, the isolated-session concurrency check can be run with:
 
 ```bash
