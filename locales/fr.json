@@ -130,6 +130,9 @@
       "sessionRestored": "Séance restaurée.",
       "noSavedSessionFound": "Aucune session enregistrée trouvée.",
       "sessionRestoreFailed": "La restauration de session a échoué. Veuillez vous reconnecter."
+    },
+    "qr": {
+      "codeExpired": "Ce code a expiré. Lancez une nouvelle connexion."
     }
   },
   "navigation": {

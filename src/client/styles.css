@@ -1813,6 +1813,12 @@ body,
   font-variant-numeric: tabular-nums;
 }
 
+/* The code ran out: this is now a "do something" message, not a countdown. */
+.login-qr-countdown.is-expired {
+  color: #f87171;
+  font-weight: 600;
+}
+
 .login-qr-copy p.login-qr-renewed {
   margin: 8px 0 0;
   color: var(--accent);
@@ -12144,6 +12150,23 @@ body {
 /* ======================================================
    CONTINUE PLAYING RAIL
    ====================================================== */
+/* The rail reuses the generic `.home-row` metrics but needs a little more
+   breathing room than the catalog rows: its tiles are cards, not posters. */
+.home-continue-row {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-bottom: 6px;
+}
+
+.home-continue-row .home-row-scroller {
+  scroll-snap-type: x mandatory;
+}
+
+.home-continue-row .home-continue-tile {
+  scroll-snap-align: start;
+}
+
 .home-continue-tile {
   display: flex;
   flex-direction: column;
@@ -12305,6 +12328,41 @@ body {
 .stream-auto-tune-actions {
   display: flex;
   gap: 8px;
+}
+
+/* The panel's primary buttons ("Analyze connection" / "Apply"). The class was
+   referenced by StreamAutoTunePanel but never styled, so the two most
+   important controls in the panel rendered as unstyled browser buttons. */
+.settings-action-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 9px 18px;
+  border-radius: var(--r-sm, 8px);
+  border: 1px solid color-mix(in srgb, var(--accent) 45%, var(--panel-border-solid, rgba(255, 255, 255, 0.12)));
+  background: color-mix(in srgb, var(--accent) 16%, transparent);
+  color: var(--ink);
+  font-family: inherit;
+  font-size: 0.84rem;
+  font-weight: 700;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background var(--t-fast, 140ms), border-color var(--t-fast, 140ms), opacity var(--t-fast, 140ms);
+}
+
+.settings-action-button:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--accent) 26%, transparent);
+  border-color: var(--accent);
+}
+
+.settings-action-button:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.settings-action-button:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
 }
 
 .stream-auto-tune-result {

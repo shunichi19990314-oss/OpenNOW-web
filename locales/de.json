@@ -130,6 +130,9 @@
       "sessionRestored": "Sitzung wiederhergestellt.",
       "noSavedSessionFound": "Keine gespeicherte Sitzung gefunden.",
       "sessionRestoreFailed": "Die Wiederherstellung der Sitzung ist fehlgeschlagen. Bitte melden Sie sich erneut an."
+    },
+    "qr": {
+      "codeExpired": "Dieser Code ist abgelaufen. Starte eine neue Anmeldung."
     }
   },
   "navigation": {
