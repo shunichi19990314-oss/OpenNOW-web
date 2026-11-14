@@ -194,7 +194,10 @@
     "sortAriaLabel": "ゲームを並び替え",
     "continuePlaying": {
       "kicker": "プレイを再開",
-      "play": "起動"
+      "play": "起動",
+      "railTitle": "続きからプレイ",
+      "neverPlayed": "未プレイ",
+      "sessionCount": "{{count}} 回プレイ"
     },
     "hero": {
       "play": "プレイ",
@@ -268,10 +271,12 @@
       "controller": "コントローラー",
       "touch": "タッチ",
       "played": "プレイ済み",
-      "neverPlayed": "未プレイ"
+      "neverPlayed": "未プレイ",
+      "favorite": "お気に入り"
     },
     "gameDetails": "ゲーム詳細",
-    "descriptionUnavailable": "このゲームの日本語説明は現在利用できません。"
+    "descriptionUnavailable": "このゲームの日本語説明は現在利用できません。",
+    "totalPlaytime": "累計プレイ時間"
   },
   "gameCard": {
     "selectGame": "{{title}}を選択します",
@@ -1142,6 +1147,93 @@
       "error": "再生エラー",
       "errorMsg": "メディアの読み込みに失敗しました。",
       "titleAdvertisement": "{{title}} の広告"
+    }
+  },
+  "commandPalette": {
+    "title": "コマンドパレット",
+    "placeholder": "ゲームやコマンドを検索…",
+    "clear": "検索をクリア",
+    "close": "コマンドパレットを閉じる",
+    "noResults": "一致するものがありません",
+    "noResultsHint": "ゲーム名・ページ名・コマンド名で検索してください。",
+    "groups": {
+      "games": "ゲーム",
+      "navigate": "移動",
+      "stream": "ストリーム中",
+      "actions": "操作"
+    },
+    "pages": {
+      "home": "ホームへ移動",
+      "library": "ライブラリへ移動",
+      "settings": "設定を開く"
+    },
+    "stream": {
+      "toggleStats": "パフォーマンス統計を切り替え",
+      "toggleMicrophone": "マイクを切り替え",
+      "toggleFullscreen": "フルスクリーンを切り替え",
+      "toggleAntiAfk": "Anti-AFK を切り替え",
+      "stop": "ストリームを終了"
+    },
+    "actions": {
+      "captureMouse": "マウスをキャプチャ",
+      "captureMouseHint": "ゲーム入力用にポインターを固定します"
+    },
+    "hints": {
+      "play": "起動",
+      "favorite": "お気に入り",
+      "recent": "最近プレイ"
+    },
+    "keywords": {
+      "play": "起動"
+    },
+    "footer": {
+      "navigate": "移動",
+      "run": "実行",
+      "close": "閉じる"
+    }
+  },
+  "streamTuning": {
+    "title": "自動画質チューニング",
+    "description": "回線・画面・コーデック対応を測定し、最適な設定をまとめて適用します。",
+    "run": "回線を診断",
+    "rerun": "もう一度診断",
+    "running": "診断中…",
+    "failed": "測定に失敗しました。回線を確認して再試行してください。",
+    "score": "{{score}} / 100",
+    "unavailable": "取得できません",
+    "udpOk": "UDP 利用可",
+    "udpTcpFallback": "TCP フォールバックのみ",
+    "limiting": "ボトルネック",
+    "changesTitle": "推奨される変更",
+    "apply": "適用",
+    "applied": "適用済み",
+    "applyHint": "{{count}}件の設定が変更されます。",
+    "appliedHint": "ストリーム設定を更新しました。",
+    "alreadyOptimal": "現在の設定はこの回線に最適です。",
+    "howItWorks": "仕組み",
+    "howItWorksBody": "ブラウザーからレイテンシ・ダウンロード速度・WebRTC 候補・コーデック対応を測定します。解像度とフレームレートは画面と回線の低い方に合わせ、コーデックはこのブラウザーでデコードできるものだけを提案します。",
+    "currentProfile": "現在: {{resolution}} · {{fps}} fps · {{bitrate}} Mbps · {{codec}}",
+    "fields": {
+      "resolution": "解像度",
+      "fps": "フレームレート",
+      "maxBitrateMbps": "ビットレート",
+      "codec": "コーデック",
+      "colorQuality": "色品質"
+    },
+    "grade": {
+      "excellent": "最高",
+      "good": "良好",
+      "fair": "普通",
+      "weak": "弱い",
+      "poor": "不良",
+      "unknown": "未測定"
+    },
+    "limitingFactor": {
+      "none": "問題なし",
+      "latency": "レイテンシ",
+      "throughput": "ダウンロード速度",
+      "network": "ネットワーク経路",
+      "unknown": "不明"
     }
   }
 }

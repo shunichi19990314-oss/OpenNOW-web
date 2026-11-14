@@ -168,6 +168,11 @@
       "playNow": "Play Now",
       "variant": "{{variant}}",
       "storeCount": "{{count}} stores"
+    },
+    "continuePlaying": {
+      "railTitle": "Oynamaya devam et",
+      "neverPlayed": "Hiç oynanmadı",
+      "sessionCount": "{{count}} oturum"
     }
   },
   "library": {
@@ -207,7 +212,11 @@
       "ownedGamesAppearHere": "Sahip olduğunuz oyunlar burada görünecek. Oyunları bulmak için kataloğa göz atın.",
       "noGamesFound": "Oyun bulunamadı",
       "noGamesMatch": "\"{{query}}\" ile eşleşen oyun yok"
-    }
+    },
+    "filterOptions": {
+      "favorite": "Favoriler"
+    },
+    "totalPlaytime": "Toplam oynama süresi"
   },
   "gameCard": {
     "selectGame": "{{title}}'i seçin",
@@ -671,5 +680,92 @@
     "queueAdPlayTimeout": "Reklam oynatma zaman aşımı",
     "queueAdVideoStuck": "Reklam videosu takılı kaldı",
     "queueAdUrlLoad": "URL yüklenirken hata oluştu"
+  },
+  "commandPalette": {
+    "title": "Komut paleti",
+    "placeholder": "Oyun ve komut ara…",
+    "clear": "Aramayı temizle",
+    "close": "Komut paletini kapat",
+    "noResults": "Eşleşme yok",
+    "noResultsHint": "Bir oyun adı, sayfa veya komut deneyin.",
+    "groups": {
+      "games": "Oyunlar",
+      "navigate": "Gezinme",
+      "stream": "Yayın sırasında",
+      "actions": "Eylemler"
+    },
+    "pages": {
+      "home": "Ana sayfaya git",
+      "library": "Kitaplığa git",
+      "settings": "Ayarları aç"
+    },
+    "stream": {
+      "toggleStats": "Performans istatistiklerini değiştir",
+      "toggleMicrophone": "Mikrofonu değiştir",
+      "toggleFullscreen": "Tam ekranı değiştir",
+      "toggleAntiAfk": "Anti-AFK’yi değiştir",
+      "stop": "Yayını bitir"
+    },
+    "actions": {
+      "captureMouse": "Fareyi yakala",
+      "captureMouseHint": "İşaretçiyi oyun girişi için kilitler"
+    },
+    "hints": {
+      "play": "Başlat",
+      "favorite": "Favori",
+      "recent": "Son oynanan"
+    },
+    "keywords": {
+      "play": "başlat"
+    },
+    "footer": {
+      "navigate": "gezin",
+      "run": "çalıştır",
+      "close": "kapat"
+    }
+  },
+  "streamTuning": {
+    "title": "Otomatik kalite ayarı",
+    "description": "Bağlantıyı, ekranı ve kodek desteğini ölçer, uygun profili uygular.",
+    "run": "Bağlantıyı analiz et",
+    "rerun": "Yeniden analiz et",
+    "running": "Analiz ediliyor…",
+    "failed": "Ölçüm başarısız oldu. Ağınızı kontrol edin.",
+    "score": "{{score}} / 100",
+    "unavailable": "Kullanılamıyor",
+    "udpOk": "UDP kullanılabilir",
+    "udpTcpFallback": "Yalnızca TCP yedeği",
+    "limiting": "Sınırlayıcı faktör",
+    "changesTitle": "Önerilen değişiklikler",
+    "apply": "Uygula",
+    "applied": "Uygulandı",
+    "applyHint": "{{count}} ayar değişecek.",
+    "appliedHint": "Yayın ayarlarınız güncellendi.",
+    "alreadyOptimal": "Mevcut ayarlarınız bu bağlantıya zaten uygun.",
+    "howItWorks": "Nasıl çalışır",
+    "howItWorksBody": "Gecikme, indirme hızı, WebRTC adayları ve kodek desteği tarayıcınızda ölçülür. Çözünürlük ve FPS, ekran ile bağlantıdan düşük olana göre seçilir; bir kodek yalnızca tarayıcınız çözebiliyorsa önerilir.",
+    "currentProfile": "Şu an: {{resolution}} · {{fps}} fps · {{bitrate}} Mbps · {{codec}}",
+    "fields": {
+      "resolution": "Çözünürlük",
+      "fps": "Kare hızı",
+      "maxBitrateMbps": "Bit hızı",
+      "codec": "Kodek",
+      "colorQuality": "Renk kalitesi"
+    },
+    "grade": {
+      "excellent": "Mükemmel",
+      "good": "İyi",
+      "fair": "Orta",
+      "weak": "Zayıf",
+      "poor": "Kötü",
+      "unknown": "Ölçülmedi"
+    },
+    "limitingFactor": {
+      "none": "Önemli değil",
+      "latency": "Gecikme",
+      "throughput": "İndirme hızı",
+      "network": "Ağ yolu",
+      "unknown": "Bilinmiyor"
+    }
   }
 }

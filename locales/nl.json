@@ -168,6 +168,11 @@
       "playNow": "Play Now",
       "variant": "{{variant}}",
       "storeCount": "{{count}} stores"
+    },
+    "continuePlaying": {
+      "railTitle": "Verder spelen",
+      "neverPlayed": "Nooit gespeeld",
+      "sessionCount": "{{count}} sessies"
     }
   },
   "library": {
@@ -207,7 +212,11 @@
       "ownedGamesAppearHere": "Games die jij bezit, verschijnen hier. Blader door de catalogus om games te vinden.",
       "noGamesFound": "Geen spellen gevonden",
       "noGamesMatch": "Er komen geen games overeen met \"{{query}}\""
-    }
+    },
+    "filterOptions": {
+      "favorite": "Favorieten"
+    },
+    "totalPlaytime": "Totale speeltijd"
   },
   "gameCard": {
     "selectGame": "Selecteer {{title}}",
@@ -671,5 +680,92 @@
     "queueAdPlayTimeout": "Time-out voor afspelen van advertentie",
     "queueAdVideoStuck": "Advertentievideo loopt vast",
     "queueAdUrlLoad": "Fout bij laden van URL"
+  },
+  "commandPalette": {
+    "title": "Opdrachtenpalet",
+    "placeholder": "Zoek games en opdrachten…",
+    "clear": "Zoekopdracht wissen",
+    "close": "Opdrachtenpalet sluiten",
+    "noResults": "Geen resultaten",
+    "noResultsHint": "Probeer een gametitel, pagina of opdracht.",
+    "groups": {
+      "games": "Games",
+      "navigate": "Navigatie",
+      "stream": "Tijdens stream",
+      "actions": "Acties"
+    },
+    "pages": {
+      "home": "Naar start",
+      "library": "Naar bibliotheek",
+      "settings": "Instellingen openen"
+    },
+    "stream": {
+      "toggleStats": "Prestatiestatistieken aan/uit",
+      "toggleMicrophone": "Microfoon aan/uit",
+      "toggleFullscreen": "Volledig scherm aan/uit",
+      "toggleAntiAfk": "Anti-AFK aan/uit",
+      "stop": "Stream beëindigen"
+    },
+    "actions": {
+      "captureMouse": "Muis vastleggen",
+      "captureMouseHint": "Vergrendelt de cursor voor spelinvoer"
+    },
+    "hints": {
+      "play": "Starten",
+      "favorite": "Favoriet",
+      "recent": "Recent gespeeld"
+    },
+    "keywords": {
+      "play": "starten"
+    },
+    "footer": {
+      "navigate": "navigeren",
+      "run": "uitvoeren",
+      "close": "sluiten"
+    }
+  },
+  "streamTuning": {
+    "title": "Automatische kwaliteitsafstelling",
+    "description": "Meet verbinding, scherm en codec-ondersteuning en past een passend profiel toe.",
+    "run": "Verbinding analyseren",
+    "rerun": "Opnieuw analyseren",
+    "running": "Analyseren…",
+    "failed": "De meting is mislukt. Controleer je netwerk.",
+    "score": "{{score}} / 100",
+    "unavailable": "Niet beschikbaar",
+    "udpOk": "UDP beschikbaar",
+    "udpTcpFallback": "Alleen TCP-terugval",
+    "limiting": "Beperkende factor",
+    "changesTitle": "Voorgestelde wijzigingen",
+    "apply": "Toepassen",
+    "applied": "Toegepast",
+    "applyHint": "{{count}} instellingen worden gewijzigd.",
+    "appliedHint": "Je streaminstellingen zijn bijgewerkt.",
+    "alreadyOptimal": "Je huidige instellingen passen al bij deze verbinding.",
+    "howItWorks": "Hoe dit werkt",
+    "howItWorksBody": "Latentie, downloadsnelheid, WebRTC-kandidaten en codec-ondersteuning worden in je browser gemeten. Resolutie en fps volgen de laagste waarde van scherm en verbinding; een codec wordt alleen aanbevolen als deze browser hem kan decoderen.",
+    "currentProfile": "Nu: {{resolution}} · {{fps}} fps · {{bitrate}} Mbps · {{codec}}",
+    "fields": {
+      "resolution": "Resolutie",
+      "fps": "Framerate",
+      "maxBitrateMbps": "Bitrate",
+      "codec": "Codec",
+      "colorQuality": "Kwaliteit"
+    },
+    "grade": {
+      "excellent": "Uitstekend",
+      "good": "Goed",
+      "fair": "Redelijk",
+      "weak": "Zwak",
+      "poor": "Slecht",
+      "unknown": "Niet gemeten"
+    },
+    "limitingFactor": {
+      "none": "Niets belangrijks",
+      "latency": "Latentie",
+      "throughput": "Downloadsnelheid",
+      "network": "Netwerkpad",
+      "unknown": "Onbekend"
+    }
   }
 }

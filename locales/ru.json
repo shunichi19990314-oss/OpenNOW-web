@@ -168,6 +168,11 @@
       "playNow": "Play Now",
       "variant": "{{variant}}",
       "storeCount": "{{count}} stores"
+    },
+    "continuePlaying": {
+      "railTitle": "Продолжить игру",
+      "neverPlayed": "Не играли",
+      "sessionCount": "Сессий: {{count}}"
     }
   },
   "library": {
@@ -207,7 +212,11 @@
       "ownedGamesAppearHere": "Здесь появятся ваши собственные игры. Просмотрите каталог, чтобы найти игры.",
       "noGamesFound": "Игры не найдены",
       "noGamesMatch": "Нет игр, соответствующих \"{{query}}\""
-    }
+    },
+    "filterOptions": {
+      "favorite": "Избранное"
+    },
+    "totalPlaytime": "Общее время игры"
   },
   "gameCard": {
     "selectGame": "Выберите {{title}}.",
@@ -671,5 +680,92 @@
     "queueAdPlayTimeout": "Тайм-аут воспроизведения рекламы",
     "queueAdVideoStuck": "Рекламное видео зависло",
     "queueAdUrlLoad": "Ошибка загрузки URL."
+  },
+  "commandPalette": {
+    "title": "Палитра команд",
+    "placeholder": "Поиск игр и команд…",
+    "clear": "Очистить поиск",
+    "close": "Закрыть палитру команд",
+    "noResults": "Ничего не найдено",
+    "noResultsHint": "Попробуйте название игры, страницу или команду.",
+    "groups": {
+      "games": "Игры",
+      "navigate": "Навигация",
+      "stream": "Во время стрима",
+      "actions": "Действия"
+    },
+    "pages": {
+      "home": "Перейти на главную",
+      "library": "Перейти в библиотеку",
+      "settings": "Открыть настройки"
+    },
+    "stream": {
+      "toggleStats": "Переключить статистику",
+      "toggleMicrophone": "Переключить микрофон",
+      "toggleFullscreen": "Переключить полный экран",
+      "toggleAntiAfk": "Переключить анти-AFK",
+      "stop": "Завершить стрим"
+    },
+    "actions": {
+      "captureMouse": "Захватить мышь",
+      "captureMouseHint": "Блокирует курсор для управления игрой"
+    },
+    "hints": {
+      "play": "Запустить",
+      "favorite": "Избранное",
+      "recent": "Недавно играли"
+    },
+    "keywords": {
+      "play": "запустить"
+    },
+    "footer": {
+      "navigate": "навигация",
+      "run": "запуск",
+      "close": "закрыть"
+    }
+  },
+  "streamTuning": {
+    "title": "Автонастройка качества",
+    "description": "Измеряет соединение, экран и поддержку кодеков и применяет подходящий профиль.",
+    "run": "Проверить соединение",
+    "rerun": "Проверить снова",
+    "running": "Измерение…",
+    "failed": "Измерение не удалось. Проверьте сеть.",
+    "score": "{{score}} / 100",
+    "unavailable": "Недоступно",
+    "udpOk": "UDP доступен",
+    "udpTcpFallback": "Только резервный TCP",
+    "limiting": "Ограничивающий фактор",
+    "changesTitle": "Рекомендуемые изменения",
+    "apply": "Применить",
+    "applied": "Применено",
+    "applyHint": "Изменится настройек: {{count}}.",
+    "appliedHint": "Настройки стрима обновлены.",
+    "alreadyOptimal": "Текущие настройки уже подходят для этого соединения.",
+    "howItWorks": "Как это работает",
+    "howItWorksBody": "Задержка, скорость загрузки, кандидаты WebRTC и поддержка кодеков измеряются в браузере. Разрешение и FPS выбираются по более слабому из экрана и канала, а кодек предлагается только если браузер умеет его декодировать.",
+    "currentProfile": "Сейчас: {{resolution}} · {{fps}} fps · {{bitrate}} Mbps · {{codec}}",
+    "fields": {
+      "resolution": "Разрешение",
+      "fps": "Частота кадров",
+      "maxBitrateMbps": "Битрейт",
+      "codec": "Кодек",
+      "colorQuality": "Качество цвета"
+    },
+    "grade": {
+      "excellent": "Отлично",
+      "good": "Хорошо",
+      "fair": "Средне",
+      "weak": "Слабо",
+      "poor": "Плохо",
+      "unknown": "Не измерено"
+    },
+    "limitingFactor": {
+      "none": "Нет ограничений",
+      "latency": "Задержка",
+      "throughput": "Скорость загрузки",
+      "network": "Сетевой путь",
+      "unknown": "Неизвестно"
+    }
   }
 }

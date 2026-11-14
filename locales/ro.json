@@ -168,6 +168,11 @@
       "playNow": "Play Now",
       "variant": "{{variant}}",
       "storeCount": "{{count}} stores"
+    },
+    "continuePlaying": {
+      "railTitle": "Continuă jocul",
+      "neverPlayed": "Niciodată jucat",
+      "sessionCount": "{{count}} sesiuni"
     }
   },
   "library": {
@@ -207,7 +212,11 @@
       "ownedGamesAppearHere": "Jocurile pe care le dețineți vor apărea aici. Răsfoiți catalogul pentru a găsi jocuri.",
       "noGamesFound": "Nu s-au găsit jocuri",
       "noGamesMatch": "Niciun joc nu se potrivește cu „{{query}}”"
-    }
+    },
+    "filterOptions": {
+      "favorite": "Favorite"
+    },
+    "totalPlaytime": "Timp total de joc"
   },
   "gameCard": {
     "selectGame": "Selectați {{title}}",
@@ -671,5 +680,92 @@
     "queueAdPlayTimeout": "Timp limită pentru redarea anunțurilor",
     "queueAdVideoStuck": "Videoclipul publicitar este blocat",
     "queueAdUrlLoad": "Eroare la încărcarea adresei URL"
+  },
+  "commandPalette": {
+    "title": "Paleta de comenzi",
+    "placeholder": "Caută jocuri și comenzi…",
+    "clear": "Golește căutarea",
+    "close": "Închide paleta de comenzi",
+    "noResults": "Niciun rezultat",
+    "noResultsHint": "Încearcă un titlu de joc, o pagină sau o comandă.",
+    "groups": {
+      "games": "Jocuri",
+      "navigate": "Navigare",
+      "stream": "În timpul streamului",
+      "actions": "Acțiuni"
+    },
+    "pages": {
+      "home": "Mergi la Acasă",
+      "library": "Mergi la Bibliotecă",
+      "settings": "Deschide setările"
+    },
+    "stream": {
+      "toggleStats": "Comută statisticile",
+      "toggleMicrophone": "Comută microfonul",
+      "toggleFullscreen": "Comută ecranul complet",
+      "toggleAntiAfk": "Comută anti-AFK",
+      "stop": "Încheie streamul"
+    },
+    "actions": {
+      "captureMouse": "Captează mouse-ul",
+      "captureMouseHint": "Blochează cursorul pentru input în joc"
+    },
+    "hints": {
+      "play": "Pornește",
+      "favorite": "Favorit",
+      "recent": "Jucat recent"
+    },
+    "keywords": {
+      "play": "pornește"
+    },
+    "footer": {
+      "navigate": "navighează",
+      "run": "rulează",
+      "close": "închide"
+    }
+  },
+  "streamTuning": {
+    "title": "Reglare automată a calității",
+    "description": "Măsoară conexiunea, ecranul și suportul codec, apoi aplică un profil potrivit.",
+    "run": "Analizează conexiunea",
+    "rerun": "Analizează din nou",
+    "running": "Se analizează…",
+    "failed": "Măsurătoarea a eșuat. Verifică rețeaua.",
+    "score": "{{score}} / 100",
+    "unavailable": "Indisponibil",
+    "udpOk": "UDP disponibil",
+    "udpTcpFallback": "Doar fallback TCP",
+    "limiting": "Factor limitativ",
+    "changesTitle": "Modificări sugerate",
+    "apply": "Aplică",
+    "applied": "Aplicat",
+    "applyHint": "{{count}} setări se vor schimba.",
+    "appliedHint": "Setările de stream au fost actualizate.",
+    "alreadyOptimal": "Setările actuale se potrivesc deja cu această conexiune.",
+    "howItWorks": "Cum funcționează",
+    "howItWorksBody": "Latența, viteza de descărcare, candidații WebRTC și suportul codec sunt măsurate în browser. Rezoluția și FPS urmează valoarea mai slabă dintre ecran și conexiune, iar un codec este recomandat doar dacă browserul îl poate decoda.",
+    "currentProfile": "Actual: {{resolution}} · {{fps}} fps · {{bitrate}} Mbps · {{codec}}",
+    "fields": {
+      "resolution": "Rezoluție",
+      "fps": "Cadre pe secundă",
+      "maxBitrateMbps": "Bitrate",
+      "codec": "Codec",
+      "colorQuality": "Calitate culoare"
+    },
+    "grade": {
+      "excellent": "Excelentă",
+      "good": "Bună",
+      "fair": "Medie",
+      "weak": "Slabă",
+      "poor": "Foarte slabă",
+      "unknown": "Nemăsurată"
+    },
+    "limitingFactor": {
+      "none": "Nimic semnificativ",
+      "latency": "Latență",
+      "throughput": "Viteză de descărcare",
+      "network": "Rută de rețea",
+      "unknown": "Necunoscut"
+    }
   }
 }

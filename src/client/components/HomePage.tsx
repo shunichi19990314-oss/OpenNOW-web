@@ -9,6 +9,9 @@ import { formatCatalogLastPlayed } from "../utils/lastPlayedFormat";
 import { GameCardListItem, useCatalogCardActionsRef } from "./GameCardListItem";
 import { GameDetailsModal } from "./GameDetailsModal";
 import { appendImageType, appendUnique, gameMatchesActiveSession } from "../lib/controllerCatalogUi";
+import { summarizeRecentActivity } from "../lib/localPreferences";
+import type { PlaytimeData } from "../lib/gameCatalog";
+import { ContinuePlayingRail } from "./ContinuePlayingRail";
 import { useTranslation } from "../i18n";
 import { controllerButton, readControllerGamepadButtons } from "../utils/controllerGamepad";
 import { pageTransition, panelSpring } from "./MotionProvider";
@@ -67,6 +70,8 @@ export interface HomePageProps {
   markOwnedInFlightByVariantId?: Record<string, boolean>;
   onPreviousControllerPage?: () => void;
   onNextControllerPage?: () => void;
+  /** Local playtime + activity data, used by the "Continue playing" rail. */
+  playtimeData?: PlaytimeData;
 }
 
 function getSteamHeaderUrl(game: GameInfo): string | undefined {
@@ -254,6 +259,7 @@ export const HomePage = memo(function HomePage({
   markOwnedInFlightByVariantId = {},
   onPreviousControllerPage,
   onNextControllerPage,
+  playtimeData = {},
 }: HomePageProps): JSX.Element {
   const { t } = useTranslation();
   const [detailsGame, setDetailsGame] = useState<GameInfo | null>(null);
@@ -529,6 +535,15 @@ export const HomePage = memo(function HomePage({
     }
     return best;
   }, [games, searchQuery]);
+
+  // Full "Continue playing" rail: hero resurfaces only the single newest game,
+  // this lists the rest with playtime totals so resuming needs no search.
+  const recentActivity = useMemo(() => {
+    if (searchQuery.trim() || selectedFilterIds.length > 0) return [];
+    // The hero already presents the newest entry as a full-width slide.
+    const entries = summarizeRecentActivity(games, playtimeData);
+    return entries.filter((entry) => entry.game.id !== continueGame?.id);
+  }, [continueGame?.id, games, playtimeData, searchQuery, selectedFilterIds.length]);
 
   // Featured hero carousel: the resume slot leads, then de-duped featured
   // games. Only shown while browsing (no search/filter) so results stay the
@@ -991,6 +1006,14 @@ export const HomePage = memo(function HomePage({
             </section>
           );
         })()}
+
+        {recentActivity.length > 0 && (
+          <ContinuePlayingRail
+            entries={recentActivity}
+            onPlay={onPlayGame}
+            onDetails={setDetailsGame}
+          />
+        )}
 
         {games.some((game) => favoriteGameIds.includes(game.id)) && (
           <section className="home-row home-favorites-row">

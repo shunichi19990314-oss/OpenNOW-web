@@ -168,6 +168,11 @@
       "playNow": "Play Now",
       "variant": "{{variant}}",
       "storeCount": "{{count}} stores"
+    },
+    "continuePlaying": {
+      "railTitle": "Weiterspielen",
+      "neverPlayed": "Nie gespielt",
+      "sessionCount": "{{count}} Sitzungen"
     }
   },
   "library": {
@@ -207,7 +212,11 @@
       "ownedGamesAppearHere": "Spiele, die Sie besitzen, werden hier angezeigt. Durchsuchen Sie den Katalog, um Spiele zu finden.",
       "noGamesFound": "Keine Spiele gefunden",
       "noGamesMatch": "Keine Spiele passen zu „{{query}}“"
-    }
+    },
+    "filterOptions": {
+      "favorite": "Favoriten"
+    },
+    "totalPlaytime": "Gesamte Spielzeit"
   },
   "gameCard": {
     "selectGame": "Wählen Sie {{title}}",
@@ -671,5 +680,92 @@
     "queueAdPlayTimeout": "Zeitüberschreitung bei der Anzeigenwiedergabe",
     "queueAdVideoStuck": "Das Werbevideo hängt fest",
     "queueAdUrlLoad": "Fehler beim Laden der URL"
+  },
+  "commandPalette": {
+    "title": "Befehlspalette",
+    "placeholder": "Spiele und Befehle suchen…",
+    "clear": "Suche löschen",
+    "close": "Befehlspalette schließen",
+    "noResults": "Keine Treffer",
+    "noResultsHint": "Versuche einen Spieltitel, eine Seite oder einen Befehl.",
+    "groups": {
+      "games": "Spiele",
+      "navigate": "Navigation",
+      "stream": "Im Stream",
+      "actions": "Aktionen"
+    },
+    "pages": {
+      "home": "Zur Startseite",
+      "library": "Zur Bibliothek",
+      "settings": "Einstellungen öffnen"
+    },
+    "stream": {
+      "toggleStats": "Leistungsstatistik umschalten",
+      "toggleMicrophone": "Mikrofon umschalten",
+      "toggleFullscreen": "Vollbild umschalten",
+      "toggleAntiAfk": "Anti-AFK umschalten",
+      "stop": "Stream beenden"
+    },
+    "actions": {
+      "captureMouse": "Maus erfassen",
+      "captureMouseHint": "Zeiger für Spieleingaben sperren"
+    },
+    "hints": {
+      "play": "Starten",
+      "favorite": "Favorit",
+      "recent": "Zuletzt gespielt"
+    },
+    "keywords": {
+      "play": "starten"
+    },
+    "footer": {
+      "navigate": "auswählen",
+      "run": "ausführen",
+      "close": "schließen"
+    }
+  },
+  "streamTuning": {
+    "title": "Automatische Qualitätsanpassung",
+    "description": "Misst Verbindung, Bildschirm und Codec-Unterstützung und empfiehlt ein passendes Profil.",
+    "run": "Verbindung analysieren",
+    "rerun": "Erneut analysieren",
+    "running": "Analyse läuft…",
+    "failed": "Die Messung ist fehlgeschlagen. Prüfe dein Netzwerk.",
+    "score": "{{score}} / 100",
+    "unavailable": "Nicht verfügbar",
+    "udpOk": "UDP verfügbar",
+    "udpTcpFallback": "Nur TCP-Fallback",
+    "limiting": "Engpass",
+    "changesTitle": "Empfohlene Änderungen",
+    "apply": "Anwenden",
+    "applied": "Angewendet",
+    "applyHint": "{{count}} Einstellungen werden geändert.",
+    "appliedHint": "Deine Stream-Einstellungen wurden aktualisiert.",
+    "alreadyOptimal": "Deine Einstellungen passen bereits zu dieser Verbindung.",
+    "howItWorks": "So funktioniert es",
+    "howItWorksBody": "Latenz, Downloadrate, WebRTC-Kandidaten und Codec-Unterstützung werden im Browser gemessen. Auflösung und Bildrate richten sich nach dem schwächeren Wert aus Bildschirm und Leitung; ein Codec wird nur empfohlen, wenn dieser Browser ihn dekodieren kann.",
+    "currentProfile": "Aktuell: {{resolution}} · {{fps}} fps · {{bitrate}} Mbps · {{codec}}",
+    "fields": {
+      "resolution": "Auflösung",
+      "fps": "Bildrate",
+      "maxBitrateMbps": "Bitrate",
+      "codec": "Codec",
+      "colorQuality": "Farbqualität"
+    },
+    "grade": {
+      "excellent": "Ausgezeichnet",
+      "good": "Gut",
+      "fair": "Mittel",
+      "weak": "Schwach",
+      "poor": "Schlecht",
+      "unknown": "Nicht gemessen"
+    },
+    "limitingFactor": {
+      "none": "Keine Einschränkung",
+      "latency": "Latenz",
+      "throughput": "Downloadrate",
+      "network": "Netzwerkpfad",
+      "unknown": "Unbekannt"
+    }
   }
 }
