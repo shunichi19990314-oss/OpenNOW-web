@@ -3321,6 +3321,62 @@ export class GfnWebRtcClient {
     this.sendPartiallyReliable(payload);
   }
 
+  /**
+   * Injects a synthetic gamepad state, as if a locally connected controller had
+   * reported it.
+   *
+   * Used by the AI player: the automation loop lives in the browser and owns
+   * the decision making, while the packet encoding and channel selection stay
+   * here so injected input is byte-identical to real input. Returns false when
+   * the input path is not ready yet, so the caller can retry instead of
+   * pretending the press landed.
+   */
+  public sendAiGamepadState(
+    state: {
+      buttons: number;
+      leftTrigger?: number;
+      rightTrigger?: number;
+      leftStickX?: number;
+      leftStickY?: number;
+      rightStickX?: number;
+      rightStickY?: number;
+    },
+    controllerId = 0,
+  ): boolean {
+    if (!this.inputReady || !this.reliableInputChannel || this.reliableInputChannel.readyState !== "open") {
+      return false;
+    }
+    const clampStick = (value: number | undefined): number => {
+      if (!value || !Number.isFinite(value)) return 0;
+      return Math.max(-32768, Math.min(32767, Math.round(value)));
+    };
+    const clampTrigger = (value: number | undefined): number => {
+      if (!value || !Number.isFinite(value)) return 0;
+      return Math.max(0, Math.min(255, Math.round(value)));
+    };
+    const payload: GamepadInput = {
+      controllerId: controllerId & 0x03,
+      buttons: state.buttons & 0xffff,
+      leftTrigger: clampTrigger(state.leftTrigger),
+      rightTrigger: clampTrigger(state.rightTrigger),
+      leftStickX: clampStick(state.leftStickX),
+      leftStickY: clampStick(state.leftStickY),
+      rightStickX: clampStick(state.rightStickX),
+      rightStickY: clampStick(state.rightStickY),
+      connected: true,
+      timestampUs: timestampUs(),
+    };
+    const usePR = this.canSendGamepadPartiallyReliable(payload.controllerId);
+    const bytes = this.inputEncoder.encodeGamepadState(payload, this.gamepadBitmap, usePR);
+    if (usePR) {
+      this.sendGamepad(bytes);
+    } else {
+      this.sendReliable(bytes);
+    }
+    this.lastGamepadSendMs = performance.now();
+    return true;
+  }
+
   private installInputCapture(videoElement: HTMLVideoElement): void {
     this.detachInputCapture();
 

@@ -15,7 +15,7 @@ export type ThanksLoadState = "idle" | "loading" | "loaded" | "error";
 export type StorageResetState = "idle" | "resetting" | "success" | "error";
 export type GameAccountBusyAction = "link" | "unlink" | "resync";
 
-export type SettingsSectionId = "account" | "stream" | "game" | "audio" | "input" | "interface" | "about" | "thanks";
+export type SettingsSectionId = "account" | "stream" | "game" | "audio" | "input" | "interface" | "ai" | "about" | "thanks";
 export type SettingsSearchScopeId =
   | "account-storage"
   | "stream-region"
@@ -25,6 +25,7 @@ export type SettingsSearchScopeId =
   | "audio"
   | "input"
   | "interface"
+  | "ai"
   | "about"
   | "thanks";
 
@@ -181,6 +182,16 @@ export const SETTINGS_SCOPE_SEARCH_TERMS: Record<SettingsSearchScopeId, readonly
     "controller",
     "gamepad",
     "big picture",
+  ],
+  ai: [
+    "ai",
+    "ai player",
+    "auto play",
+    "自動プレイ",
+    "aiプレイヤー",
+    "numes",
+    "api key",
+    "model",
   ],
   about: ["about", "what's new", "release notes", "logs", "cache", "export", "delete"],
   thanks: ["thanks", "contributors", "supporters", "sponsors", "community"],

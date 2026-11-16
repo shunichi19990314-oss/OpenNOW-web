@@ -21,6 +21,7 @@ import { SettingsAboutSection } from "./settings/sections/SettingsAboutSection";
 import { SettingsAudioSection } from "./settings/sections/SettingsAudioSection";
 import { SettingsGameSection } from "./settings/sections/SettingsGameSection";
 import { SettingsInputSection } from "./settings/sections/SettingsInputSection";
+import { SettingsAiSection } from "./settings/sections/SettingsAiSection";
 import { SettingsInterfaceSection } from "./settings/sections/SettingsInterfaceSection";
 import { SettingsStreamSection } from "./settings/sections/SettingsStreamSection";
 import { SettingsThanksSection } from "./settings/sections/SettingsThanksSection";
@@ -175,9 +176,10 @@ export function SettingsPage({
   const showAudio = showAll ? scopeMatchesSearch("audio") : activeSection === "audio";
   const showInput = showAll ? scopeMatchesSearch("input") : activeSection === "input";
   const showInterface = showAll ? scopeMatchesSearch("interface") : activeSection === "interface";
+  const showAi = showAll ? scopeMatchesSearch("ai") : activeSection === "ai";
   const showAbout = showAll ? scopeMatchesSearch("about") : activeSection === "about";
   const showThanks = showAll ? scopeMatchesSearch("thanks") : activeSection === "thanks";
-  const hasAnySearchMatches = showAccount || showStream || showGame || showAudio || showInput || showInterface || showAbout || showThanks;
+  const hasAnySearchMatches = showAccount || showStream || showGame || showAudio || showInput || showInterface || showAi || showAbout || showThanks;
   const shouldRenderSettingsSections = showAll || activeSection !== "thanks";
 
   useEffect(() => {
@@ -295,6 +297,7 @@ export function SettingsPage({
                       onSaved={markSaved}
                     />
                   )}
+                  {showAi && <SettingsAiSection showAll={showAll} />}
                   {showAbout && (
                     <SettingsAboutSection
                       showAll={showAll}

@@ -583,7 +583,8 @@
       "interface": "インターフェース",
       "about": "このアプリについて",
       "thanks": "謝辞",
-      "account": "アカウント"
+      "account": "アカウント",
+      "ai": "AI プレイヤー"
     },
     "region": {
       "title": "地域",
@@ -990,7 +991,27 @@
     "queueNotificationsHint": "このタブがバックグラウンドにあるとき、順番が来たりキュー失敗時に通知音を鳴らし、システム通知を表示します。",
     "adaptiveBitrate": "自動ビットレート調整",
     "adaptiveBitrateHint": "RTT やパケットロスが悪化したときにビットレートを自動で下げ、回復したら元に戻します。",
-    "advanced": "詳細設定"
+    "advanced": "詳細設定",
+    "ai": {
+      "title": "AI プレイヤー",
+      "description": "Numes の API キーを使い、AI にゲームをプレイさせます。キーはサーバー側だけで使い、ブラウザには一切送信しません。",
+      "statusLabel": "サーバーの状態",
+      "statusChecking": "確認中...",
+      "statusReady": "NUMES_API_KEY を検出しました。",
+      "statusMissing": "NUMES_API_KEY が未設定です。",
+      "statusError": "状態を取得できませんでした。ログイン状態を確認してください。",
+      "badgeReady": "利用可能",
+      "badgeMissing": "未設定",
+      "modelLabel": "既定のモデル",
+      "modelHint": "AI_PLAYER_MODEL で変更できます。Numes の無料モデルは残高なしでも試せます。",
+      "keyLabel": "API キーの設定方法",
+      "step1": "Numes でキーを発行します:",
+      "step2": "Render の Environment(またはローカルの .env)に下記を追加します。",
+      "step3": "再デプロイして、配信画面の「AI」ボタンから開始します。",
+      "keyWarning": "キーはアカウント全体の残高に紐づきます。絶対にこのアプリの画面やチャットに貼り付けないでください。",
+      "usageLabel": "使用量の制御",
+      "usageHint": "AI_PLAYER_DAILY_REQUESTS で 1 アカウントあたりの 1 日のリクエスト上限を設定できます(0 で無制限)。"
+    }
   },
   "navbar": {
     "subscriptionDetails": "サブスクリプションの詳細",
@@ -1236,5 +1257,16 @@
       "network": "ネットワーク経路",
       "unknown": "不明"
     }
+  },
+  "aiPlayer": {
+    "title": "AI プレイヤー",
+    "shortLabel": "AI",
+    "start": "AI に任せる",
+    "stop": "停止",
+    "round": "ラウンド {{count}}",
+    "modelLabel": "モデル",
+    "statusUnavailable": "AI サーバーの状態を取得できませんでした。ログインし直してください。",
+    "missingKey": "サーバーに NUMES_API_KEY が設定されていません。設定 → AI プレイヤーを確認してください。",
+    "disclaimer": "AI の操作はゲームパッド入力として送信されます。誤操作の可能性があるため、対戦相手がいるゲームでは使用しないでください。"
   }
 }
