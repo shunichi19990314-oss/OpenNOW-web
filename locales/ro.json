@@ -801,6 +801,16 @@
     "modelLabel": "Model",
     "statusUnavailable": "Nu s-a putut citi starea serverului AI. Autentifică-te din nou.",
     "missingKey": "NUMES_API_KEY nu este configurată pe server. Vezi Setări → Jucător AI.",
-    "disclaimer": "Acțiunile AI sunt trimise ca intrare de gamepad. Evită jocurile cu alți jucători, deoarece AI-ul poate greși."
+    "disclaimer": "Acțiunile AI sunt trimise ca intrare de gamepad. Evită jocurile cu alți jucători, deoarece AI-ul poate greși.",
+    "log": {
+      "session_expired": "Sesiunea acestui tab a expirat. Reîncarcă pagina și autentifică-te din nou.",
+      "rate_limited": "Prea multe cereri. Se reîncearcă imediat.",
+      "not_configured": "NUMES_API_KEY nu este configurată pe server.",
+      "network": "Serverul AI nu poate fi contactat. Verifică conexiunea.",
+      "bad_reply": "Răspunsul AI nu a putut fi interpretat. Se reîncearcă în runda următoare.",
+      "unknown_action": "AI a cerut o acțiune neacceptată, așa că nu s-a trimis nimic.",
+      "input_not_ready": "Canalul de intrare nu este încă conectat. Se așteaptă."
+    },
+    "reload": "Reîncarcă pagina"
   }
 }

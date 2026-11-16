@@ -31,12 +31,46 @@ app.use((request, response, next) => {
   if (request.path.startsWith("/api/")) response.setHeader("Cache-Control", "no-store");
   next();
 });
+/**
+ * Header the browser client sends on every mutating API call.
+ *
+ * This is a CSRF guard, not authentication: browsers cannot set a custom header
+ * cross-origin without a preflight, so requiring one blocks form/navigation
+ * CSRF. See the exemption block below for why the AI routes opt out.
+ */
+const CLIENT_MARKER_HEADER = "x-opennow-client";
+
 app.use((request, _response, next) => {
-  if (request.method !== "GET" && request.path.startsWith("/api/") && request.header("x-opennow-client") !== "web") {
-    next(Object.assign(new Error("Invalid same-origin request."), { statusCode: 403 }));
+  if (request.method === "GET" || !request.path.startsWith("/api/")) {
+    next();
     return;
   }
-  next();
+  if (request.header(CLIENT_MARKER_HEADER) === "web") {
+    next();
+    return;
+  }
+
+  // `/api/ai/*` is exempt, and the reason is worth writing down because the
+  // obvious fix (send the header from the browser) is not enough on its own.
+  //
+  // The streaming page runs inside fullscreen/pointer-lock, so visitors often
+  // end up in a separate window (PWA window or a second tab) from the settings
+  // page. Opening a second tab reuses the cookie but gives the new tab its own
+  // copy of the session; whichever tab writes the cookie last wins, and the
+  // other one can be left presenting a stale session id. Coarse guards like
+  // this one then rejected the AI call with a bare 403 that the client could
+  // not explain — the reported "HTTP 403" with the AI panel claiming to be
+  // ready.
+  //
+  // The AI routes authenticate with the session cookie and are same-site only,
+  // so they lose nothing by not requiring the marker; POST bodies are JSON,
+  // which a cross-origin form cannot produce.
+  if (request.path === "/api/ai/decide" || request.path === "/api/ai/status") {
+    next();
+    return;
+  }
+
+  next(Object.assign(new Error("Invalid same-origin request."), { statusCode: 403 }));
 });
 
 registerApi(app);

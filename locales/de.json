@@ -801,6 +801,16 @@
     "modelLabel": "Modell",
     "statusUnavailable": "Der Status des KI-Servers konnte nicht gelesen werden. Bitte erneut anmelden.",
     "missingKey": "NUMES_API_KEY ist auf dem Server nicht gesetzt. Siehe Einstellungen → KI-Spieler.",
-    "disclaimer": "KI-Aktionen werden als Gamepad-Eingabe gesendet. In Spielen mit anderen Spielern bitte nicht verwenden, da Fehler möglich sind."
+    "disclaimer": "KI-Aktionen werden als Gamepad-Eingabe gesendet. In Spielen mit anderen Spielern bitte nicht verwenden, da Fehler möglich sind.",
+    "log": {
+      "session_expired": "Die Anmeldung dieses Tabs ist abgelaufen. Seite neu laden und erneut anmelden.",
+      "rate_limited": "Zu viele Anfragen. Gleich wird es erneut versucht.",
+      "not_configured": "NUMES_API_KEY ist auf dem Server nicht gesetzt.",
+      "network": "Der KI-Server ist nicht erreichbar. Verbindung prüfen.",
+      "bad_reply": "Die Antwort der KI war nicht lesbar. Neuer Versuch in der nächsten Runde.",
+      "unknown_action": "Die KI forderte eine nicht unterstützte Aktion an; es wurde nichts gesendet.",
+      "input_not_ready": "Der Eingabekanal ist noch nicht verbunden. Warten."
+    },
+    "reload": "Seite neu laden"
   }
 }

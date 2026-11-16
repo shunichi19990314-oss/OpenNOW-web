@@ -801,6 +801,16 @@
     "modelLabel": "Model",
     "statusUnavailable": "Nie udało się odczytać stanu serwera AI. Zaloguj się ponownie.",
     "missingKey": "NUMES_API_KEY nie jest ustawiony na serwerze. Zobacz Ustawienia → Gracz AI.",
-    "disclaimer": "Działania AI są wysyłane jako wejście pada. Nie używaj w grach z innymi graczami, ponieważ AI może się mylić."
+    "disclaimer": "Działania AI są wysyłane jako wejście pada. Nie używaj w grach z innymi graczami, ponieważ AI może się mylić.",
+    "log": {
+      "session_expired": "Sesja tej karty wygasła. Odśwież stronę i zaloguj się ponownie.",
+      "rate_limited": "Zbyt wiele żądań. Wkrótce ponowna próba.",
+      "not_configured": "NUMES_API_KEY nie jest ustawiony na serwerze.",
+      "network": "Brak połączenia z serwerem AI. Sprawdź sieć.",
+      "bad_reply": "Nie udało się odczytać odpowiedzi AI. Ponowna próba w kolejnej rundzie.",
+      "unknown_action": "AI zażądało nieobsługiwanej akcji, więc nic nie wysłano.",
+      "input_not_ready": "Kanał wejściowy nie jest jeszcze połączony. Czekam."
+    },
+    "reload": "Odśwież stronę"
   }
 }
