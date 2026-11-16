@@ -1267,6 +1267,16 @@
     "modelLabel": "Model",
     "statusUnavailable": "Could not read the AI server status. Please sign in again.",
     "missingKey": "NUMES_API_KEY is not configured on the server. See Settings → AI player.",
-    "disclaimer": "AI actions are sent as gamepad input. Avoid using it in games with other players, since it can make mistakes."
+    "disclaimer": "AI actions are sent as gamepad input. Avoid using it in games with other players, since it can make mistakes.",
+    "log": {
+      "session_expired": "This tab's sign-in is no longer valid. Reload the page and sign in again.",
+      "rate_limited": "Too many requests right now. Retrying shortly.",
+      "not_configured": "NUMES_API_KEY is not configured on the server.",
+      "network": "Could not reach the AI server. Check your connection.",
+      "bad_reply": "The AI reply could not be understood. Retrying next round.",
+      "unknown_action": "The AI asked for an unsupported action, so nothing was sent.",
+      "input_not_ready": "The input channel is not connected yet. Waiting for it."
+    },
+    "reload": "Reload page"
   }
 }

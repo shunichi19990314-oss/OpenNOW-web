@@ -801,6 +801,16 @@
     "modelLabel": "Model",
     "statusUnavailable": "Yapay zekâ sunucusunun durumu okunamadı. Lütfen yeniden giriş yapın.",
     "missingKey": "Sunucuda NUMES_API_KEY ayarlı değil. Ayarlar → Yapay zekâ oyuncusu bölümüne bakın.",
-    "disclaimer": "YZ eylemleri gamepad girdisi olarak gönderilir. Hata yapabileceği için diğer oyuncularla oynanan oyunlarda kullanmayın."
+    "disclaimer": "YZ eylemleri gamepad girdisi olarak gönderilir. Hata yapabileceği için diğer oyuncularla oynanan oyunlarda kullanmayın.",
+    "log": {
+      "session_expired": "Bu sekmenin oturumu sona erdi. Sayfayı yenileyip yeniden giriş yapın.",
+      "rate_limited": "Çok fazla istek var. Kısa süre sonra yeniden denenecek.",
+      "not_configured": "Sunucuda NUMES_API_KEY ayarlı değil.",
+      "network": "Yapay zekâ sunucusuna ulaşılamadı. Bağlantınızı kontrol edin.",
+      "bad_reply": "Yapay zekâ yanıtı okunamadı. Sonraki turda yeniden denenecek.",
+      "unknown_action": "Yapay zekâ desteklenmeyen bir işlem istedi, girdi gönderilmedi.",
+      "input_not_ready": "Giriş kanalı henüz bağlı değil. Bekleniyor."
+    },
+    "reload": "Sayfayı yenile"
   }
 }
