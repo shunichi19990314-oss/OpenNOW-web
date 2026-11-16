@@ -8,7 +8,13 @@ import {
   resolveGamepadAction,
 } from "./aiPlayerActions";
 import { parseAiPlayerDecision, buildAiPlayerPrompt } from "../../shared/aiPlayerPrompt";
-import { runAiPlayerLoop, runAiPlayerRound } from "./aiPlayerLoop";
+import {
+  describeDecisionFailure,
+  runAiPlayerLoop,
+  runAiPlayerRound,
+  type AiPlayerPost,
+} from "./aiPlayerLoop";
+import type { AiPlayerDecideResponse } from "../../shared/aiPlayer";
 import {
   GAMEPAD_A,
   GAMEPAD_B,
@@ -114,13 +120,19 @@ describe("decision parsing", () => {
   });
 });
 
-function fakeFetch(body: unknown, status = 200): typeof fetch {
-  return vi.fn(async () => ({
-    ok: status >= 200 && status < 300,
-    status,
-    headers: new Headers(),
-    json: async () => body,
-  })) as unknown as typeof fetch;
+/**
+ * Stands in for the proxy call.
+ *
+ * Mirrors `api()`: a non-2xx reply becomes a thrown Error carrying `httpStatus`,
+ * which is what the round reads to explain the failure.
+ */
+function fakePost(body: unknown, status = 200): AiPlayerPost {
+  const error = new Error(`Request failed (${status})`) as Error & { httpStatus?: number };
+  error.httpStatus = status;
+  return (async () => {
+    if (status >= 200 && status < 300) return body as AiPlayerDecideResponse;
+    throw error;
+  }) as AiPlayerPost;
 }
 
 describe("AI player round", () => {
@@ -129,7 +141,7 @@ describe("AI player round", () => {
     const decision = await runAiPlayerRound({
       observation: OBSERVATION,
       sink: { send: (state) => { sent.push(state.buttons); return true; } },
-      fetchImpl: fakeFetch({ raw: '{"plan":"jump","actions":[{"action":"a","durationMs":120}]}' }),
+      post: fakePost({ raw: '{"plan":"jump","actions":[{"action":"a","durationMs":120}]}' }),
       sleep: async () => {},
       now: () => 1000,
     });
@@ -146,7 +158,7 @@ describe("AI player round", () => {
     await runAiPlayerRound({
       observation: OBSERVATION,
       sink: { send },
-      fetchImpl: fakeFetch({ raw: "I cannot do that." }),
+      post: fakePost({ raw: "I cannot do that." }),
       sleep: async () => {},
       onLog: (entry) => logs.push(entry.message),
     });
@@ -159,7 +171,7 @@ describe("AI player round", () => {
     await runAiPlayerRound({
       observation: OBSERVATION,
       sink: { send },
-      fetchImpl: fakeFetch({ raw: '{"plan":"x","actions":[{"action":"a","durationMs":100},{"action":"b","durationMs":100}]}' }),
+      post: fakePost({ raw: '{"plan":"x","actions":[{"action":"a","durationMs":100},{"action":"b","durationMs":100}]}' }),
       sleep: async () => {},
     });
     // First attempt fails, so the loop must not queue the remaining actions.
@@ -168,15 +180,12 @@ describe("AI player round", () => {
 
   it("explains a missing key from the proxy", async () => {
     const logs: string[] = [];
+    const error = new Error("AI player is not configured: set NUMES_API_KEY on the server.") as Error & { httpStatus?: number };
+    error.httpStatus = 503;
     await runAiPlayerRound({
       observation: OBSERVATION,
       sink: { send: () => true },
-      fetchImpl: vi.fn(async () => ({
-        ok: false,
-        status: 503,
-        headers: new Headers(),
-        json: async () => ({ error: "missing_key", message: "no key" }),
-      })) as unknown as typeof fetch,
+      post: vi.fn(async () => { throw error; }),
       sleep: async () => {},
       onLog: (entry) => logs.push(entry.message),
     });
@@ -188,11 +197,27 @@ describe("AI player round", () => {
     await runAiPlayerRound({
       observation: OBSERVATION,
       sink: { send: () => true },
-      fetchImpl: vi.fn(async () => { throw new TypeError("failed to fetch"); }) as unknown as typeof fetch,
+      post: vi.fn(async () => { throw new TypeError("failed to fetch"); }),
       sleep: async () => {},
       onLog: (entry) => logs.push(entry.message),
     });
     expect(logs.join(" ")).toContain("接続できません");
+  });
+
+  it("turns a 403 into sign-in guidance instead of a bare status", async () => {
+    const logs: string[] = [];
+    await runAiPlayerRound({
+      observation: OBSERVATION,
+      sink: { send: () => true },
+      // Exactly what the same-origin guard produced before the fix.
+      post: fakePost(null, 403),
+      sleep: async () => {},
+      onLog: (entry) => logs.push(entry.message),
+    });
+    const text = logs.join(" ");
+    expect(text).toContain("403");
+    expect(text).toContain("再読み込み");
+    expect(text).not.toBe("AI リクエストが失敗しました (HTTP 403)。");
   });
 });
 
@@ -208,7 +233,7 @@ describe("AI player loop", () => {
       buildObservation: () => OBSERVATION,
       options: {
         signal: controller.signal,
-        fetchImpl: fakeFetch({ raw: '{"plan":"step","actions":[{"action":"a","durationMs":100}]}' }),
+        post: fakePost({ raw: '{"plan":"step","actions":[{"action":"a","durationMs":100}]}' }),
         now: () => 0,
         sleep: async () => {
           rounds += 1;
@@ -233,7 +258,7 @@ describe("AI player loop", () => {
       buildObservation: () => OBSERVATION,
       options: {
         signal: controller.signal,
-        fetchImpl: fakeFetch({}, 500),
+        post: fakePost({}, 500),
         now: () => 0,
         sleep: async (ms) => {
           sleeps.push(ms);
@@ -247,3 +272,19 @@ describe("AI player loop", () => {
     expect(sleeps[0]).toBeGreaterThan(1_500);
   });
 });
+
+describe("decision failure messages", () => {
+  it("guides the visitor to re-authenticate on 401/403", () => {
+    for (const status of [401, 403]) {
+      const message = describeDecisionFailure(status, "Invalid same-origin request.");
+      expect(message).toContain(String(status));
+      expect(message).toContain("再読み込み");
+    }
+  });
+
+  it("keeps the server's explanation for other statuses", () => {
+    expect(describeDecisionFailure(503, "NUMES_API_KEY is not set.")).toBe("NUMES_API_KEY is not set.");
+    expect(describeDecisionFailure(500, "")).toContain("HTTP 500");
+  });
+});
+

@@ -801,6 +801,16 @@
     "modelLabel": "Modèle",
     "statusUnavailable": "Impossible de lire l'état du serveur IA. Reconnectez-vous.",
     "missingKey": "NUMES_API_KEY n'est pas configurée sur le serveur. Voir Paramètres → Joueur IA.",
-    "disclaimer": "Les actions de l'IA sont envoyées comme entrées de manette. À éviter dans les jeux multijoueur, car elle peut se tromper."
+    "disclaimer": "Les actions de l'IA sont envoyées comme entrées de manette. À éviter dans les jeux multijoueur, car elle peut se tromper.",
+    "log": {
+      "session_expired": "La session de cet onglet a expiré. Rechargez la page et reconnectez-vous.",
+      "rate_limited": "Trop de requêtes. Nouvelle tentative dans un instant.",
+      "not_configured": "NUMES_API_KEY n'est pas configurée sur le serveur.",
+      "network": "Impossible de joindre le serveur IA. Vérifiez votre connexion.",
+      "bad_reply": "La réponse de l'IA est illisible. Nouvel essai au prochain tour.",
+      "unknown_action": "L'IA a demandé une action non prise en charge ; rien n'a été envoyé.",
+      "input_not_ready": "Le canal d'entrée n'est pas encore connecté. Attente."
+    },
+    "reload": "Recharger la page"
   }
 }

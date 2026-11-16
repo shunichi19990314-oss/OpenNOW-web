@@ -801,6 +801,16 @@
     "modelLabel": "Model",
     "statusUnavailable": "De status van de AI-server kon niet worden gelezen. Log opnieuw in.",
     "missingKey": "NUMES_API_KEY is niet ingesteld op de server. Zie Instellingen → AI-speler.",
-    "disclaimer": "AI-acties worden als gamepadinvoer verzonden. Gebruik dit niet in games met andere spelers, want de AI kan fouten maken."
+    "disclaimer": "AI-acties worden als gamepadinvoer verzonden. Gebruik dit niet in games met andere spelers, want de AI kan fouten maken.",
+    "log": {
+      "session_expired": "De aanmelding van dit tabblad is verlopen. Herlaad de pagina en meld opnieuw aan.",
+      "rate_limited": "Te veel verzoeken. Zo meteen opnieuw.",
+      "not_configured": "NUMES_API_KEY is niet ingesteld op de server.",
+      "network": "De AI-server is niet bereikbaar. Controleer je verbinding.",
+      "bad_reply": "Het antwoord van de AI was onleesbaar. Nieuwe poging volgende ronde.",
+      "unknown_action": "De AI vroeg een niet-ondersteunde actie; er is niets verzonden.",
+      "input_not_ready": "Het invoerkanaal is nog niet verbonden. Even wachten."
+    },
+    "reload": "Pagina herladen"
   }
 }
