@@ -801,6 +801,16 @@
     "modelLabel": "模型",
     "statusUnavailable": "无法获取 AI 服务器状态，请重新登录。",
     "missingKey": "服务器未配置 NUMES_API_KEY，请查看 设置 → AI 玩家。",
-    "disclaimer": "AI 的操作会作为手柄输入发送。它可能出错，请勿在有其他玩家的游戏中使用。"
+    "disclaimer": "AI 的操作会作为手柄输入发送。它可能出错，请勿在有其他玩家的游戏中使用。",
+    "log": {
+      "session_expired": "此标签页的登录已失效。请刷新页面并重新登录。",
+      "rate_limited": "请求过于频繁，稍后再试。",
+      "not_configured": "服务器未配置 NUMES_API_KEY。",
+      "network": "无法连接 AI 服务器，请检查网络。",
+      "bad_reply": "无法解析 AI 的回复，将在下一回合重试。",
+      "unknown_action": "AI 请求了不支持的操作，未发送输入。",
+      "input_not_ready": "输入通道尚未连接，正在等待。"
+    },
+    "reload": "刷新页面"
   }
 }

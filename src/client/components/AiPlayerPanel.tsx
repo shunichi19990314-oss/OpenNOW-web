@@ -6,7 +6,13 @@ import {
   type AiPlayerDecision,
   type AiPlayerStatus,
 } from "../../shared/aiPlayer";
-import { runAiPlayerLoop, type AiPlayerInputSink, type AiPlayerLoopState, type AiPlayerLogEntry } from "../lib/aiPlayerLoop";
+import {
+  runAiPlayerLoop,
+  type AiPlayerInputSink,
+  type AiPlayerLogCode,
+  type AiPlayerLoopState,
+  type AiPlayerLogEntry,
+} from "../lib/aiPlayerLoop";
 
 export interface AiPlayerPanelProps {
   gameTitle: string;
@@ -67,6 +73,24 @@ export const AiPlayerPanel = memo(function AiPlayerPanel({
       cancelled = true;
     };
   }, [open, status, statusError]);
+
+  /**
+   * Localised text for the codes the loop emits.
+   *
+   * The loop's own messages stay Japanese as a fallback (they carry detail such
+   * as which action was unknown), but anything with a known code is shown in
+   * the visitor's language.
+   */
+  const translateLog = useCallback((entry: AiPlayerLogEntry): string => {
+    const code = entry.code as AiPlayerLogCode | undefined;
+    if (code) {
+      const key = `aiPlayer.log.${code}`;
+      const translated = t(key);
+      // `t` returns the key itself when the locale has no entry.
+      if (translated && translated !== key) return translated;
+    }
+    return entry.message;
+  }, [t]);
 
   const appendLog = useCallback((entry: AiPlayerLogEntry) => {
     setLog((current) => [...current.slice(-(DEFAULT_LOG_LIMIT - 1)), entry]);
@@ -196,13 +220,28 @@ export const AiPlayerPanel = memo(function AiPlayerPanel({
             </label>
           )}
 
-          {loopState?.lastError && <p className="ai-player-note ai-player-note--warn">{loopState.lastError}</p>}
+          {loopState?.lastError && (
+            <div className="ai-player-note ai-player-note--warn">
+              <p>{translateLog({ atMs: 0, level: "warn", message: loopState.lastError, code: loopState.lastErrorCode })}</p>
+              {loopState.lastErrorCode === "session_expired" && (
+                // Retrying cannot fix a stale session; the visitor needs a fresh
+                // document, so offer the one action that works.
+                <button
+                  type="button"
+                  className="ai-player-reload"
+                  onClick={() => window.location.reload()}
+                >
+                  {t("aiPlayer.reload")}
+                </button>
+              )}
+            </div>
+          )}
 
           {log.length > 0 && (
             <ol className="ai-player-log" aria-live="polite">
               {log.slice(-8).map((entry, index) => (
                 <li key={`${entry.atMs}-${index}`} className={`ai-player-log-${entry.level}`}>
-                  {entry.message}
+                  {translateLog(entry)}
                 </li>
               ))}
             </ol>

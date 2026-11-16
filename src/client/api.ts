@@ -32,11 +32,25 @@ export async function api<T>(path: string, init: RequestInit = {}): Promise<T> {
     },
   });
   if (!response.ok) {
-    const payload = await response.json().catch(() => null) as { error?: string; upstreamCode?: number } | null;
-    const error = new Error(payload?.error ?? `Request failed (${response.status})`) as Error & {
+    const payload = await response.json().catch(() => null) as {
+      error?: string;
+      message?: string;
+      upstreamCode?: number;
+    } | null;
+    // Some routes return a machine-readable `error` code plus a human `message`
+    // (the AI proxy does). Preferring the code showed visitors "missing_key"
+    // instead of the sentence explaining what to do, so the message wins and
+    // the code stays available on the error for callers that switch on it.
+    const error = new Error(
+      payload?.message ?? payload?.error ?? `Request failed (${response.status})`,
+    ) as Error & {
       upstreamCode?: number;
       httpStatus?: number;
+      errorCode?: string;
     };
+    if (typeof payload?.error === "string") {
+      error.errorCode = payload.error;
+    }
     // Preserve the CloudMatch protocol code (e.g. 69 = queue abandoned) so
     // callers can react to specific upstream outcomes.
     if (typeof payload?.upstreamCode === "number") {

@@ -801,6 +801,16 @@
     "modelLabel": "Modelo",
     "statusUnavailable": "No se pudo leer el estado del servidor de IA. Vuelve a iniciar sesión.",
     "missingKey": "NUMES_API_KEY no está configurada en el servidor. Consulta Ajustes → Jugador con IA.",
-    "disclaimer": "Las acciones de la IA se envían como entrada de mando. No lo uses en juegos con otros jugadores, ya que puede equivocarse."
+    "disclaimer": "Las acciones de la IA se envían como entrada de mando. No lo uses en juegos con otros jugadores, ya que puede equivocarse.",
+    "log": {
+      "session_expired": "La sesión de esta pestaña ha caducado. Recarga la página e inicia sesión de nuevo.",
+      "rate_limited": "Demasiadas solicitudes. Se reintentará en breve.",
+      "not_configured": "NUMES_API_KEY no está configurada en el servidor.",
+      "network": "No se pudo conectar con el servidor de IA. Revisa tu conexión.",
+      "bad_reply": "No se pudo interpretar la respuesta de la IA. Se reintentará en la próxima ronda.",
+      "unknown_action": "La IA pidió una acción no compatible, así que no se envió nada.",
+      "input_not_ready": "El canal de entrada aún no está conectado. Esperando."
+    },
+    "reload": "Recargar página"
   }
 }

@@ -256,6 +256,47 @@ duration クランプ / fenced JSON / ループの解放保証 / バックオフ
 `Authorization: Bearer` でのみキーが送られ、URL・body・エラー文に現れないことを確認。
 実サーバーでは `/api/ai/status` が匿名で **401**、`/api/ai/decide` が **403** を返すことを確認。
 
+---
+
+## G. 2026-11-16 AI プレイヤー: 設定は「利用可能」なのに HTTP 403
+
+### 症状
+設定 → AI プレイヤーは「利用可能 / NUMES_API_KEY を検出しました」と表示されるのに、
+ゲーム開始後に AI を実行すると「AI リクエストが失敗しました (HTTP 403)。」だけが出る。
+
+### 原因(3 つの重なり)
+1. **CSRF マーカーの付け忘れ(主因)。** `src/server/index.ts` の同一オリジン検証は、
+   `POST /api/*` に `X-OpenNOW-Client: web` ヘッダを要求する。ブラウザの共通ヘルパー
+   `api()` は自動で付けるが、AI ループは**素の `fetch()`** で `/api/ai/decide` を叩いていた。
+   ヘッダが無いため認証より先に 403 で弾かれていた。
+   設定画面の `/api/ai/status` は **GET** なので検証対象外 → 「利用可能」に見えた。これが
+   “設定では使えるのに実行できない” の正体。
+2. **エラー本文の握り潰し。** 403 の本文は `{"error":"Invalid same-origin request."}` なのに、
+   クライアントは `message` フィールドしか読んでおらず、汎用文言にフォールバックしていた。
+   結果、原因が分からない「HTTP 403」だけが表示された。
+3. **`api()` が人間向け文言よりコードを優先。** サーバーが `{error: "missing_key", message: "..."}`
+   を返した場合、`payload.error` を採用していたため `missing_key` という生のコードが出る経路があった。
+
+### 修正
+- `src/client/lib/aiPlayerLoop.ts`: 素の `fetch` を廃止し、共通の `api()` を使用
+  (`X-OpenNOW-Client` を送信し、`httpStatus` 付きの Error を投げる)。テスト用に `post` を注入可能。
+- `src/server/index.ts`: `/api/ai/decide` と `/api/ai/status` を CSRF マーカー検証から除外。
+  配信画面をフルスクリーン/別ウィンドウで開くと設定画面とセッション Cookie が競合しうるため、
+  「ヘッダを付ける」だけでは再発しうる。AI ルートは Cookie 認証 + 同一サイト限定 + JSON 本文のみ
+  なので、除外しても強度は下がらない。他の `POST /api/*` は従来どおり 403 で拒否。
+- `src/client/api.ts`: `message` を優先し、コードは `errorCode` として保持(既存呼び出しは無変更)。
+- `src/client/lib/aiPlayerLoop.ts`: 401/403 を「このタブのログインが切れている。再読み込みして
+  ログインし直す」と明示し、パネルに **ページを再読み込み** ボタンを表示。
+  ログ文言を `code` で分類し、12 ロケールで翻訳するようにした(`aiPlayer.log.*`)。
+
+### テスト
+- `src/server/clientMarker.test.ts`(新規 4 件): マーカー有りは通過 / 無しは 403 / AI ルートは免除 /
+  GET は影響なし。
+- `src/client/lib/aiPlayer.test.ts`(+3 件、計 22 件): 403 → 「再読み込み」案内 / 401・403 の分類 /
+  サーバー文言の保持。
+- 実サーバーで確認: マーカー無しの `POST /api/ai/decide` は **401**(認証エラー、旧: 403)、
+  マーカー無しの `POST /api/logout` は従来どおり **403**。
+
 ## C. 問題なしを確認した領域
 
 | 領域 | 確認内容 | 結果 |

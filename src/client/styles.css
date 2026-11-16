@@ -7898,6 +7898,26 @@ button.game-card-store-chip.owned.active:hover {
   font-variant-numeric: tabular-nums;
 }
 
+.ai-player-note p {
+  margin: 0;
+}
+
+.ai-player-reload {
+  margin-top: 6px;
+  padding: 5px 10px;
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: var(--ink);
+  background: color-mix(in srgb, var(--warning, #e0b252) 20%, transparent);
+  border: 1px solid color-mix(in srgb, var(--warning, #e0b252) 45%, transparent);
+  border-radius: var(--r-sm);
+  cursor: pointer;
+}
+
+.ai-player-reload:hover {
+  background: color-mix(in srgb, var(--warning, #e0b252) 32%, transparent);
+}
+
 .ai-player-model {
   display: flex;
   flex-direction: column;
