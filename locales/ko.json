@@ -396,7 +396,8 @@
       "input": "입력",
       "interface": "인터페이스",
       "about": "소개",
-      "thanks": "감사합니다"
+      "thanks": "감사합니다",
+      "ai": "AI"
     },
     "region": {
       "title": "지역",
@@ -622,6 +623,26 @@
       "loadingSupporters": "GitHub 후원자에서 후원자를 로드하는 중...",
       "noContributors": "지금은 참여자를 표시할 수 없습니다.",
       "noSupporters": "지금은 지지자를 표시할 수 없습니다."
+    },
+    "ai": {
+      "title": "AI player",
+      "description": "Let an AI play games with your Numes API key. The key is used only on the server and is never sent to the browser.",
+      "statusLabel": "Server status",
+      "statusChecking": "Checking...",
+      "statusReady": "NUMES_API_KEY detected.",
+      "statusMissing": "NUMES_API_KEY is not set.",
+      "statusError": "Could not read the status. Check that you are signed in.",
+      "badgeReady": "Ready",
+      "badgeMissing": "Not configured",
+      "modelLabel": "Default model",
+      "modelHint": "Change it with AI_PLAYER_MODEL. Free Numes models work without adding credits.",
+      "keyLabel": "How to set the key",
+      "step1": "Create a key at Numes:",
+      "step2": "Add the variables below to Render's Environment (or your local .env).",
+      "step3": "Redeploy, then press the AI button during a stream.",
+      "keyWarning": "The key is tied to your whole account balance. Never paste it into this app's UI or into chat.",
+      "usageLabel": "Usage limits",
+      "usageHint": "AI_PLAYER_DAILY_REQUESTS caps requests per account per day (0 means unlimited)."
     }
   },
   "navbar": {
@@ -770,5 +791,16 @@
       "network": "네트워크 경로",
       "unknown": "알 수 없음"
     }
+  },
+  "aiPlayer": {
+    "title": "AI 플레이어",
+    "shortLabel": "AI",
+    "start": "AI에게 맡기기",
+    "stop": "중지",
+    "round": "라운드 {{count}}",
+    "modelLabel": "모델",
+    "statusUnavailable": "AI 서버 상태를 가져올 수 없습니다. 다시 로그인해 주세요.",
+    "missingKey": "서버에 NUMES_API_KEY가 설정되어 있지 않습니다. 설정 → AI 플레이어를 확인하세요.",
+    "disclaimer": "AI 조작은 게임패드 입력으로 전송됩니다. 실수할 수 있으므로 다른 플레이어와 함께하는 게임에서는 사용하지 마세요."
   }
 }

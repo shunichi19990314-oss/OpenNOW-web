@@ -396,7 +396,8 @@
       "input": "Intrare",
       "interface": "Interfață",
       "about": "Despre",
-      "thanks": "Mulțumiri"
+      "thanks": "Mulțumiri",
+      "ai": "AI"
     },
     "region": {
       "title": "Regiunea",
@@ -622,6 +623,26 @@
       "loadingSupporters": "Se încarcă suporterii de la sponsorii GitHub...",
       "noContributors": "Niciun colaborator nu a putut fi afișat în acest moment.",
       "noSupporters": "Niciun suporter nu a putut fi arătat în acest moment."
+    },
+    "ai": {
+      "title": "AI player",
+      "description": "Let an AI play games with your Numes API key. The key is used only on the server and is never sent to the browser.",
+      "statusLabel": "Server status",
+      "statusChecking": "Checking...",
+      "statusReady": "NUMES_API_KEY detected.",
+      "statusMissing": "NUMES_API_KEY is not set.",
+      "statusError": "Could not read the status. Check that you are signed in.",
+      "badgeReady": "Ready",
+      "badgeMissing": "Not configured",
+      "modelLabel": "Default model",
+      "modelHint": "Change it with AI_PLAYER_MODEL. Free Numes models work without adding credits.",
+      "keyLabel": "How to set the key",
+      "step1": "Create a key at Numes:",
+      "step2": "Add the variables below to Render's Environment (or your local .env).",
+      "step3": "Redeploy, then press the AI button during a stream.",
+      "keyWarning": "The key is tied to your whole account balance. Never paste it into this app's UI or into chat.",
+      "usageLabel": "Usage limits",
+      "usageHint": "AI_PLAYER_DAILY_REQUESTS caps requests per account per day (0 means unlimited)."
     }
   },
   "navbar": {
@@ -770,5 +791,16 @@
       "network": "Rută de rețea",
       "unknown": "Necunoscut"
     }
+  },
+  "aiPlayer": {
+    "title": "Jucător AI",
+    "shortLabel": "AI",
+    "start": "Lasă AI să joace",
+    "stop": "Oprește",
+    "round": "Runda {{count}}",
+    "modelLabel": "Model",
+    "statusUnavailable": "Nu s-a putut citi starea serverului AI. Autentifică-te din nou.",
+    "missingKey": "NUMES_API_KEY nu este configurată pe server. Vezi Setări → Jucător AI.",
+    "disclaimer": "Acțiunile AI sunt trimise ca intrare de gamepad. Evită jocurile cu alți jucători, deoarece AI-ul poate greși."
   }
 }

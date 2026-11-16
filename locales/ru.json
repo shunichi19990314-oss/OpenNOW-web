@@ -396,7 +396,8 @@
       "input": "Ввод",
       "interface": "Интерфейс",
       "about": "О",
-      "thanks": "Спасибо"
+      "thanks": "Спасибо",
+      "ai": "AI"
     },
     "region": {
       "title": "Регион",
@@ -622,6 +623,26 @@
       "loadingSupporters": "Загрузка сторонников от спонсоров GitHub...",
       "noContributors": "В данный момент не может быть показано ни одного автора.",
       "noSupporters": "В данный момент не может быть показано ни одного сторонника."
+    },
+    "ai": {
+      "title": "AI player",
+      "description": "Let an AI play games with your Numes API key. The key is used only on the server and is never sent to the browser.",
+      "statusLabel": "Server status",
+      "statusChecking": "Checking...",
+      "statusReady": "NUMES_API_KEY detected.",
+      "statusMissing": "NUMES_API_KEY is not set.",
+      "statusError": "Could not read the status. Check that you are signed in.",
+      "badgeReady": "Ready",
+      "badgeMissing": "Not configured",
+      "modelLabel": "Default model",
+      "modelHint": "Change it with AI_PLAYER_MODEL. Free Numes models work without adding credits.",
+      "keyLabel": "How to set the key",
+      "step1": "Create a key at Numes:",
+      "step2": "Add the variables below to Render's Environment (or your local .env).",
+      "step3": "Redeploy, then press the AI button during a stream.",
+      "keyWarning": "The key is tied to your whole account balance. Never paste it into this app's UI or into chat.",
+      "usageLabel": "Usage limits",
+      "usageHint": "AI_PLAYER_DAILY_REQUESTS caps requests per account per day (0 means unlimited)."
     }
   },
   "navbar": {
@@ -770,5 +791,16 @@
       "network": "Сетевой путь",
       "unknown": "Неизвестно"
     }
+  },
+  "aiPlayer": {
+    "title": "ИИ-игрок",
+    "shortLabel": "ИИ",
+    "start": "Пусть играет ИИ",
+    "stop": "Остановить",
+    "round": "Раунд {{count}}",
+    "modelLabel": "Модель",
+    "statusUnavailable": "Не удалось получить состояние сервера ИИ. Войдите заново.",
+    "missingKey": "На сервере не задан NUMES_API_KEY. См. Настройки → ИИ-игрок.",
+    "disclaimer": "Действия ИИ отправляются как ввод геймпада. Не используйте в играх с другими игроками: ИИ может ошибаться."
   }
 }

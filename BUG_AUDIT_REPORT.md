@@ -211,6 +211,51 @@
 - テスト: `CommandPalette.test.tsx` に 3 件追加(未確定時はスケルトン、確定後は
   出ない、新 prop 無しでも描画できる)。
 
+---
+
+## F. 2026-11-14 新機能: AI プレイヤー(Numes 連携)
+
+### 目的
+[numes.ai](https://numes.ai) で発行した API キーを使い、AI にゲームをプレイさせる。
+Numes は OpenAI Chat Completions 互換(`https://api.numes.ai/api/v1`)で、
+GLM 5.3 / DeepSeek V4.1 Flash / Kimi K3.1 Pro などの**無料モデル**が使える。
+
+### 構成(キーをブラウザに置かないための分割)
+
+| 層 | ファイル | 役割 |
+|---|---|---|
+| 契約 | `src/shared/aiPlayer.ts` | 型・既定モデル・上限値 |
+| サーバープロキシ | `src/server/aiPlayer.ts` | 環境変数からキーを読み、provider へ 1 往復。入力のサニタイズ、日次上限、エラー整形 |
+| ルート | `src/server/api.ts` | `GET /api/ai/status` / `POST /api/ai/decide`(どちらも `requireAuth()`) |
+| 判断の解釈 | `src/client/lib/aiPlayerPrompt.ts` | 返答 JSON の抽出・検証。**許可された操作以外は破棄** |
+| 操作表 | `src/client/lib/aiPlayerActions.ts` | 操作名 → ゲームパッドビットマスク |
+| ループ | `src/client/lib/aiPlayerLoop.ts` | 観測 → 判断 → 押下 → 解放。中断・バックオフ |
+| 入力注入 | `src/client/platforms/gfn/webrtcClient.ts` | `sendAiGamepadState()`(パケット生成は既存経路と同一) |
+| UI | `src/client/components/AiPlayerPanel.tsx` | 配信画面右下のオーバーレイ |
+| 設定 | `src/client/components/settings/sections/SettingsAiSection.tsx` | 設定 → AI プレイヤー(キーの入力欄は**作らない**) |
+
+### 設計上の判断
+- **キーはサーバーの環境変数のみ。** 設定画面にキー入力欄を作らないのは意図的:
+  入力させるとブラウザ・スクリーンショット・issue に残る。
+- `/api/ai/*` はアクセスパスワードではなく **NVIDIA ログイン**を要求する。
+  キーは運営者の残高に紐づくため、匿名の来訪者に消費させない。
+- モデル ID は `author/model` 形式のみ許可。URL やパスを渡せないようにしてある。
+- プロバイダのエラー本文は中継しない(キーが混ざる可能性があるため、ステータスコードのみ)。
+- AI は**ゲームパッド入力のみ**。キーボードやクリップボードには触れない。
+- 停止時・ストリーム終了時は必ず中立状態を送信し、押しっぱなしを残さない。
+
+### テスト
+`src/server/aiPlayer.test.ts` 17 件(設定読み取り / サニタイズ / モデル許可 / 日次上限 /
+429 の Retry-After / エラー本文の非中継 / 空応答 / キーが URL・body に出ないこと)、
+`src/client/lib/aiPlayer.test.ts` 19 件(操作表 / 日本語エイリアス / 未知操作の拒否 /
+duration クランプ / fenced JSON / ループの解放保証 / バックオフ)、
+`src/client/components/AiPlayerPanel.test.tsx` 4 件(非表示条件 / キー入力欄が無いこと)。
+
+### 実測
+ローカルの OpenAI 互換スタブに対して `requestAiPlayerDecision` を実行し、
+`Authorization: Bearer` でのみキーが送られ、URL・body・エラー文に現れないことを確認。
+実サーバーでは `/api/ai/status` が匿名で **401**、`/api/ai/decide` が **403** を返すことを確認。
+
 ## C. 問題なしを確認した領域
 
 | 領域 | 確認内容 | 結果 |

@@ -1,4 +1,4 @@
-import { Search, X, Users, Wifi, Globe, Mic, Keyboard, Monitor, Info, Heart } from "lucide-react";
+import { Search, X, Users, Wifi, Globe, Mic, Keyboard, Monitor, Info, Heart, Sparkles } from "lucide-react";
 import { useMemo, type JSX } from "react";
 import { useTranslation } from "../../i18n";
 import type { SettingsNavGroup, SettingsSectionId } from "./settingsTypes";
@@ -45,6 +45,7 @@ export function SettingsNav({
       label: "App",
       items: [
         { id: "interface", label: t("settings.sections.interface"), icon: <Monitor size={15} /> },
+        { id: "ai", label: t("settings.sections.ai"), icon: <Sparkles size={15} /> },
         { id: "about", label: t("settings.sections.about"), icon: <Info size={15} /> },
         { id: "thanks", label: t("settings.sections.thanks"), icon: <Heart size={15} /> },
       ],
