@@ -396,7 +396,8 @@
       "input": "Wejście",
       "interface": "Interfejs",
       "about": "O programie",
-      "thanks": "Podziękowania"
+      "thanks": "Podziękowania",
+      "ai": "AI"
     },
     "region": {
       "title": "Region",
@@ -622,6 +623,26 @@
       "loadingSupporters": "Ładowanie zwolenników z GitHub Sponsors...",
       "noContributors": "W tej chwili nie można wyświetlić żadnych współtwórców.",
       "noSupporters": "W tej chwili nie można pokazać żadnych wspierających."
+    },
+    "ai": {
+      "title": "AI player",
+      "description": "Let an AI play games with your Numes API key. The key is used only on the server and is never sent to the browser.",
+      "statusLabel": "Server status",
+      "statusChecking": "Checking...",
+      "statusReady": "NUMES_API_KEY detected.",
+      "statusMissing": "NUMES_API_KEY is not set.",
+      "statusError": "Could not read the status. Check that you are signed in.",
+      "badgeReady": "Ready",
+      "badgeMissing": "Not configured",
+      "modelLabel": "Default model",
+      "modelHint": "Change it with AI_PLAYER_MODEL. Free Numes models work without adding credits.",
+      "keyLabel": "How to set the key",
+      "step1": "Create a key at Numes:",
+      "step2": "Add the variables below to Render's Environment (or your local .env).",
+      "step3": "Redeploy, then press the AI button during a stream.",
+      "keyWarning": "The key is tied to your whole account balance. Never paste it into this app's UI or into chat.",
+      "usageLabel": "Usage limits",
+      "usageHint": "AI_PLAYER_DAILY_REQUESTS caps requests per account per day (0 means unlimited)."
     }
   },
   "navbar": {
@@ -770,5 +791,16 @@
       "network": "Ścieżka sieci",
       "unknown": "Nieznane"
     }
+  },
+  "aiPlayer": {
+    "title": "Gracz AI",
+    "shortLabel": "AI",
+    "start": "Pozwól grać AI",
+    "stop": "Zatrzymaj",
+    "round": "Runda {{count}}",
+    "modelLabel": "Model",
+    "statusUnavailable": "Nie udało się odczytać stanu serwera AI. Zaloguj się ponownie.",
+    "missingKey": "NUMES_API_KEY nie jest ustawiony na serwerze. Zobacz Ustawienia → Gracz AI.",
+    "disclaimer": "Działania AI są wysyłane jako wejście pada. Nie używaj w grach z innymi graczami, ponieważ AI może się mylić."
   }
 }

@@ -396,7 +396,8 @@
       "input": "Invoer",
       "interface": "Interface",
       "about": "Over",
-      "thanks": "Bedankt"
+      "thanks": "Bedankt",
+      "ai": "AI"
     },
     "region": {
       "title": "Regio",
@@ -622,6 +623,26 @@
       "loadingSupporters": "Supporters van GitHub-sponsors laden...",
       "noContributors": "Er kunnen momenteel geen bijdragers worden weergegeven.",
       "noSupporters": "Er konden momenteel geen supporters worden getoond."
+    },
+    "ai": {
+      "title": "AI player",
+      "description": "Let an AI play games with your Numes API key. The key is used only on the server and is never sent to the browser.",
+      "statusLabel": "Server status",
+      "statusChecking": "Checking...",
+      "statusReady": "NUMES_API_KEY detected.",
+      "statusMissing": "NUMES_API_KEY is not set.",
+      "statusError": "Could not read the status. Check that you are signed in.",
+      "badgeReady": "Ready",
+      "badgeMissing": "Not configured",
+      "modelLabel": "Default model",
+      "modelHint": "Change it with AI_PLAYER_MODEL. Free Numes models work without adding credits.",
+      "keyLabel": "How to set the key",
+      "step1": "Create a key at Numes:",
+      "step2": "Add the variables below to Render's Environment (or your local .env).",
+      "step3": "Redeploy, then press the AI button during a stream.",
+      "keyWarning": "The key is tied to your whole account balance. Never paste it into this app's UI or into chat.",
+      "usageLabel": "Usage limits",
+      "usageHint": "AI_PLAYER_DAILY_REQUESTS caps requests per account per day (0 means unlimited)."
     }
   },
   "navbar": {
@@ -770,5 +791,16 @@
       "network": "Netwerkpad",
       "unknown": "Onbekend"
     }
+  },
+  "aiPlayer": {
+    "title": "AI-speler",
+    "shortLabel": "AI",
+    "start": "AI laten spelen",
+    "stop": "Stoppen",
+    "round": "Ronde {{count}}",
+    "modelLabel": "Model",
+    "statusUnavailable": "De status van de AI-server kon niet worden gelezen. Log opnieuw in.",
+    "missingKey": "NUMES_API_KEY is niet ingesteld op de server. Zie Instellingen → AI-speler.",
+    "disclaimer": "AI-acties worden als gamepadinvoer verzonden. Gebruik dit niet in games met andere spelers, want de AI kan fouten maken."
   }
 }

@@ -10,6 +10,12 @@ import { isTrustedCloudMatchBase, normalizeCloudMatchBaseUrl } from "./gfn/cloud
 import { fetchSubscription } from "./gfn/subscription";
 import { getLoginProviders } from "./webAuth";
 import { getSession } from "./sessionStore";
+import {
+  AiPlayerError,
+  describeAiPlayerStatus,
+  requestAiPlayerDecision,
+} from "./aiPlayer";
+import { AI_PLAYER_SUGGESTED_MODELS } from "@shared/aiPlayer";
 
 function asyncRoute(handler: (request: Request, response: Response) => Promise<void>) {
   return (request: Request, response: Response, next: NextFunction) => {
@@ -156,6 +162,40 @@ export function registerApi(app: Express): void {
   app.post("/api/auth/qr/cancel", asyncRoute(async (request, response) => {
     getSession(request, response).cancelDeviceLogin(String(request.body?.attemptId ?? ""));
     response.status(204).end();
+  }));
+
+  // --- AI player -----------------------------------------------------------
+  // Both routes require a signed-in NVIDIA session, not just the access
+  // password: the provider key is billed to the operator, so an anonymous
+  // caller must never be able to spend it.
+  app.get("/api/ai/status", asyncRoute(async (request, response) => {
+    response.setHeader("Cache-Control", "no-store");
+    await getSession(request, response).requireAuth();
+    response.json({
+      ...describeAiPlayerStatus(),
+      suggestedModels: AI_PLAYER_SUGGESTED_MODELS,
+    });
+  }));
+
+  app.post("/api/ai/decide", asyncRoute(async (request, response) => {
+    response.setHeader("Cache-Control", "no-store");
+    const auth = await getSession(request, response).requireAuth();
+    // A stable per-account key for the daily cap; the NVIDIA user id is the
+    // only identity this app has, and it is not the API key.
+    const userId = auth.user.userId;
+    try {
+      const decision = await requestAiPlayerDecision(request.body, userId);
+      response.json(decision);
+    } catch (error) {
+      if (error instanceof AiPlayerError) {
+        if (error.retryAfterSeconds !== undefined) {
+          response.setHeader("Retry-After", String(error.retryAfterSeconds));
+        }
+        response.status(error.statusCode).json(error.toBody());
+        return;
+      }
+      throw error;
+    }
   }));
 
   app.post("/api/logout", asyncRoute(async (request, response) => {
