@@ -586,7 +586,8 @@
       "input": "Input",
       "interface": "Interface",
       "about": "About",
-      "thanks": "Thanks"
+      "thanks": "Thanks",
+      "ai": "AI"
     },
     "region": {
       "title": "Region",
@@ -993,7 +994,27 @@
     "queueNotificationsHint": "Play a chime and show a system notification when your queued rig is ready or the queue fails while this tab is in the background.",
     "adaptiveBitrate": "Adaptive bitrate",
     "adaptiveBitrateHint": "Automatically lower the stream bitrate when RTT or packet loss spikes, and raise it again once the connection recovers.",
-    "advanced": "Advanced"
+    "advanced": "Advanced",
+    "ai": {
+      "title": "AI player",
+      "description": "Let an AI play games with your Numes API key. The key is used only on the server and is never sent to the browser.",
+      "statusLabel": "Server status",
+      "statusChecking": "Checking...",
+      "statusReady": "NUMES_API_KEY detected.",
+      "statusMissing": "NUMES_API_KEY is not set.",
+      "statusError": "Could not read the status. Check that you are signed in.",
+      "badgeReady": "Ready",
+      "badgeMissing": "Not configured",
+      "modelLabel": "Default model",
+      "modelHint": "Change it with AI_PLAYER_MODEL. Free Numes models work without adding credits.",
+      "keyLabel": "How to set the key",
+      "step1": "Create a key at Numes:",
+      "step2": "Add the variables below to Render's Environment (or your local .env).",
+      "step3": "Redeploy, then press the AI button during a stream.",
+      "keyWarning": "The key is tied to your whole account balance. Never paste it into this app's UI or into chat.",
+      "usageLabel": "Usage limits",
+      "usageHint": "AI_PLAYER_DAILY_REQUESTS caps requests per account per day (0 means unlimited)."
+    }
   },
   "navbar": {
     "subscriptionDetails": "Subscription details",
@@ -1236,5 +1257,16 @@
       "network": "Network path",
       "unknown": "Unknown"
     }
+  },
+  "aiPlayer": {
+    "title": "AI player",
+    "shortLabel": "AI",
+    "start": "Let AI play",
+    "stop": "Stop",
+    "round": "Round {{count}}",
+    "modelLabel": "Model",
+    "statusUnavailable": "Could not read the AI server status. Please sign in again.",
+    "missingKey": "NUMES_API_KEY is not configured on the server. See Settings → AI player.",
+    "disclaimer": "AI actions are sent as gamepad input. Avoid using it in games with other players, since it can make mistakes."
   }
 }

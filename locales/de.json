@@ -396,7 +396,8 @@
       "input": "Eingabe",
       "interface": "Schnittstelle",
       "about": "Über",
-      "thanks": "Danke"
+      "thanks": "Danke",
+      "ai": "AI"
     },
     "region": {
       "title": "Region",
@@ -622,6 +623,26 @@
       "loadingSupporters": "Unterstützer von GitHub-Sponsoren werden geladen...",
       "noContributors": "Derzeit konnten keine Mitwirkenden angezeigt werden.",
       "noSupporters": "Derzeit konnten keine Unterstützer angezeigt werden."
+    },
+    "ai": {
+      "title": "AI player",
+      "description": "Let an AI play games with your Numes API key. The key is used only on the server and is never sent to the browser.",
+      "statusLabel": "Server status",
+      "statusChecking": "Checking...",
+      "statusReady": "NUMES_API_KEY detected.",
+      "statusMissing": "NUMES_API_KEY is not set.",
+      "statusError": "Could not read the status. Check that you are signed in.",
+      "badgeReady": "Ready",
+      "badgeMissing": "Not configured",
+      "modelLabel": "Default model",
+      "modelHint": "Change it with AI_PLAYER_MODEL. Free Numes models work without adding credits.",
+      "keyLabel": "How to set the key",
+      "step1": "Create a key at Numes:",
+      "step2": "Add the variables below to Render's Environment (or your local .env).",
+      "step3": "Redeploy, then press the AI button during a stream.",
+      "keyWarning": "The key is tied to your whole account balance. Never paste it into this app's UI or into chat.",
+      "usageLabel": "Usage limits",
+      "usageHint": "AI_PLAYER_DAILY_REQUESTS caps requests per account per day (0 means unlimited)."
     }
   },
   "navbar": {
@@ -770,5 +791,16 @@
       "network": "Netzwerkpfad",
       "unknown": "Unbekannt"
     }
+  },
+  "aiPlayer": {
+    "title": "KI-Spieler",
+    "shortLabel": "KI",
+    "start": "KI spielen lassen",
+    "stop": "Stoppen",
+    "round": "Runde {{count}}",
+    "modelLabel": "Modell",
+    "statusUnavailable": "Der Status des KI-Servers konnte nicht gelesen werden. Bitte erneut anmelden.",
+    "missingKey": "NUMES_API_KEY ist auf dem Server nicht gesetzt. Siehe Einstellungen → KI-Spieler.",
+    "disclaimer": "KI-Aktionen werden als Gamepad-Eingabe gesendet. In Spielen mit anderen Spielern bitte nicht verwenden, da Fehler möglich sind."
   }
 }

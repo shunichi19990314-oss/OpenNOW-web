@@ -5085,6 +5085,66 @@ button.game-card-store-chip.owned.active:hover {
   border-color: rgba(239, 68, 68, 0.22);
 }
 
+.settings-ai-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 9px;
+  font-size: 0.7rem;
+  font-weight: 700;
+  border-radius: 999px;
+  border: 1px solid transparent;
+}
+
+.settings-ai-badge--ok {
+  color: var(--success, #4ade80);
+  border-color: color-mix(in srgb, var(--success, #4ade80) 35%, transparent);
+  background: color-mix(in srgb, var(--success, #4ade80) 12%, transparent);
+}
+
+.settings-ai-badge--warn {
+  color: var(--warning, #e0b252);
+  border-color: color-mix(in srgb, var(--warning, #e0b252) 35%, transparent);
+  background: color-mix(in srgb, var(--warning, #e0b252) 12%, transparent);
+}
+
+.settings-ai-code {
+  font-size: 0.72rem;
+  padding: 3px 6px;
+  border-radius: var(--r-sm);
+  background: color-mix(in srgb, var(--ink) 7%, transparent);
+}
+
+.settings-row--stacked {
+  flex-direction: column;
+  align-items: stretch;
+  gap: 8px;
+}
+
+.settings-ai-steps ol {
+  margin: 0 0 8px;
+  padding-left: 18px;
+  font-size: 0.72rem;
+  line-height: 1.6;
+  color: var(--ink-soft);
+}
+
+.settings-ai-steps a {
+  color: var(--accent);
+}
+
+.settings-ai-env {
+  margin: 0 0 8px;
+  padding: 9px 11px;
+  font-size: 0.68rem;
+  line-height: 1.55;
+  color: var(--ink-soft);
+  background: var(--bg-c);
+  border: 1px solid var(--panel-border);
+  border-radius: var(--r-sm);
+  overflow-x: auto;
+}
+
 .settings-hint {
   display: block;
   margin-top: 2px;
@@ -7691,6 +7751,188 @@ button.game-card-store-chip.owned.active:hover {
   font-weight: 700;
   color: var(--error);
   letter-spacing: 0.06em;
+}
+
+/* ── AI player ─────────────────────────────────────────────────────────── */
+/* Sits opposite the microphone badge so both stay reachable while the stream
+   owns the pointer-lock surface. Only the panel itself takes pointer events. */
+.ai-player {
+  position: fixed;
+  right: 14px;
+  bottom: 14px;
+  z-index: 1002;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 8px;
+  pointer-events: none;
+}
+
+.ai-player-toggle {
+  pointer-events: auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 7px 12px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  color: var(--ink);
+  background: rgba(10, 10, 12, 0.92);
+  border: 1px solid var(--panel-border);
+  border-radius: 999px;
+  cursor: pointer;
+  backdrop-filter: blur(8px);
+  transition: border-color 0.15s ease, background 0.15s ease;
+}
+
+.ai-player-toggle:hover {
+  background: rgba(20, 20, 24, 0.95);
+  border-color: color-mix(in srgb, var(--accent) 40%, transparent);
+}
+
+.ai-player-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--ink-muted);
+  transition: background 0.2s ease, box-shadow 0.2s ease;
+}
+
+.ai-player-toggle--running .ai-player-dot {
+  background: var(--accent);
+  box-shadow: 0 0 0 3px rgba(var(--accent-rgb), 0.22);
+  animation: ai-player-pulse 1.6s ease-in-out infinite;
+}
+
+@keyframes ai-player-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.45; }
+}
+
+.ai-player-body {
+  pointer-events: auto;
+  width: min(320px, calc(100vw - 28px));
+  padding: 12px;
+  background: rgba(12, 12, 14, 0.96);
+  border: 1px solid var(--panel-border);
+  border-radius: var(--r-lg);
+  box-shadow: var(--shadow-md);
+  backdrop-filter: blur(12px);
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+}
+
+.ai-player-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 0.78rem;
+}
+
+.ai-player-close {
+  background: none;
+  border: none;
+  color: var(--ink-muted);
+  font-size: 1rem;
+  line-height: 1;
+  cursor: pointer;
+  padding: 2px 4px;
+}
+
+.ai-player-close:hover {
+  color: var(--ink);
+}
+
+.ai-player-note {
+  margin: 0;
+  font-size: 0.7rem;
+  color: var(--ink-muted);
+  line-height: 1.45;
+}
+
+.ai-player-note--warn {
+  color: var(--warning, #e0b252);
+}
+
+.ai-player-note code,
+.ai-player-model code {
+  font-size: 0.68rem;
+  padding: 1px 4px;
+  border-radius: 4px;
+  background: color-mix(in srgb, var(--ink) 8%, transparent);
+}
+
+.ai-player-controls {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.ai-player-start {
+  flex: 1;
+  padding: 7px 10px;
+  font-size: 0.74rem;
+  font-weight: 700;
+  color: var(--ink);
+  background: color-mix(in srgb, var(--accent) 22%, transparent);
+  border: 1px solid color-mix(in srgb, var(--accent) 45%, transparent);
+  border-radius: var(--r-md);
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+.ai-player-start:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--accent) 34%, transparent);
+}
+
+.ai-player-start:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.ai-player-round {
+  font-size: 0.68rem;
+  color: var(--ink-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.ai-player-model {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 0.68rem;
+  color: var(--ink-muted);
+}
+
+.ai-player-model select {
+  padding: 5px 6px;
+  font-size: 0.7rem;
+  color: var(--ink);
+  background: var(--bg-c);
+  border: 1px solid var(--panel-border);
+  border-radius: var(--r-sm);
+}
+
+.ai-player-log {
+  margin: 0;
+  padding: 0 0 0 14px;
+  max-height: 132px;
+  overflow-y: auto;
+  font-size: 0.68rem;
+  line-height: 1.4;
+  color: var(--ink-soft);
+}
+
+.ai-player-log-warn { color: var(--warning, #e0b252); }
+.ai-player-log-error { color: var(--error); }
+
+.ai-player-foot {
+  margin: 0;
+  font-size: 0.63rem;
+  color: var(--ink-muted);
+  line-height: 1.4;
 }
 
 .sv-mic {

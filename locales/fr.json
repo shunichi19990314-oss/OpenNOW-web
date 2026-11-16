@@ -396,7 +396,8 @@
       "input": "Entrée",
       "interface": "Interface",
       "about": "À propos",
-      "thanks": "Merci"
+      "thanks": "Merci",
+      "ai": "AI"
     },
     "region": {
       "title": "Région",
@@ -622,6 +623,26 @@
       "loadingSupporters": "Chargement des supporters depuis les sponsors GitHub...",
       "noContributors": "Aucun contributeur n'a pu être affiché pour le moment.",
       "noSupporters": "Aucun supporter n'a pu être affiché pour le moment."
+    },
+    "ai": {
+      "title": "AI player",
+      "description": "Let an AI play games with your Numes API key. The key is used only on the server and is never sent to the browser.",
+      "statusLabel": "Server status",
+      "statusChecking": "Checking...",
+      "statusReady": "NUMES_API_KEY detected.",
+      "statusMissing": "NUMES_API_KEY is not set.",
+      "statusError": "Could not read the status. Check that you are signed in.",
+      "badgeReady": "Ready",
+      "badgeMissing": "Not configured",
+      "modelLabel": "Default model",
+      "modelHint": "Change it with AI_PLAYER_MODEL. Free Numes models work without adding credits.",
+      "keyLabel": "How to set the key",
+      "step1": "Create a key at Numes:",
+      "step2": "Add the variables below to Render's Environment (or your local .env).",
+      "step3": "Redeploy, then press the AI button during a stream.",
+      "keyWarning": "The key is tied to your whole account balance. Never paste it into this app's UI or into chat.",
+      "usageLabel": "Usage limits",
+      "usageHint": "AI_PLAYER_DAILY_REQUESTS caps requests per account per day (0 means unlimited)."
     }
   },
   "navbar": {
@@ -770,5 +791,16 @@
       "network": "Chemin réseau",
       "unknown": "Inconnu"
     }
+  },
+  "aiPlayer": {
+    "title": "Joueur IA",
+    "shortLabel": "IA",
+    "start": "Laisser l'IA jouer",
+    "stop": "Arrêter",
+    "round": "Manche {{count}}",
+    "modelLabel": "Modèle",
+    "statusUnavailable": "Impossible de lire l'état du serveur IA. Reconnectez-vous.",
+    "missingKey": "NUMES_API_KEY n'est pas configurée sur le serveur. Voir Paramètres → Joueur IA.",
+    "disclaimer": "Les actions de l'IA sont envoyées comme entrées de manette. À éviter dans les jeux multijoueur, car elle peut se tromper."
   }
 }

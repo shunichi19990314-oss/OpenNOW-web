@@ -42,6 +42,19 @@ services:
       # signs every visitor out. Use the same value across instances.
       - key: SESSION_SECRET
         generateValue: true
+      # AI player (optional). Set NUMES_API_KEY in the dashboard, never here:
+      # this file is committed, and the key grants access to the whole Numes
+      # balance. Leave the key out of the blueprint and paste it in
+      # Environment -> Secret Files/Env Vars after the first deploy.
+      - key: NUMES_API_KEY
+        sync: false
+      - key: NUMES_BASE_URL
+        value: https://api.numes.ai/api/v1
+      - key: AI_PLAYER_MODEL
+        value: z-ai/glm-5.3
+      # 0 = unlimited. Set a number to cap requests per account per day.
+      - key: AI_PLAYER_DAILY_REQUESTS
+        value: "0"
       # Fill in manually AFTER the first deploy with the exact public origin,
       # e.g. https://opennow-web-xxxx.onrender.com (no trailing slash).
       - key: OPENNOW_ORIGIN

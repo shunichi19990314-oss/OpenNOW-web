@@ -45,6 +45,33 @@ GitHub で Fork してから自分の Fork をデプロイするのがおすす�
 | `SESSION_SECRET` | 32 文字以上のランダム文字列 | 生成例: `node -e "console.log(require('crypto').randomBytes(48).toString('base64url'))"`。全インスタンスで同一値にする。変更すると全員ログアウト |
 | `OPENNOW_ORIGIN` | `https://<Railwayのドメイン>` | **手順 4 の後に**正確な公開オリジンを入れる。WebSocket の Origin 検証に使われ、不一致だとシグナリング接続が拒否される |
 | `PORT` | (設定しない) | Railway が自動注入し、アプリは `process.env.PORT` を読む |
+| `NUMES_API_KEY` | `sk-...`(任意) | AI プレイヤーを使う場合のみ。**サーバー専用**で、ブラウザには一切送られない |
+
+## 3.5. AI プレイヤーを有効にする(任意)
+
+Numes(<https://numes.ai>)で発行した API キーを使い、AI にゲームをプレイさせられます。
+
+1. <https://numes.ai/dashboard/keys> で **Create key** → 表示された `sk-...` をコピー(再表示はできません)。
+   無料モデル(Kimi K3.1 Pro / GLM 5.3 / DeepSeek V4.1 Flash など)はクレジット追加なしで試せます。
+2. ホスティングの **Environment / Variables** に以下を追加します。
+
+| 変数 | 値の例 | 用途 |
+|---|---|---|
+| `NUMES_API_KEY` | `sk-...` | 必須。**サーバー側でのみ使用** |
+| `NUMES_BASE_URL` | `https://api.numes.ai/api/v1` | 省略可(既定値) |
+| `AI_PLAYER_MODEL` | `z-ai/glm-5.3` | 省略可。既定モデル |
+| `AI_PLAYER_DAILY_REQUESTS` | `200` | 省略可。1 アカウントあたりの 1 日上限(`0` で無制限) |
+
+3. Redeploy します。`GET /api/ai/status` が `{"configured":true,...}` を返せば有効です。
+4. 配信画面の右下に **AI** ボタンが出ます → 開いて「AI に任せる」で開始、もう一度押すと停止します。
+
+**セキュリティ上の注意**
+
+- キーは**このアプリの画面・チャット・リポジトリに貼らないでください。** 設定画面にも入力欄はありません(サーバーの環境変数のみ)。
+- キーは Numes アカウント全体の残高に紐づきます。`AI_PLAYER_DAILY_REQUESTS` で 1 アカウントあたりの消費を抑えられます。
+- `/api/ai/*` は **NVIDIA ログイン済み**のセッションのみ許可されます(アクセスパスワードだけでは通りません)。
+- 課金対象のリクエストはサーバーが発行します。ブラウザは決定(計画と操作)だけを受け取ります。
+- AI の操作はゲームパッド入力として送信されます。誤操作しうるため、対戦相手がいるゲームでの使用は避けてください。
 
 ## 4. 公開ドメインを生成 → OPENNOW_ORIGIN に反映
 

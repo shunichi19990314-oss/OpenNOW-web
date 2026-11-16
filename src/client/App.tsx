@@ -135,6 +135,8 @@ import { SettingsPage } from "./components/SettingsPage";
 import { SettingsModalHost } from "./components/SettingsModalHost";
 import { StreamLoading } from "./components/StreamLoading";
 import { StreamView } from "./components/StreamView";
+import { AiPlayerPanel } from "./components/AiPlayerPanel";
+import { AI_PLAYER_ACTION_NAMES } from "./lib/aiPlayerActions";
 import { QueueServerSelectModal } from "./components/QueueServerSelectModal";
 import { CommandPalette } from "./components/CommandPalette";
 import { ReleaseHighlightsModal } from "./components/ReleaseHighlightsModal";
@@ -378,6 +380,25 @@ export function App(): JSX.Element {
   const [videoElementHasFrame, setVideoElementHasFrame] = useState(false);
   const [streamRevealComplete, setStreamRevealComplete] = useState(false);
   const clientRef = useRef<GfnWebRtcClient | null>(null);
+
+  /**
+   * Bridge between the AI loop (plain module) and the WebRTC client.
+   *
+   * Injected lazily through `clientRef` rather than captured at render time:
+   * the client is created after the first signaling event, so a captured
+   * reference would stay null for the whole session.
+   */
+  const aiPlayerSink = useMemo(() => ({
+    send: (state: {
+      buttons: number;
+      leftTrigger: number;
+      rightTrigger: number;
+      leftStickX: number;
+      leftStickY: number;
+      rightStickX: number;
+      rightStickY: number;
+    }): boolean => clientRef.current?.sendAiGamepadState(state) ?? false,
+  }), []);
 
   // Touch gamepad: only offer the overlay when the device actually has a
   // coarse pointer, so desktop users never pay for an unused rAF loop.
@@ -4047,6 +4068,15 @@ export function App(): JSX.Element {
               recording: shortcuts.recording.canonical,
             }}
             hideStreamButtons={settings.hideStreamButtons}
+            aiPlayerSlot={(
+              <AiPlayerPanel
+                gameTitle={streamingGame?.title ?? ""}
+                sessionStartedAtMs={sessionStartedAtMs}
+                sink={aiPlayerSink}
+                actionNames={AI_PLAYER_ACTION_NAMES}
+                enabled={isStreaming}
+              />
+            )}
             serverRegion={session?.serverIp}
             antiAfkEnabled={antiAfkEnabled}
             antiAfkAckNonce={antiAfkAckNonce}

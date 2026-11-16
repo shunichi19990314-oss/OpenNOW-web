@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback, useRef, useMemo } from "react";
 import { createPortal } from "react-dom";
 import { AnimatePresence, m } from "motion/react";
-import type { JSX } from "react";
+import type { JSX, ReactNode } from "react";
 import { Maximize, Minimize, LogOut, Clock3, AlertTriangle, Mic, Camera, ChevronLeft, ChevronRight, Save, Trash2, X, Circle, Square, Video, FolderOpen, Gamepad2, Gauge, Images, Keyboard, MousePointer2, SlidersHorizontal } from "lucide-react";
 import SideBar from "./SideBar";
 import { SessionStartedSplash } from "./SessionStartedSplash";
@@ -63,6 +63,11 @@ interface StreamViewProps {
     recording: string;
   };
   hideStreamButtons?: boolean;
+  /**
+   * The AI player overlay. Rendered as a child rather than imported directly so
+   * StreamView keeps no dependency on the automation loop.
+   */
+  aiPlayerSlot?: ReactNode;
   serverRegion?: string;
   antiAfkEnabled: boolean;
   antiAfkAckNonce: number;
@@ -165,6 +170,7 @@ export function StreamView({
   subscriptionInfo,
   micTrack,
   hideStreamButtons = false,
+  aiPlayerSlot = null,
   allowEscapeToExitFullscreen,
   className,
   videoShader,
@@ -2206,6 +2212,8 @@ export function StreamView({
           />
         )}
       </AnimatePresence>
+
+      {aiPlayerSlot}
 
       {/* Microphone toggle button */}
       <MicrophoneIndicator

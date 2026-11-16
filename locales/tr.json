@@ -396,7 +396,8 @@
       "input": "Giriş",
       "interface": "Arayüz",
       "about": "Hakkında",
-      "thanks": "teşekkürler"
+      "thanks": "teşekkürler",
+      "ai": "AI"
     },
     "region": {
       "title": "Bölge",
@@ -622,6 +623,26 @@
       "loadingSupporters": "GitHub Sponsorlarından destekçiler yükleniyor...",
       "noContributors": "Şu anda hiçbir katkıda bulunan gösterilemiyor.",
       "noSupporters": "Şu anda hiçbir taraftar gösterilemiyor."
+    },
+    "ai": {
+      "title": "AI player",
+      "description": "Let an AI play games with your Numes API key. The key is used only on the server and is never sent to the browser.",
+      "statusLabel": "Server status",
+      "statusChecking": "Checking...",
+      "statusReady": "NUMES_API_KEY detected.",
+      "statusMissing": "NUMES_API_KEY is not set.",
+      "statusError": "Could not read the status. Check that you are signed in.",
+      "badgeReady": "Ready",
+      "badgeMissing": "Not configured",
+      "modelLabel": "Default model",
+      "modelHint": "Change it with AI_PLAYER_MODEL. Free Numes models work without adding credits.",
+      "keyLabel": "How to set the key",
+      "step1": "Create a key at Numes:",
+      "step2": "Add the variables below to Render's Environment (or your local .env).",
+      "step3": "Redeploy, then press the AI button during a stream.",
+      "keyWarning": "The key is tied to your whole account balance. Never paste it into this app's UI or into chat.",
+      "usageLabel": "Usage limits",
+      "usageHint": "AI_PLAYER_DAILY_REQUESTS caps requests per account per day (0 means unlimited)."
     }
   },
   "navbar": {
@@ -770,5 +791,16 @@
       "network": "Ağ yolu",
       "unknown": "Bilinmiyor"
     }
+  },
+  "aiPlayer": {
+    "title": "Yapay zekâ oyuncusu",
+    "shortLabel": "YZ",
+    "start": "YZ oynasın",
+    "stop": "Durdur",
+    "round": "Tur {{count}}",
+    "modelLabel": "Model",
+    "statusUnavailable": "Yapay zekâ sunucusunun durumu okunamadı. Lütfen yeniden giriş yapın.",
+    "missingKey": "Sunucuda NUMES_API_KEY ayarlı değil. Ayarlar → Yapay zekâ oyuncusu bölümüne bakın.",
+    "disclaimer": "YZ eylemleri gamepad girdisi olarak gönderilir. Hata yapabileceği için diğer oyuncularla oynanan oyunlarda kullanmayın."
   }
 }
