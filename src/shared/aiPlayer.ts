@@ -94,6 +94,15 @@ export interface AiPlayerDecision {
 export interface AiPlayerDecideResponse {
   raw: string;
   usage?: { inputTokens?: number; outputTokens?: number };
+  /**
+   * Set when the screenshot was rejected upstream and the round was retried
+   * as text-only.
+   *
+   * The request is still useful (the model can play from the observation), but
+   * the visitor has to know the picture was dropped — otherwise a session that
+   * silently stopped seeing the screen looks like the AI ignoring it.
+   */
+  droppedFrame?: boolean;
 }
 
 export interface AiPlayerStatus {
@@ -173,12 +182,47 @@ export const AI_PLAYER_SUGGESTED_MODELS = [
   "z-ai/glm-5.3",
   "deepseek/deepseek-v4.1-flash",
   "moonshotai/kimi-k3.1-pro",
+  // Image-capable choices, so "画面をAIに送る" can actually be used. Verified
+  // against the catalogue's `input_modalities`; the first two are priced at 0.
+  "qwen/qwen3.8-27b",
+  "dealignai/glm-5.3-flash-uncensored-fp8",
+  "uniboshi/kimi-k3-abliterated-v1",
 ] as const;
 
-/** Models known to accept image input, so the UI can warn before spending. */
+/**
+ * Models known to accept image input, so the UI can warn before spending.
+ *
+ * Verified against Numes' own catalogue (`input_modalities`), because sending
+ * an image part to a text-only model is a hard `400 invalid_request` — every
+ * round fails, nothing plays, and the visitor only sees an error. That is
+ * exactly what happened while `z-ai/glm-5.3` was listed here: its catalogue
+ * entry is `text` only, so the screenshot has to be dropped for it.
+ */
 export const AI_PLAYER_VISION_MODELS = [
-  "z-ai/glm-5.3",
+  "qwen/qwen3.8-27b",
+  "dealignai/glm-5.3-flash-uncensored-fp8",
+  "dealignai/deepseek-v4.1-flash-uncensored-fp8",
+  "uniboshi/kimi-k3-abliterated-v1",
 ] as const;
+
+/**
+ * Model to switch to when the visitor turns screen-send on for a model that
+ * cannot read images.
+ *
+ * Free on Numes today and image-capable, so the promise "the AI looks at the
+ * screen" does not require the operator to add credits.
+ */
+export const AI_PLAYER_VISION_FALLBACK_MODEL = "qwen/qwen3.8-27b";
+
+/**
+ * Whether `model` can accept image parts.
+ *
+ * Lives in the shared module so the panel and the proxy agree: a mismatch here
+ * is what produced a hard `400` on every round.
+ */
+export function modelSupportsVision(model: string): boolean {
+  return (AI_PLAYER_VISION_MODELS as readonly string[]).includes(model);
+}
 
 /** Clamp on how long a single injected press may be held. */
 export const AI_PLAYER_MAX_ACTION_MS = 2_000;

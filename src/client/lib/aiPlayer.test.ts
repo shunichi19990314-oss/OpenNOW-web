@@ -275,6 +275,61 @@ describe("AI player loop", () => {
   });
 });
 
+describe("provider-refused frames", () => {
+  it("says in Japanese that the screenshot was dropped and retried", async () => {
+    const entries: Array<{ level: string; message: string; code?: string }> = [];
+    let dropped = 0;
+    const decision = await runAiPlayerRound({
+      observation: OBSERVATION,
+      sink: { send: () => true },
+      sleep: async () => {},
+      now: () => 0,
+      onLog: (entry) => entries.push(entry),
+      onFrameDropped: () => { dropped += 1; },
+      post: async () => ({
+        raw: '{"plan":"walk","actions":[]}',
+        droppedFrame: true,
+      }),
+    });
+
+    expect(decision?.plan).toBe("walk");
+    expect(dropped).toBe(1);
+    const warning = entries.find((entry) => entry.code === "frame_rejected");
+    expect(warning?.level).toBe("warn");
+    expect(warning?.message).toContain("文字情報だけ");
+    // No English provider sentence reaches the log.
+    expect(warning?.message).not.toMatch(/[A-Za-z]{4,}/);
+  });
+
+  it("counts dropped frames in the loop state", async () => {
+    const controller = new AbortController();
+    const states: Array<{ framesCaptured: number; framesDropped: number }> = [];
+    let rounds = 0;
+    await runAiPlayerLoop({
+      sink: { send: () => true },
+      buildObservation: () => OBSERVATION,
+      options: {
+        signal: controller.signal,
+        captureFrame: () => ({ dataUrl: "data:image/jpeg;base64,AAAA", width: 960, height: 540 }),
+        post: async () => ({ raw: '{"plan":"walk","actions":[]}', droppedFrame: true }),
+        now: () => 0,
+        intervalMs: 10,
+        sleep: async () => {
+          rounds += 1;
+          if (rounds >= 2) controller.abort();
+        },
+      },
+      onState: (state) => states.push({
+        framesCaptured: state.framesCaptured,
+        framesDropped: state.framesDropped,
+      }),
+    });
+    const last = states[states.length - 1];
+    expect(last.framesCaptured).toBeGreaterThan(0);
+    expect(last.framesDropped).toBe(last.framesCaptured);
+  });
+});
+
 describe("decision failure messages", () => {
   it("guides the visitor to re-authenticate on 401/403", () => {
     for (const status of [401, 403]) {
@@ -411,7 +466,7 @@ describe("vision in the loop", () => {
         },
       },
       onState: (state) => {
-        if (!state.running) expect(state.framesSent).toBeGreaterThan(0);
+        if (!state.running) expect(state.framesCaptured).toBeGreaterThan(0);
       },
     });
     expect(seen[0]).toBe(640);

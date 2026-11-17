@@ -1342,7 +1342,12 @@
       "unknown_action": "AIが未対応の操作を要求したため、入力は送信しませんでした。",
       "input_not_ready": "入力チャンネルが未接続です。接続が終わるまで待機します。",
       "frame_captured": "画面を取得しました",
-      "forced_variety": "同じ操作が続いたため、別の操作に切り替えました"
-    }
+      "forced_variety": "同じ操作が続いたため、別の操作に切り替えました",
+      "frame_rejected": "画面画像が AI プロバイダに拒否されたため、このラウンドは文字情報だけで判断しました。モデルを画像対応のものに変えると画面が使えます。"
+    },
+    "lastError": "直近のエラー(詳細は動作ログにあります)",
+    "visionUnavailableSwitch": "画像対応モデル(例: {{model}})を選ぶと画面を送れます",
+    "statFramesHint": "取得した画面",
+    "statDropped": "画面拒否"
   }
 }

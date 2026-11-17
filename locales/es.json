@@ -874,7 +874,12 @@
       "network": "No se pudo conectar con el servidor de IA. Revisa tu conexión.",
       "bad_reply": "No se pudo interpretar la respuesta de la IA. Se reintentará en la próxima ronda.",
       "unknown_action": "La IA pidió una acción no compatible, así que no se envió nada.",
-      "input_not_ready": "El canal de entrada aún no está conectado. Esperando."
-    }
+      "input_not_ready": "El canal de entrada aún no está conectado. Esperando.",
+      "frame_rejected": "El proveedor de IA rechazó la captura, así que esta ronda usó solo texto. Elige un modelo con imágenes para usar la pantalla."
+    },
+    "lastError": "Último error (detalles en el registro de actividad)",
+    "visionUnavailableSwitch": "Elige un modelo con imágenes (p. ej. {{model}}) para enviar la pantalla",
+    "statFramesHint": "Capturas tomadas",
+    "statDropped": "Rechazadas"
   }
 }

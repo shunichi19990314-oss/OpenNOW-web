@@ -3,6 +3,8 @@ import { memo, useCallback, useEffect, useMemo, useRef, useState, type JSX } fro
 import { useTranslation } from "../i18n";
 import {
   AI_PLAYER_SUGGESTED_MODELS,
+  AI_PLAYER_VISION_FALLBACK_MODEL,
+  modelSupportsVision,
   type AiChatTurn,
   type AiPlayerFrame,
   type AiPlayerMode,
@@ -124,7 +126,23 @@ export const AiPlayerPanel = memo(function AiPlayerPanel({
     abortRef.current?.abort();
   }, []);
 
-  const visionAvailable = status?.vision === true && typeof captureFrame === "function";
+  const canCapture = typeof captureFrame === "function";
+  // The panel lets the visitor pick a model, so vision follows the selection,
+  // not only the configured default.
+  const visionAvailable = canCapture && modelSupportsVision(model || status?.model || "");
+
+  /**
+   * Model changes the visitor makes have to keep the frame toggle honest.
+   *
+   * Choosing a text-only model while "send the screen" is on would otherwise
+   * leave the checkbox ticked and the frames silently dropped; choosing an
+   * image model while the screen is off would leave the AI blind for no reason
+   * the visitor asked for.
+   */
+  const selectModel = useCallback((next: string) => {
+    setModel(next);
+    setSendFrames(modelSupportsVision(next));
+  }, []);
 
   const buildObservation = useCallback((state: {
     rounds: number;
@@ -177,7 +195,7 @@ export const AiPlayerPanel = memo(function AiPlayerPanel({
         maxRounds: 1,
         instruction: message,
         conversation: history.filter((entry) => entry.text !== message),
-        captureFrame: sendFrames && captureFrame ? captureFrame : undefined,
+        captureFrame: sendFrames && visionAvailable ? captureFrame : undefined,
         onRound: (decision, entry) => {
           // The loop reports each line; the decision carries the reply, which
           // is what the visitor is waiting for.
@@ -195,7 +213,7 @@ export const AiPlayerPanel = memo(function AiPlayerPanel({
       setChatBusy(false);
       abortRef.current = null;
     });
-  }, [appendLog, buildObservation, captureFrame, conversation, draft, sendFrames, sink]);
+  }, [appendLog, buildObservation, captureFrame, conversation, draft, sendFrames, sink, visionAvailable]);
 
   const startAuto = useCallback(() => {
     if (!sink) return;
@@ -210,7 +228,7 @@ export const AiPlayerPanel = memo(function AiPlayerPanel({
       options: {
         signal: controller.signal,
         mode: "auto",
-        captureFrame: sendFrames && captureFrame ? captureFrame : undefined,
+        captureFrame: sendFrames && visionAvailable ? captureFrame : undefined,
         onRound: (_decision, entry) => appendLog(entry),
       },
       onState: setLoopState,
@@ -224,7 +242,7 @@ export const AiPlayerPanel = memo(function AiPlayerPanel({
       setRunning(false);
       abortRef.current = null;
     });
-  }, [appendLog, buildObservation, captureFrame, sendFrames, sink, stop]);
+  }, [appendLog, buildObservation, captureFrame, sendFrames, sink, stop, visionAvailable]);
 
   const configured = status?.configured === true;
   const unavailableReason = statusError
@@ -238,7 +256,8 @@ export const AiPlayerPanel = memo(function AiPlayerPanel({
     return {
       rounds: loopState.rounds,
       presses: loopState.sentPresses,
-      frames: loopState.framesSent,
+      frames: loopState.framesCaptured,
+      dropped: loopState.framesDropped,
       breaks: loopState.varietyBreaks,
     };
   }, [loopState]);
@@ -296,14 +315,21 @@ export const AiPlayerPanel = memo(function AiPlayerPanel({
           <label className="ai-player-frame-toggle">
             <input
               type="checkbox"
-              checked={sendFrames && visionAvailable}
+              checked={sendFrames && visionAvailable && canCapture}
               onChange={(event) => setSendFrames(event.target.checked)}
-              disabled={!visionAvailable || running || chatBusy}
+              // Ticking the box is an explicit request to send the screen, so it
+              // also switches to a model that can read it. Leaving it dead was
+              // why "the AI looks at the screen" never worked with the default
+              // text-only model.
+              disabled={!canCapture || running || chatBusy}
             />
             <span>
               {t("aiPlayer.sendFrames")}
-              {!visionAvailable && status && (
-                <em className="ai-player-frame-hint"> {t("aiPlayer.visionUnavailable")}</em>
+              {canCapture && status && !visionAvailable && (
+                <em className="ai-player-frame-hint">
+                  {" "}
+                  {t("aiPlayer.visionUnavailableSwitch", { model: AI_PLAYER_VISION_FALLBACK_MODEL })}
+                </em>
               )}
             </span>
           </label>
@@ -365,7 +391,14 @@ export const AiPlayerPanel = memo(function AiPlayerPanel({
             <dl className="ai-player-stats">
               <div><dt>{t("aiPlayer.statRounds")}</dt><dd>{stats.rounds}</dd></div>
               <div><dt>{t("aiPlayer.statPresses")}</dt><dd>{stats.presses}</dd></div>
-              <div><dt>{t("aiPlayer.statFrames")}</dt><dd>{stats.frames}</dd></div>
+              <div title={t("aiPlayer.statFramesHint")}>
+                <dt>{t("aiPlayer.statFrames")}</dt><dd>{stats.frames}</dd>
+              </div>
+              {/* Only when it actually happened: a permanent "0 rejected" tile
+                  would be noise, but a silent drop looks like a blind AI. */}
+              {stats.dropped > 0 && (
+                <div><dt>{t("aiPlayer.statDropped")}</dt><dd>{stats.dropped}</dd></div>
+              )}
               <div><dt>{t("aiPlayer.statBreaks")}</dt><dd>{stats.breaks}</dd></div>
             </dl>
           )}
@@ -373,7 +406,7 @@ export const AiPlayerPanel = memo(function AiPlayerPanel({
           {status && configured && (
             <label className="ai-player-model">
               <span>{t("aiPlayer.modelLabel")}</span>
-              <select value={model} onChange={(event) => setModel(event.target.value)} disabled={running || chatBusy}>
+              <select value={model} onChange={(event) => selectModel(event.target.value)} disabled={running || chatBusy}>
                 {Array.from(new Set([status.model, ...AI_PLAYER_SUGGESTED_MODELS])).map((id) => (
                   <option key={id} value={id}>{id}</option>
                 ))}
@@ -382,8 +415,10 @@ export const AiPlayerPanel = memo(function AiPlayerPanel({
           )}
 
           {loopState?.lastError && (
-            <div className="ai-player-note ai-player-note--warn">
-              <p>{loopState.lastError}</p>
+            <div className="ai-player-note ai-player-note--warn" role="status">
+              {/* The same failure is already a log row directly below; printing
+                  it twice made the panel look like two separate problems. */}
+              <p>{t("aiPlayer.lastError")}</p>
               {loopState.lastErrorCode === "session_expired" && (
                 // Retrying cannot fix a stale session; the visitor needs a fresh
                 // document, so offer the one action that works.
