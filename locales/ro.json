@@ -874,7 +874,12 @@
       "network": "Serverul AI nu poate fi contactat. Verifică conexiunea.",
       "bad_reply": "Răspunsul AI nu a putut fi interpretat. Se reîncearcă în runda următoare.",
       "unknown_action": "AI a cerut o acțiune neacceptată, așa că nu s-a trimis nimic.",
-      "input_not_ready": "Canalul de intrare nu este încă conectat. Se așteaptă."
-    }
+      "input_not_ready": "Canalul de intrare nu este încă conectat. Se așteaptă.",
+      "frame_rejected": "Furnizorul AI a respins captura, așa că această rundă a folosit doar text. Alege un model cu imagini pentru a folosi ecranul."
+    },
+    "lastError": "Ultima eroare (detalii în jurnal)",
+    "visionUnavailableSwitch": "Alege un model cu imagini (ex. {{model}}) pentru a trimite ecranul",
+    "statFramesHint": "Capturi realizate",
+    "statDropped": "Respinse"
   }
 }

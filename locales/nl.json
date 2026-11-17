@@ -874,7 +874,12 @@
       "network": "De AI-server is niet bereikbaar. Controleer je verbinding.",
       "bad_reply": "Het antwoord van de AI was onleesbaar. Nieuwe poging volgende ronde.",
       "unknown_action": "De AI vroeg een niet-ondersteunde actie; er is niets verzonden.",
-      "input_not_ready": "Het invoerkanaal is nog niet verbonden. Even wachten."
-    }
+      "input_not_ready": "Het invoerkanaal is nog niet verbonden. Even wachten.",
+      "frame_rejected": "De AI-aanbieder weigerde de schermafbeelding, dus deze ronde gebruikte alleen tekst. Kies een model met beeld om het scherm te gebruiken."
+    },
+    "lastError": "Laatste fout (details in het activiteitenlogboek)",
+    "visionUnavailableSwitch": "Kies een model met beeld (bijv. {{model}}) om het scherm te versturen",
+    "statFramesHint": "Vastgelegde beelden",
+    "statDropped": "Geweigerd"
   }
 }
