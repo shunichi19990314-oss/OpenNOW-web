@@ -2,24 +2,36 @@
  * Browser-side automation loop for the AI player.
  *
  * Split from React on purpose: the loop needs precise timing, an abort path and
- * a fake clock in tests, none of which survive inside a component. The sink is
- * injected, so nothing here touches WebRTC directly.
+ * a fake clock in tests, none of which survive inside a component. The sink and
+ * the frame capture are injected, so nothing here touches WebRTC or the DOM.
  *
- * Flow per round:
- *   1. ask this app's server for a decision (the key stays server-side)
- *   2. validate the reply against the offered actions
- *   3. press each action with a hold and a release
- *   4. wait one interval, carrying the plan forward for continuity
+ * Two modes share one transport:
+ *
+ *   auto — observe, decide, press, wait, repeat
+ *   chat — the visitor's message is the instruction; the AI answers and acts
+ *
+ * Everything the visitor reads is Japanese (the panel is Japanese-only for now);
+ * codes are still attached so the UI can localise later without touching logic.
  */
 import {
+  AI_PLAYER_CHAT_PATH,
   AI_PLAYER_DECIDE_PATH,
+  AI_PLAYER_AUTO_INTERVAL_MS,
+  type AiChatTurn,
   type AiPlayerDecideResponse,
   type AiPlayerDecision,
+  type AiPlayerFrame,
+  type AiPlayerMode,
   type AiPlayerObservation,
 } from "../../shared/aiPlayer";
 import { api } from "../api";
 import { buildActionSequence, type InjectedGamepadState } from "./aiPlayerActions";
 import { parseAiPlayerDecision } from "../../shared/aiPlayerPrompt";
+import {
+  enforceVariety,
+  INITIAL_REPEAT_TRACKER,
+  type RepeatTracker,
+} from "./aiPlayerVariety";
 
 /** How a decision becomes input. */
 export interface AiPlayerInputSink {
@@ -42,13 +54,14 @@ export interface AiPlayerLogEntry {
   /**
    * Machine-readable code for messages the UI can translate.
    *
-   * `message` stays Japanese and is the fallback; the panel prefers a localised
-   * string when it recognises the code, so a visitor reading Korean is not shown
-   * Japanese error text.
+   * `message` is already Japanese; the code exists so the panel can attach an
+   * icon or replace the wording per locale without parsing strings.
    */
   code?: AiPlayerLogCode;
   /** Set when this entry records a button press that reached the wire. */
   sentPress?: boolean;
+  /** Actions this entry describes, for the log's structured rendering. */
+  actions?: string[];
 }
 
 export type AiPlayerLogCode =
@@ -58,17 +71,36 @@ export type AiPlayerLogCode =
   | "network"
   | "bad_reply"
   | "unknown_action"
-  | "input_not_ready";
+  | "input_not_ready"
+  | "frame_captured"
+  | "forced_variety";
 
 export interface AiPlayerLoopOptions {
-  post?: AiPlayerPost;
+  mode?: AiPlayerMode;
   now?: () => number;
   sleep?: (ms: number) => Promise<void>;
   /** Minimum gap between decision rounds. */
   intervalMs?: number;
-  /** Called after every round so the UI can show what happened. */
+  /** Called for every log line. */
   onRound?: (decision: AiPlayerDecision | null, log: AiPlayerLogEntry) => void;
   signal?: AbortSignal;
+  /** Overrides the proxy call (tests only). */
+  post?: AiPlayerPost;
+  /** Grabs the current frame, or null when vision is off / unavailable. */
+  captureFrame?: () => AiPlayerFrame | null;
+  /** Chat mode: the instruction to act on, then cleared. */
+  instruction?: string;
+  /** Chat mode: conversation so far, oldest first. */
+  conversation?: AiChatTurn[];
+  model?: string;
+  /**
+   * Stop after this many rounds.
+   *
+   * Chat mode uses `1`: the visitor asked for one instruction, so answering once
+   * and waiting for the next message is the whole job. Auto mode leaves it unset
+   * and runs until aborted.
+   */
+  maxRounds?: number;
 }
 
 export interface AiPlayerLoopState {
@@ -86,12 +118,55 @@ export interface AiPlayerLoopState {
    * it — the session that prompted this ran 51 rounds and reported nothing.
    */
   sentPresses: number;
+  /** Frames attached so far, so the visitor can confirm vision is working. */
+  framesSent: number;
+  /** Rounds where the fallback rotation replaced the model's choice. */
+  varietyBreaks: number;
+  /** Last reply addressed to the visitor (chat mode). */
+  lastReply: string | null;
 }
 
-const DEFAULT_INTERVAL_MS = 1_500;
+const EMPTY_STATE: AiPlayerLoopState = {
+  running: true,
+  rounds: 0,
+  lastPlan: "",
+  lastError: null,
+  lastErrorCode: undefined,
+  sentPresses: 0,
+  framesSent: 0,
+  varietyBreaks: 0,
+  lastReply: null,
+};
+
+const DEFAULT_INTERVAL_MS = AI_PLAYER_AUTO_INTERVAL_MS;
 /** Extra wait after a failed round, so a broken provider is not hammered. */
 const ERROR_BACKOFF_MS = 5_000;
 const RELEASE_SETTLE_MS = 60;
+/** Interval for the controller heartbeat, matching the physical pad path. */
+const KEEPALIVE_MS = 100;
+
+/** Posts a body to this app's own proxy. Injectable for tests. */
+export type AiPlayerPost<TBody = unknown> = (
+  path: string,
+  body: TBody,
+  signal?: AbortSignal,
+) => Promise<AiPlayerDecideResponse>;
+
+const defaultPost: AiPlayerPost = async (path, body, signal) => {
+  // `api()` attaches the CSRF marker and throws with `httpStatus` set, which
+  // `runAiPlayerRound` reads to explain the failure.
+  return api<AiPlayerDecideResponse>(path, {
+    method: "POST",
+    body: JSON.stringify(body),
+    signal,
+  });
+};
+
+function defaultSleep(ms: number): Promise<void> {
+  return new Promise((resolve) => {
+    setTimeout(resolve, ms);
+  });
+}
 
 /**
  * Turns a failed decision call into something the visitor can act on.
@@ -115,25 +190,15 @@ export function describeDecisionFailure(status: number, serverMessage: string): 
   return `AI リクエストが失敗しました (HTTP ${status})。`;
 }
 
-/** Posts an observation to this app's own proxy. Injectable for tests. */
-export type AiPlayerPost = (
-  body: { observation: AiPlayerObservation; model?: string },
-  signal?: AbortSignal,
-) => Promise<AiPlayerDecideResponse>;
-
-const defaultPost: AiPlayerPost = async (body, signal) => {
-  // `api()` throws with `httpStatus` set, which `runAiPlayerRound` reads above.
-  return api<AiPlayerDecideResponse>(AI_PLAYER_DECIDE_PATH, {
-    method: "POST",
-    body: JSON.stringify(body),
-    signal,
-  });
-};
-
-function defaultSleep(ms: number): Promise<void> {
-  return new Promise((resolve) => {
-    setTimeout(resolve, ms);
-  });
+/** Request body shared by both modes. */
+interface RoundRequestBody {
+  observation: AiPlayerObservation;
+  model?: string;
+  mode?: AiPlayerMode;
+  /** Chat mode adds these. */
+  message?: string;
+  conversation?: AiChatTurn[];
+  includeFrame?: boolean;
 }
 
 /**
@@ -144,40 +209,52 @@ function defaultSleep(ms: number): Promise<void> {
 export async function runAiPlayerRound(params: {
   observation: AiPlayerObservation;
   sink: AiPlayerInputSink;
+  mode?: AiPlayerMode;
   model?: string;
   signal?: AbortSignal;
   sleep?: (ms: number) => Promise<void>;
   now?: () => number;
   onLog?: (entry: AiPlayerLogEntry) => void;
   /** Overrides the proxy call (tests only). */
-  post?: AiPlayerPost;
+  post?: AiPlayerPost<RoundRequestBody>;
+  /** Chat message; switches the request to `/api/ai/chat`. */
+  message?: string;
+  conversation?: AiChatTurn[];
 }): Promise<AiPlayerDecision | null> {
   const sleep = params.sleep ?? defaultSleep;
   const now = params.now ?? Date.now;
+  const post = params.post ?? defaultPost;
   const log = (
     level: AiPlayerLogEntry["level"],
     message: string,
     code?: AiPlayerLogCode,
-    sentPress?: boolean,
+    extra?: Partial<AiPlayerLogEntry>,
   ): void => {
-    params.onLog?.({ atMs: now(), level, message, code, ...(sentPress ? { sentPress } : {}) });
+    params.onLog?.({ atMs: now(), level, message, code, ...extra });
   };
 
-  // Uses the shared `api()` helper rather than a bare fetch: it sends the
-  // `X-OpenNOW-Client` marker and turns a non-2xx reply into an Error carrying
-  // both the server's own message and the HTTP status. A bare fetch here meant
-  // a 403 from the same-origin guard surfaced as "HTTP 403" with no cause.
-  let payload: AiPlayerDecideResponse;
-  try {
-    payload = await (params.post ?? defaultPost)({
+  // Chat routing is per instruction, not per mode: without a message there is
+  // nothing to route to /api/ai/chat, so the round falls back to /decide.
+  const isChat = typeof params.message === "string" && params.message.trim().length > 0;
+  const body: RoundRequestBody = isChat
+    ? {
       observation: params.observation,
       model: params.model,
-    }, params.signal);
+      mode: "chat",
+      message: params.message,
+      conversation: params.conversation,
+      includeFrame: true,
+    }
+    : { observation: params.observation, model: params.model, mode: "auto" };
+
+  let payload: AiPlayerDecideResponse;
+  try {
+    payload = await post(isChat ? AI_PLAYER_CHAT_PATH : AI_PLAYER_DECIDE_PATH, body, params.signal);
   } catch (error) {
     if (error instanceof Error && error.name === "AbortError") return null;
     const status = (error as { httpStatus?: number }).httpStatus;
     if (status === undefined) {
-      log("error", "AI サーバーに接続できませんでした。", "network");
+      log("error", "AI サーバーに接続できませんでした。通信環境を確認してください。", "network");
       return null;
     }
     const message = describeDecisionFailure(status, error instanceof Error ? error.message : "");
@@ -193,61 +270,73 @@ export async function runAiPlayerRound(params: {
 
   const { decision, problem } = parseAiPlayerDecision(payload?.raw ?? "", params.observation);
   if (!decision) {
-    log("warn", `AI の応答を使用できません: ${problem ?? "unknown"}`, "bad_reply");
+    log("warn", `AI の応答を使用できません: ${problem ?? "不明な形式"}`, "bad_reply");
     return null;
   }
 
-  const sequence = buildActionSequence(decision.actions);
-  if (decision.actions.length > 0 && sequence.length === 0) {
-    log("warn", "AI が未知の操作を要求したため、入力は送信しませんでした。", "unknown_action");
-    return decision;
+  // Chat mode may legitimately answer without pressing anything.
+  if (decision.actions.length > 0) {
+    const sequence = buildActionSequence(decision.actions);
+    if (sequence.length === 0) {
+      log("warn", "AI が未知の操作を要求したため、入力は送信しませんでした。", "unknown_action");
+      return decision;
+    }
+    for (const step of sequence) {
+      if (params.signal?.aborted) return decision;
+      const delivered = params.sink.send(step.state);
+      if (delivered && step.state.buttons !== 0) {
+        // One line per distinct button press, so a session where the game
+        // ignores input can be told apart from one where nothing was sent.
+        log(
+          "info",
+          `ボタンを送信: 0x${step.state.buttons.toString(16)} (${step.durationMs}ms)`,
+          undefined,
+          { sentPress: true },
+        );
+      }
+      if (!delivered) {
+        // The stream is not accepting input yet (handshake still in flight).
+        // Releasing matters here too: leaving a button held would fire the
+        // action whenever the channel opens.
+        log("warn", "入力チャンネルが未接続のため、次のラウンドまで待機します。", "input_not_ready");
+        break;
+      }
+      await sleep(step.durationMs);
+    }
+    // Always return to neutral, even on abort, so no input stays pressed.
+    params.sink.send(buildNeutral());
+    await sleep(RELEASE_SETTLE_MS);
   }
 
-  for (const step of sequence) {
-    if (params.signal?.aborted) return decision;
-    const delivered = params.sink.send(step.state);
-    if (delivered && step.state.buttons !== 0) {
-      // One diagnostic line per distinct button press, so a session where the
-      // game ignores input can be told apart from one where nothing was sent.
-      log("info", `入力送信: buttons=0x${step.state.buttons.toString(16)} (${step.durationMs}ms)`, undefined, true);
-    }
-    if (!delivered) {
-      // The stream is not accepting input yet (handshake still in flight).
-      // Releasing matters here too: leaving a button held would fire the action
-      // whenever the channel opens.
-      log("warn", "入力チャンネルが未接続のため、次のラウンドまで待機します。", "input_not_ready");
-      break;
-    }
-    await sleep(step.durationMs);
-  }
-  // Always return to neutral, even on abort, so no input stays pressed.
-  params.sink.send(buildNeutral());
-  await sleep(RELEASE_SETTLE_MS);
-
-  log("info", decision.plan ? `計画: ${decision.plan}` : `操作: ${decision.actions.map((a) => a.action).join(", ")}`);
+  const actionNames = decision.actions.map((action) => action.action);
+  log(
+    "info",
+    decision.reply
+      ? decision.reply
+      : decision.plan
+        ? `計画: ${decision.plan}`
+        : actionNames.length > 0
+          ? `操作: ${actionNames.join(", ")}`
+          : "待機しています",
+    undefined,
+    actionNames.length > 0 ? { actions: actionNames } : undefined,
+  );
   return decision;
 }
 
-/** Interval for the controller heartbeat, matching the physical pad path. */
-const KEEPALIVE_MS = 100;
-
-/**
- * Waits `totalMs`, ticking the sink's keepalive on the way.
- *
- * Splitting the wait keeps the loop responsive to abort without burning a timer
- * per millisecond, and keeps the injected pad advertised between rounds.
- */
+/** Waits `totalMs`, ticking the sink's keepalive on the way. */
 async function waitWithKeepAlive(
   totalMs: number,
   sink: AiPlayerInputSink,
   sleep: (ms: number) => Promise<void>,
+  signal?: AbortSignal,
 ): Promise<void> {
   if (!sink.keepAlive) {
     await sleep(totalMs);
     return;
   }
   let remaining = totalMs;
-  while (remaining > 0) {
+  while (remaining > 0 && !signal?.aborted) {
     const slice = Math.min(KEEPALIVE_MS, remaining);
     await sleep(slice);
     remaining -= slice;
@@ -263,66 +352,140 @@ function buildNeutral(): InjectedGamepadState {
   return { buttons: 0, leftTrigger: 0, rightTrigger: 0, leftStickX: 0, leftStickY: 0, rightStickX: 0, rightStickY: 0 };
 }
 
+export interface AiPlayerLoopParams {
+  sink: AiPlayerInputSink;
+  /** Builds the observation for this round from the loop's own bookkeeping. */
+  buildObservation: (state: {
+    rounds: number;
+    lastPlan: string;
+    lastActions: string[];
+    repeatCount: number;
+    frame: AiPlayerFrame | null;
+  }) => AiPlayerObservation;
+  options?: AiPlayerLoopOptions;
+  onState?: (state: AiPlayerLoopState) => void;
+}
+
 /**
  * Runs rounds until stopped.
  *
- * Stops silently on abort, and keeps the last plan so a long session keeps the
- * model's intent across rounds instead of re-planning from scratch each time.
+ * Auto mode keeps the last plan so a long session keeps the model's intent; the
+ * frame is captured per round (a stale screenshot is worse than none — it makes
+ * the model act on a situation that no longer exists).
  */
-export async function runAiPlayerLoop(params: {
-  sink: AiPlayerInputSink;
-  buildObservation: (state: { rounds: number; lastPlan: string }) => AiPlayerObservation;
-  options?: AiPlayerLoopOptions;
-  onState?: (state: AiPlayerLoopState) => void;
-}): Promise<void> {
+export async function runAiPlayerLoop(params: AiPlayerLoopParams): Promise<void> {
   const options = params.options ?? {};
   const sleep = options.sleep ?? defaultSleep;
   const intervalMs = options.intervalMs ?? DEFAULT_INTERVAL_MS;
-  const state: AiPlayerLoopState = {
-    running: true,
-    rounds: 0,
-    lastPlan: "",
-    lastError: null,
-    lastErrorCode: undefined,
-    sentPresses: 0,
-  };
+  const state: AiPlayerLoopState = { ...EMPTY_STATE };
+  let tracker: RepeatTracker = INITIAL_REPEAT_TRACKER;
+  let frame: AiPlayerFrame | null = null;
+  let instruction = options.instruction;
   params.onState?.({ ...state });
 
   while (!options.signal?.aborted) {
-    const observation = params.buildObservation({ rounds: state.rounds, lastPlan: state.lastPlan });
-    // Typed through a holder object: TypeScript narrows a `let` assigned only
-    // inside a callback down to `null` and then rejects `.message`.
+    // Capture per round, not per session: the whole point is to react to what
+    // the screen shows *now*.
+    frame = options.captureFrame?.() ?? null;
+    if (frame) {
+      state.framesSent += 1;
+      options.onRound?.(null, {
+        atMs: (options.now ?? Date.now)(),
+        level: "info",
+        message: `画面を取得しました (${frame.width}×${frame.height})`,
+        code: "frame_captured",
+      });
+    }
+
+    const observation = params.buildObservation({
+      rounds: state.rounds,
+      lastPlan: state.lastPlan,
+      lastActions: tracker.last,
+      repeatCount: tracker.count,
+      frame,
+    });
+    if (instruction) {
+      observation.instruction = instruction;
+    }
+    if (options.conversation && options.conversation.length > 0) {
+      observation.conversation = options.conversation;
+    }
+
     const failure: { entry: AiPlayerLogEntry | null } = { entry: null };
-    const before = state.sentPresses;
     const decision = await runAiPlayerRound({
       observation,
       sink: params.sink,
-      post: options.post,
+      mode: options.mode ?? "auto",
+      model: options.model,
       signal: options.signal,
       sleep,
       now: options.now,
+      post: options.post,
+      message: instruction,
+      conversation: options.conversation,
       onLog: (entry) => {
         if (entry.level !== "info") failure.entry = entry;
         if (entry.sentPress) state.sentPresses += 1;
         options.onRound?.(null, entry);
       },
     });
+    // A chat instruction is consumed exactly once: repeating it every round
+    // would turn one request into an endless command.
+    instruction = undefined;
     if (options.signal?.aborted) break;
+
     state.rounds += 1;
     if (decision) {
       state.lastPlan = decision.plan || state.lastPlan;
+      state.lastReply = decision.reply ?? state.lastReply;
+      // The decision carries the reply the visitor is waiting for in chat mode;
+      // without this callback the panel had nothing to show.
+      options.onRound?.(decision, {
+        atMs: (options.now ?? Date.now)(),
+        level: "info",
+        message: decision.reply ?? decision.plan ?? "ラウンド完了",
+      });
       state.lastError = null;
       state.lastErrorCode = undefined;
-      options.onRound?.(decision, { atMs: (options.now ?? Date.now)(), level: "info", message: "round complete" });
+
+      // Break repetition even when the model insists on the same action.
+      const variety = enforceVariety(tracker, decision.actions, state.rounds, observation.availableActions);
+      tracker = variety.tracker;
+      if (variety.overridden) {
+        state.varietyBreaks += 1;
+        options.onRound?.(null, {
+          atMs: (options.now ?? Date.now)(),
+          level: "info",
+          message: `同じ操作が続いたため「${variety.actions[0]?.action}」に切り替えました`,
+          code: "forced_variety",
+          actions: variety.actions.map((action) => action.action),
+        });
+        // The override has to be pressed here: the round already finished with
+        // the model's own choice.
+        for (const action of variety.actions) {
+          if (options.signal?.aborted) break;
+          params.sink.send(buildNeutral());
+          const [pressed] = buildActionSequence([action]);
+          if (pressed) {
+            params.sink.send(pressed.state);
+            await sleep(pressed.durationMs);
+            params.sink.send(buildNeutral());
+          }
+        }
+      }
     } else {
       state.lastError = failure.entry?.message ?? "AI から応答がありませんでした。";
       state.lastErrorCode = failure.entry?.code;
     }
     params.onState?.({ ...state });
+    if (options.maxRounds !== undefined && state.rounds >= options.maxRounds) {
+      break;
+    }
     await waitWithKeepAlive(
       decision ? intervalMs : ERROR_BACKOFF_MS,
       params.sink,
       sleep,
+      options.signal,
     );
   }
 

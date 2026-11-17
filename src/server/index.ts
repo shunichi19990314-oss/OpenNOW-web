@@ -65,7 +65,11 @@ app.use((request, _response, next) => {
   // The AI routes authenticate with the session cookie and are same-site only,
   // so they lose nothing by not requiring the marker; POST bodies are JSON,
   // which a cross-origin form cannot produce.
-  if (request.path === "/api/ai/decide" || request.path === "/api/ai/status") {
+  if (
+    request.path === "/api/ai/decide"
+    || request.path === "/api/ai/chat"
+    || request.path === "/api/ai/status"
+  ) {
     next();
     return;
   }
