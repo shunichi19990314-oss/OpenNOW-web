@@ -27,27 +27,20 @@ function renderPanel(props: Partial<Parameters<typeof AiPlayerPanel>[0]> = {}): 
 }
 
 describe("AI player panel", () => {
-  it("reports how many inputs were delivered once a loop is running", () => {
-    // The panel body only mounts when opened, so this checks the copy exists in
-    // the locale bundle rather than the rendered markup (no DOM in this suite).
-    const markup = renderPanel({ enabled: true });
-    expect(markup).toContain("ai-player");
-  });
-
   it("renders nothing unless a stream is live", () => {
     expect(renderPanel({ enabled: false })).toBe("");
     expect(renderPanel({ enabled: true })).toContain("ai-player");
   });
 
-  it("offers a start control that is closed until the user opens it", () => {
+  it("stays collapsed until opened", () => {
     const markup = renderPanel();
     expect(markup).toContain("ai-player-toggle");
-    // The body (and its start button) stays collapsed so it cannot be clicked
-    // by accident while a game has the keyboard.
+    // The body (and its controls) stays closed so it cannot be clicked by
+    // accident while a game has the keyboard.
     expect(markup).not.toContain("ai-player-body");
   });
 
-  it("is disabled without an input sink", () => {
+  it("is inert without an input sink", () => {
     const markup = renderPanel({ sink: null });
     expect(markup).toContain("ai-player-toggle");
     expect(markup).not.toContain("ai-player-body");

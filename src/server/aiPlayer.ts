@@ -14,13 +14,24 @@
  *   AI_PLAYER_MODEL z-ai/glm-5.3                 (optional override)
  *   AI_PLAYER_DAILY_REQUESTS  0                  (per-user/day cap, 0 = off)
  */
-import { AI_PLAYER_SYSTEM_PROMPT, buildAiPlayerPrompt } from "@shared/aiPlayerPrompt";
+import {
+  AI_PLAYER_CHAT_SYSTEM_PROMPT,
+  AI_PLAYER_SYSTEM_PROMPT,
+  buildObservationText,
+  buildUserContent,
+  type AiMessageContent,
+} from "@shared/aiPlayerPrompt";
 import {
   AI_PLAYER_DEFAULT_MODEL,
+  AI_PLAYER_FRAME_MAX_BYTES,
+  AI_PLAYER_VISION_MODELS,
   type AiChatMessage,
+  type AiPlayerChatRequest,
   type AiPlayerDecideRequest,
   type AiPlayerDecideResponse,
   type AiPlayerErrorCode,
+  type AiPlayerFrame,
+  type AiPlayerMode,
   type AiPlayerObservation,
   type AiPlayerStatus,
 } from "@shared/aiPlayer";
@@ -29,6 +40,8 @@ const DEFAULT_BASE_URL = "https://api.numes.ai/api/v1";
 const REQUEST_TIMEOUT_MS = 20_000;
 const MAX_OBSERVATION_FIELD = 2_000;
 const MAX_ACTIONS_OFFERED = 40;
+/** A data URL is base64, so the string is ~4/3 the image size. */
+const MAX_FRAME_DATA_URL_LENGTH = Math.ceil(AI_PLAYER_FRAME_MAX_BYTES / 3) * 4;
 
 /**
  * Models an operator may pin without exposing the key.
@@ -74,6 +87,16 @@ function readEnvFrom(env: NodeJS.ProcessEnv, name: string): string {
   return typeof value === "string" ? value.trim() : "";
 }
 
+/**
+ * Whether the configured model can accept images.
+ *
+ * Used by the UI to warn before spending tokens on frames that would be
+ * rejected, and to decide whether "画面を送る" is even meaningful.
+ */
+export function modelSupportsVision(model: string): boolean {
+  return (AI_PLAYER_VISION_MODELS as readonly string[]).includes(model);
+}
+
 /** Status shown in the settings panel. Never includes the key. */
 export function describeAiPlayerStatus(config: AiPlayerConfig = resolveAiPlayerConfig()): AiPlayerStatus {
   return {
@@ -81,6 +104,7 @@ export function describeAiPlayerStatus(config: AiPlayerConfig = resolveAiPlayerC
     model: config.model,
     baseUrl: config.baseUrl,
     reason: config.apiKey.length > 0 ? undefined : "missing_key",
+    vision: modelSupportsVision(config.model),
   };
 }
 
@@ -133,13 +157,59 @@ export function sanitizeObservation(raw: unknown): AiPlayerObservation {
   const signals = Array.isArray(record.signals)
     ? record.signals.map((value) => sanitizeField(value, 120)).filter(Boolean).slice(0, 6)
     : undefined;
+  const conversation = Array.isArray(record.conversation)
+    ? record.conversation
+      .slice(-10)
+      .map((turn) => {
+        if (!turn || typeof turn !== "object") return null;
+        const entry = turn as Record<string, unknown>;
+        const role = entry.role === "assistant" ? "assistant" as const : "user" as const;
+        const text = sanitizeField(entry.text, 600);
+        return text ? { role, text } : null;
+      })
+      .filter((turn): turn is { role: "user" | "assistant"; text: string } => turn !== null)
+    : undefined;
+
   return {
     game: sanitizeField(record.game, 120) || "unknown game",
     elapsedSeconds: Number.isFinite(elapsed) ? Math.max(0, Math.min(86_400, Math.round(elapsed))) : 0,
     plan: sanitizeField(record.plan, 400) || undefined,
     signals,
     availableActions,
+    frame: sanitizeFrame(record.frame),
+    instruction: sanitizeField(record.instruction, 600) || undefined,
+    conversation,
+    lastActions: Array.isArray(record.lastActions)
+      ? record.lastActions.map((value) => sanitizeField(value, 32).toLowerCase()).filter(Boolean).slice(0, 8)
+      : undefined,
+    repeatCount: Number.isFinite(Number(record.repeatCount))
+      ? Math.max(0, Math.min(100, Math.round(Number(record.repeatCount))))
+      : undefined,
   };
+}
+
+/**
+ * Validates a captured frame.
+ *
+ * Only a JPEG data URL is accepted: the value is forwarded verbatim to the
+ * provider inside a JSON body, so an arbitrary URL (or an SVG data URL, which
+ * can carry script) must not pass. Oversized payloads are refused rather than
+ * silently truncated — a half image would be billed and be useless.
+ */
+export function sanitizeFrame(raw: unknown): AiPlayerFrame | undefined {
+  if (!raw || typeof raw !== "object") return undefined;
+  const record = raw as Record<string, unknown>;
+  const dataUrl = typeof record.dataUrl === "string" ? record.dataUrl : "";
+  if (!dataUrl.startsWith("data:image/jpeg;base64,")) return undefined;
+  if (dataUrl.length > MAX_FRAME_DATA_URL_LENGTH) {
+    throw new AiPlayerError("frame_too_large", "The captured frame is too large to send.", 413);
+  }
+  const width = Number(record.width);
+  const height = Number(record.height);
+  if (!Number.isFinite(width) || !Number.isFinite(height) || width <= 0 || height <= 0) {
+    return undefined;
+  }
+  return { dataUrl, width: Math.round(width), height: Math.round(height) };
 }
 
 /** Picks the model for a request, refusing anything outside the allowlist. */
@@ -250,6 +320,7 @@ export interface ChatCompletionRequest {
 export function buildChatCompletionRequest(
   model: string,
   messages: AiChatMessage[],
+  options: { maxTokens?: number } = {},
 ): ChatCompletionRequest {
   return {
     model,
@@ -257,9 +328,41 @@ export function buildChatCompletionRequest(
     // Low temperature: the agent should follow the plan, not improvise.
     temperature: 0.3,
     // The reply is a small JSON object; 400 tokens is generous headroom and
-    // caps worst-case spend per request on paid models.
-    max_tokens: 400,
+    // caps worst-case spend per request on paid models. Vision rounds get a bit
+    // more because the model tends to reason about the image before answering,
+    // and a truncated reply would arrive as invalid JSON.
+    max_tokens: options.maxTokens ?? 400,
   };
+}
+
+/**
+ * Lifts the multimodal content into the message shape the provider expects.
+ *
+ * `AiChatMessage.content` is typed as a string for the text-only case; the
+ * provider accepts an array of parts, so the cast is confined here.
+ */
+function toChatMessage(role: "system" | "user" | "assistant", content: AiMessageContent): AiChatMessage {
+  return { role, content: content as unknown as string };
+}
+
+/** Builds the provider request for either mode. Exported for tests. */
+export function buildRequestForMode(
+  mode: AiPlayerMode,
+  model: string,
+  observation: AiPlayerObservation,
+  visionSupported: boolean,
+): ChatCompletionRequest {
+  const systemPrompt = mode === "chat" ? AI_PLAYER_CHAT_SYSTEM_PROMPT : AI_PLAYER_SYSTEM_PROMPT;
+  const text = buildObservationText(observation);
+  const frame = visionSupported ? observation.frame?.dataUrl : undefined;
+  return buildChatCompletionRequest(
+    model,
+    [
+      toChatMessage("system", systemPrompt),
+      toChatMessage("user", buildUserContent(text, frame)),
+    ],
+    { maxTokens: frame ? 700 : 400 },
+  );
 }
 
 export interface DecideDependencies {
@@ -293,6 +396,7 @@ export async function requestAiPlayerDecision(
 
   const observation = sanitizeObservation(request?.observation);
   const model = resolveRequestModel(request?.model, config);
+  const mode: AiPlayerMode = request?.mode === "chat" ? "chat" : "auto";
 
   const retryAfterSeconds = reserveDailyRequest(userId, config.dailyRequestCap, now());
   if (retryAfterSeconds !== null) {
@@ -304,10 +408,7 @@ export async function requestAiPlayerDecision(
     );
   }
 
-  const requestBody = buildChatCompletionRequest(model, [
-    { role: "system", content: AI_PLAYER_SYSTEM_PROMPT },
-    { role: "user", content: buildAiPlayerPrompt(observation) },
-  ]);
+  const requestBody = buildRequestForMode(mode, model, observation, modelSupportsVision(model));
 
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
@@ -382,6 +483,39 @@ export async function requestAiPlayerDecision(
     raw: text,
     usage: usage && Number.isFinite(usage.inputTokens) ? usage : undefined,
   };
+}
+
+/**
+ * Chat-mode round-trip: the visitor's message plus the current frame.
+ *
+ * Shares the transport with the auto loop so both modes behave identically on
+ * errors, caps and timeouts; only the prompt and the presence of an instruction
+ * differ.
+ */
+export async function requestAiPlayerChat(
+  request: AiPlayerChatRequest,
+  userId: string,
+  deps: DecideDependencies = {},
+): Promise<AiPlayerDecideResponse> {
+  const message = sanitizeField(request?.message, 600);
+  if (!message) {
+    throw new AiPlayerError("invalid_response", "The chat message is empty.", 400);
+  }
+  const observation = sanitizeObservation(request?.observation);
+  // The chat message is the instruction for this round; `instruction` in the
+  // body is a convenience for callers that only have one field.
+  const withInstruction: AiPlayerObservation = {
+    ...observation,
+    instruction: message,
+    conversation: sanitizeObservation({ conversation: request.conversation }).conversation,
+    frame: request.includeFrame === false ? undefined : observation.frame,
+  };
+  const config = deps.config ?? resolveAiPlayerConfig();
+  return requestAiPlayerDecision(
+    { observation: withInstruction, model: request.model, mode: "chat" },
+    userId,
+    { ...deps, config },
+  );
 }
 
 export const aiPlayerInternals = {

@@ -15,10 +15,26 @@ export interface AiChatMessage {
 }
 
 /**
+ * One captured frame of the stream.
+ *
+ * Kept as a JPEG data URL because that is what the provider accepts without
+ * multipart plumbing, and because the whole payload must survive JSON. Sending
+ * an image is roughly 200-1200 tokens depending on size, which is why the frame
+ * is downscaled before it is attached.
+ */
+export interface AiPlayerFrame {
+  /** `data:image/jpeg;base64,...` */
+  dataUrl: string;
+  /** Pixel size after downscaling, for the prompt and for logging. */
+  width: number;
+  height: number;
+}
+
+/**
  * One frame of what the player can see and do.
  *
- * Deliberately small: model round-trips are the bottleneck, so the browser
- * sends a compact state block rather than screenshots or full game state.
+ * `frame` is optional: vision is what makes the AI stop repeating itself, but a
+ * text-only provider still gets a usable (if blind) loop.
  */
 export interface AiPlayerObservation {
   /** Game title, so the model knows what it is playing. */
@@ -31,6 +47,21 @@ export interface AiPlayerObservation {
   signals?: string[];
   /** Actions the caller allows the model to choose from. */
   availableActions: string[];
+  /** Most recent capture of the stream, when vision is enabled. */
+  frame?: AiPlayerFrame;
+  /** The chat instruction from the visitor, when the AI is in chat mode. */
+  instruction?: string;
+  /** Recent conversation, oldest first (chat mode only). */
+  conversation?: AiChatTurn[];
+  /** What the loop did last round, so the model can avoid repeating it. */
+  lastActions?: string[];
+  /** Auto mode: how many consecutive rounds the same action was repeated. */
+  repeatCount?: number;
+}
+
+export interface AiChatTurn {
+  role: "user" | "assistant";
+  text: string;
 }
 
 /** A single decoded action the browser will apply to the gamepad. */
@@ -47,6 +78,8 @@ export interface AiPlayerDecision {
   /** Short natural-language plan the model wants to follow next. */
   plan: string;
   actions: AiPlayerAction[];
+  /** Reply addressed to the visitor (chat mode; a status line in auto mode). */
+  reply?: string;
   /** Token usage reported by the provider, for the settings panel. */
   usage?: { inputTokens?: number; outputTokens?: number };
 }
@@ -72,13 +105,37 @@ export interface AiPlayerStatus {
   baseUrl: string;
   /** Why the feature is unavailable, when `configured` is false. */
   reason?: "missing_key" | "disabled";
+  /** Whether the configured model accepts image input. */
+  vision: boolean;
 }
+
+/**
+ * How the AI decides what to press.
+ *
+ * `auto`: observe → decide → press, on a timer.
+ * `chat`: the visitor writes an instruction; the AI answers and acts on it.
+ */
+export type AiPlayerMode = "auto" | "chat";
 
 /** Request body for `POST /api/ai/decide`. */
 export interface AiPlayerDecideRequest {
   observation: AiPlayerObservation;
   /** Optional override picked in the UI; ignored when not in the allowlist. */
   model?: string;
+  /** Defaults to `auto` when omitted. */
+  mode?: AiPlayerMode;
+}
+
+/** Request body for `POST /api/ai/chat`. */
+export interface AiPlayerChatRequest {
+  observation: AiPlayerObservation;
+  /** The visitor's message. */
+  message: string;
+  /** Earlier turns, oldest first. */
+  conversation?: AiChatTurn[];
+  model?: string;
+  /** Whether to attach the captured frame (chat replies can be text-only). */
+  includeFrame?: boolean;
 }
 
 /** Error codes the proxy returns so the UI can explain them. */
@@ -88,7 +145,8 @@ export type AiPlayerErrorCode =
   | "rate_limited"
   | "upstream_error"
   | "invalid_response"
-  | "budget_exceeded";
+  | "budget_exceeded"
+  | "frame_too_large";
 
 export interface AiPlayerErrorBody {
   error: AiPlayerErrorCode;
@@ -98,6 +156,7 @@ export interface AiPlayerErrorBody {
 }
 
 export const AI_PLAYER_DECIDE_PATH = "/api/ai/decide";
+export const AI_PLAYER_CHAT_PATH = "/api/ai/chat";
 export const AI_PLAYER_STATUS_PATH = "/api/ai/status";
 export const AI_PLAYER_MODELS_PATH = "/api/ai/models";
 
@@ -116,6 +175,23 @@ export const AI_PLAYER_SUGGESTED_MODELS = [
   "moonshotai/kimi-k3.1-pro",
 ] as const;
 
+/** Models known to accept image input, so the UI can warn before spending. */
+export const AI_PLAYER_VISION_MODELS = [
+  "z-ai/glm-5.3",
+] as const;
+
 /** Clamp on how long a single injected press may be held. */
 export const AI_PLAYER_MAX_ACTION_MS = 2_000;
 export const AI_PLAYER_MIN_ACTION_MS = 30;
+
+/** Frame capture bounds. Bigger images cost more tokens for no extra detail. */
+export const AI_PLAYER_FRAME_MAX_WIDTH = 960;
+export const AI_PLAYER_FRAME_MAX_HEIGHT = 540;
+export const AI_PLAYER_FRAME_JPEG_QUALITY = 0.6;
+/** Hard cap on the encoded data URL, enforced on both sides. */
+export const AI_PLAYER_FRAME_MAX_BYTES = 1_500_000;
+
+/** Auto mode cadence, in milliseconds. */
+export const AI_PLAYER_AUTO_INTERVAL_MS = 1_500;
+/** A repeated identical action this many times forces a different choice. */
+export const AI_PLAYER_REPEAT_LIMIT = 3;
