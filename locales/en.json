@@ -302,7 +302,8 @@
       "launchError": "Launch Error",
       "nowLoading": "Now Loading",
       "adQueue": "Ad Queue",
-      "launchProgress": "Game launch progress"
+      "launchProgress": "Game launch progress",
+      "upstreamDetail": "Response from GFN: {{detail}}"
     },
     "steps": {
       "queue": "Queue",
@@ -399,7 +400,10 @@
       "freeTier30MinutesRemaining": "30 minutes remaining in this free-tier session",
       "freeTier15MinutesRemaining": "15 minutes remaining in this free-tier session",
       "freeTierEndsSoon": "This free-tier session ends soon"
-    }
+    },
+    "sessionStartingCannotResume": "This session is still starting up, so it cannot be resumed yet. End it and launch again.",
+    "terminateBlockingCloudSession": "End the session blocking your launch",
+    "terminateBlockingCloudSessionTitle": "End the session blocking your launch: {{title}}"
   },
   "stream": {
     "sessionStarted": {
@@ -1095,7 +1099,15 @@
     "queueMaintenanceTitle": "Queue server maintenance",
     "queueMaintenanceDescription": "The queue server was removed for maintenance (code 71). Try again, optionally selecting a different queue server.",
     "recoveryExhaustedTitle": "Could not connect to the game server",
-    "recoveryExhaustedDescription": "All reconnection attempts were exhausted while waiting for the game server. Try launching again; if it keeps failing, try a different time or network."
+    "recoveryExhaustedDescription": "All reconnection attempts were exhausted while waiting for the game server. Try launching again; if it keeps failing, try a different time or network.",
+    "duplicateSessionDescriptionGame": "Tried to launch {{game}}, but another cloud session is still running on this account. End the existing session below and launch again (no need to wait for GFN's timeout).",
+    "duplicateSessionEndAction": "End the existing session",
+    "duplicateSessionEndConfirm": "End the cloud session that is running on your account? Unsaved progress in that game may be lost.",
+    "duplicateSessionNoneFound": "No session could be ended. GFN may still hold one, so try again in a few minutes.",
+    "duplicateSessionEndFailed": "The existing session could not be ended.",
+    "duplicateSessionEnded": "The existing session was ended. Launch the game again.",
+    "duplicateSessionRunning": "Sessions currently running on this account: {{games}}",
+    "duplicateSessionEndedPartial": "Ended {{stopped}} session(s); {{failed}} could not be stopped. Try launching again."
   },
   "releaseHighlights": {
     "kicker": "What's new",

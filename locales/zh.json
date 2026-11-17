@@ -232,7 +232,8 @@
     "labels": {
       "launchError": "启动错误",
       "nowLoading": "正在加载",
-      "adQueue": "广告队列"
+      "adQueue": "广告队列",
+      "upstreamDetail": "GFN 的响应：{{detail}}"
     },
     "steps": {
       "queue": "队列",
@@ -306,7 +307,10 @@
       "freeTier30MinutesRemaining": "此免费套餐还剩 30 分钟",
       "freeTier15MinutesRemaining": "此免费套餐还剩 15 分钟",
       "freeTierEndsSoon": "此免费套餐即将结束"
-    }
+    },
+    "sessionStartingCannotResume": "该会话仍在启动中,暂时无法继续。请先结束它,然后重新启动游戏。",
+    "terminateBlockingCloudSession": "结束阻碍启动的会话",
+    "terminateBlockingCloudSessionTitle": "结束阻碍启动的会话:{{title}}"
   },
   "stream": {
     "stats": {
@@ -703,7 +707,15 @@
     "sessionResumeFailedDescription": "与正在运行的会话的连接丢失并且恢复失败。",
     "queueAdPlayTimeout": "广告播放超时",
     "queueAdVideoStuck": "广告视频卡住了",
-    "queueAdUrlLoad": "加载网址时出错"
+    "queueAdUrlLoad": "加载网址时出错",
+    "duplicateSessionDescriptionGame": "尝试启动 {{game}}，但该账号仍有另一个云端会话在运行。请用下方按钮结束现有会话后再启动(无需等待 GFN 超时)。",
+    "duplicateSessionEndAction": "结束现有会话",
+    "duplicateSessionEndConfirm": "要结束账号中正在运行的云端会话吗?未保存的进度可能会丢失。",
+    "duplicateSessionNoneFound": "没有可结束的会话。GFN 可能仍占用会话，请几分钟后重试。",
+    "duplicateSessionEndFailed": "无法结束现有会话。",
+    "duplicateSessionEnded": "已结束现有会话。请重新启动游戏。",
+    "duplicateSessionRunning": "该账号正在运行的会话：{{games}}",
+    "duplicateSessionEndedPartial": "已结束 {{stopped}} 个会话;{{failed}} 个无法结束。请重新启动。"
   },
   "commandPalette": {
     "title": "命令面板",

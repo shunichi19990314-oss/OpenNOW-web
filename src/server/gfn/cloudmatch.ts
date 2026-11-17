@@ -287,9 +287,17 @@ export async function stopSession(input: SessionStopRequest): Promise<void> {
  * Get list of active sessions (status 2 or 3)
  * Returns sessions that are Ready or Streaming
  */
+export interface ActiveSessionLookupDependencies {
+  /** Overrides the per-base GET (tests only). */
+  fetchSessions?: (base: string, headers: Record<string, string>) => Promise<ActiveSessionInfo[] | null>;
+  /** Overrides the region discovery used for fallback bases (tests only). */
+  discoverBases?: (base: string, headers: Record<string, string>) => Promise<string[]>;
+}
+
 export async function getActiveSessions(
   token: string,
   streamingBaseUrl: string,
+  dependencies: ActiveSessionLookupDependencies = {},
 ): Promise<ActiveSessionInfo[]> {
   if (!token) {
     throw new Error("Missing token for getting active sessions");
@@ -301,22 +309,49 @@ export async function getActiveSessions(
     deviceId: getStableDeviceId(),
     includeOrigin: false,
   });
-  const primary = await fetchActiveSessionsFromBase(base, headers);
-  if (primary) {
-    return primary;
-  }
+  const fetchSessions = dependencies.fetchSessions ?? fetchActiveSessionsFromBase;
+  const discoverBases = dependencies.discoverBases ?? discoverActiveSessionFallbackBases;
+  // Merge instead of "first non-null wins".
+  //
+  // A session can live on a zone that stored its own base in
+  // `streamingBaseUrl` (install-to-play regions do this), while the caller asks
+  // the account default base. Stopping at the first base that answers means the
+  // other base's session is invisible to the launcher — which is exactly how a
+  // running session becomes "DuplicateSessionDetected" on the next launch: the
+  // resume path never saw it. Querying every base we know about costs one extra
+  // GET and removes that blind spot.
+  const bases = [base, ...(await discoverBases(base, headers))]
+    .filter((candidate, index, all) => candidate && all.indexOf(candidate) === index);
 
-  for (const fallbackBase of await discoverActiveSessionFallbackBases(base, headers)) {
-    if (fallbackBase === base) {
+  const collected: ActiveSessionInfo[] = [];
+  let answered = false;
+  for (const candidateBase of bases) {
+    let sessions: ActiveSessionInfo[] | null;
+    try {
+      sessions = await fetchSessions(candidateBase, headers);
+    } catch (error) {
+      // One dead base must not abort the hunt: the session that blocks the
+      // launch may be reported by the next base.
+      console.warn(`[CloudMatch] getActiveSessions failed for ${candidateBase}: ${formatErrorForLog(error)}`);
       continue;
     }
-    const fallback = await fetchActiveSessionsFromBase(fallbackBase, headers);
-    if (fallback) {
-      return fallback;
-    }
+    if (sessions === null) continue;
+    answered = true;
+    collected.push(...sessions);
   }
 
-  return [];
+  if (!answered) {
+    // Every base failed to answer: the caller must not treat that as "you have
+    // no sessions", because the launch path would then create a second one.
+    console.warn(`[CloudMatch] getActiveSessions: no base answered (${bases.length} tried)`);
+  }
+
+  const seen = new Set<string>();
+  return collected.filter((session) => {
+    if (seen.has(session.sessionId)) return false;
+    seen.add(session.sessionId);
+    return true;
+  });
 }
 
 async function discoverActiveSessionFallbackBases(
