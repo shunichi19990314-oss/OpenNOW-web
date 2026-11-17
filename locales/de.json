@@ -232,7 +232,8 @@
     "labels": {
       "launchError": "Startfehler",
       "nowLoading": "Wird jetzt geladen",
-      "adQueue": "Anzeigenwarteschlange"
+      "adQueue": "Anzeigenwarteschlange",
+      "upstreamDetail": "Antwort von GFN: {{detail}}"
     },
     "steps": {
       "queue": "Warteschlange",
@@ -306,7 +307,10 @@
       "freeTier30MinutesRemaining": "Es verbleiben noch 30 Minuten in dieser kostenlosen Sitzung",
       "freeTier15MinutesRemaining": "Es verbleiben noch 15 Minuten in dieser kostenlosen Sitzung",
       "freeTierEndsSoon": "Diese kostenlose Sitzung endet bald"
-    }
+    },
+    "sessionStartingCannotResume": "Diese Sitzung startet noch und kann nicht fortgesetzt werden. Beende sie und starte erneut.",
+    "terminateBlockingCloudSession": "Blockierende Sitzung beenden",
+    "terminateBlockingCloudSessionTitle": "Blockierende Sitzung beenden: {{title}}"
   },
   "stream": {
     "stats": {
@@ -703,7 +707,15 @@
     "sessionResumeFailedDescription": "Die Verbindung zur laufenden Sitzung wurde unterbrochen und die Wiederaufnahme ist fehlgeschlagen.",
     "queueAdPlayTimeout": "Zeitüberschreitung bei der Anzeigenwiedergabe",
     "queueAdVideoStuck": "Das Werbevideo hängt fest",
-    "queueAdUrlLoad": "Fehler beim Laden der URL"
+    "queueAdUrlLoad": "Fehler beim Laden der URL",
+    "duplicateSessionDescriptionGame": "{{game}} sollte gestartet werden, aber auf diesem Konto läuft noch eine Cloud-Sitzung. Beende die bestehende Sitzung unten und starte erneut (kein Warten auf das GFN-Timeout nötig).",
+    "duplicateSessionEndAction": "Bestehende Sitzung beenden",
+    "duplicateSessionEndConfirm": "Die laufende Cloud-Sitzung des Kontos beenden? Ungespeicherter Fortschritt kann verloren gehen.",
+    "duplicateSessionNoneFound": "Es konnte keine Sitzung beendet werden. GFN hält möglicherweise noch eine; versuche es in einigen Minuten erneut.",
+    "duplicateSessionEndFailed": "Die bestehende Sitzung konnte nicht beendet werden.",
+    "duplicateSessionEnded": "Die bestehende Sitzung wurde beendet. Starte das Spiel erneut.",
+    "duplicateSessionRunning": "Derzeit laufende Sitzungen dieses Kontos: {{games}}",
+    "duplicateSessionEndedPartial": "{{stopped}} Sitzung(en) beendet; {{failed}} konnten nicht beendet werden. Bitte erneut starten."
   },
   "commandPalette": {
     "title": "Befehlspalette",
