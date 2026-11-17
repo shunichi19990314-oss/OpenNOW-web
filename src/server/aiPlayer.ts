@@ -29,6 +29,7 @@ import {
   type AiPlayerChatRequest,
   type AiPlayerDecideRequest,
   type AiPlayerDecideResponse,
+  type AiPlayerErrorBody,
   type AiPlayerErrorCode,
   type AiPlayerFrame,
   type AiPlayerMode,
@@ -37,7 +38,24 @@ import {
 } from "@shared/aiPlayer";
 
 const DEFAULT_BASE_URL = "https://api.numes.ai/api/v1";
-const REQUEST_TIMEOUT_MS = 20_000;
+/**
+ * Deadline for one provider round-trip.
+ *
+ * Thinking models are slow and the free endpoints are slower still: Numes'
+ * published 7-day medians are 8.4 s to first token for `moonshotai/kimi-k3.1-pro`
+ * and a p90 of ~40 s, so a 20 s cap aborted perfectly healthy requests and the
+ * panel showed nothing but "時間切れ" forever. 60 s sits above the p90 of every
+ * model offered in the picker while still bounding a hung connection.
+ */
+const DEFAULT_REQUEST_TIMEOUT_MS = 60_000;
+const MIN_REQUEST_TIMEOUT_MS = 5_000;
+const MAX_REQUEST_TIMEOUT_MS = 180_000;
+
+export function resolveRequestTimeoutMs(env: NodeJS.ProcessEnv = process.env): number {
+  const raw = Number.parseInt(readEnvFrom(env, "AI_PLAYER_TIMEOUT_MS"), 10);
+  if (!Number.isFinite(raw)) return DEFAULT_REQUEST_TIMEOUT_MS;
+  return Math.min(MAX_REQUEST_TIMEOUT_MS, Math.max(MIN_REQUEST_TIMEOUT_MS, raw));
+}
 const MAX_OBSERVATION_FIELD = 2_000;
 const MAX_ACTIONS_OFFERED = 40;
 /** A data URL is base64, so the string is ~4/3 the image size. */
@@ -112,20 +130,32 @@ export class AiPlayerError extends Error {
   public readonly code: AiPlayerErrorCode;
   public readonly statusCode: number;
   public readonly retryAfterSeconds?: number;
+  public readonly waitedMs?: number;
+  public readonly model?: string;
 
-  constructor(code: AiPlayerErrorCode, message: string, statusCode: number, retryAfterSeconds?: number) {
+  constructor(
+    code: AiPlayerErrorCode,
+    message: string,
+    statusCode: number,
+    retryAfterSeconds?: number,
+    extra: { waitedMs?: number; model?: string } = {},
+  ) {
     super(message);
     this.name = "AiPlayerError";
     this.code = code;
     this.statusCode = statusCode;
     this.retryAfterSeconds = retryAfterSeconds;
+    this.waitedMs = extra.waitedMs;
+    this.model = extra.model;
   }
 
-  toBody(): { error: AiPlayerErrorCode; message: string; retryAfterSeconds?: number } {
+  toBody(): AiPlayerErrorBody {
     return {
       error: this.code,
       message: this.message,
       ...(this.retryAfterSeconds !== undefined ? { retryAfterSeconds: this.retryAfterSeconds } : {}),
+      ...(this.waitedMs !== undefined ? { waitedMs: this.waitedMs } : {}),
+      ...(this.model ? { model: this.model } : {}),
     };
   }
 }
@@ -369,6 +399,8 @@ export interface DecideDependencies {
   fetchImpl?: typeof fetch;
   now?: () => number;
   config?: AiPlayerConfig;
+  /** Overrides the provider deadline (tests only). */
+  timeoutMs?: number;
 }
 
 /**
@@ -439,9 +471,12 @@ async function callProvider(
   body: string,
   config: AiPlayerConfig,
   fetchImpl: typeof fetch,
+  timeoutMs: number,
+  model: string,
 ): Promise<UpstreamResult> {
   const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
+  const startedAt = Date.now();
+  const timeout = setTimeout(() => controller.abort(), timeoutMs);
   let response: Response;
   try {
     response = await fetchImpl(`${config.baseUrl}/chat/completions`, {
@@ -458,9 +493,21 @@ async function callProvider(
     });
   } catch (error) {
     const aborted = error instanceof Error && error.name === "AbortError";
+    if (aborted) {
+      const waitedMs = Date.now() - startedAt;
+      const seconds = Math.max(1, Math.round(waitedMs / 1000));
+      throw new AiPlayerError(
+        "upstream_timeout",
+        `AI プロバイダの応答が ${seconds} 秒以内に返りませんでした(モデル: ${model})。`
+          + "このモデルは応答が遅い可能性があります。別のモデルを選ぶか、時間をおいて再試行してください。",
+        504,
+        undefined,
+        { waitedMs, model },
+      );
+    }
     throw new AiPlayerError(
       "upstream_error",
-      aborted ? "AI プロバイダの応答が時間切れになりました。" : "AI プロバイダに接続できませんでした。",
+      "AI プロバイダに接続できませんでした。通信経路を確認してください。",
       502,
     );
   } finally {
@@ -564,9 +611,12 @@ export async function requestAiPlayerDecision(
   const visionSupported = modelSupportsVision(model);
   const requestBody = buildRequestForMode(mode, model, observation, visionSupported);
   const hasFrame = visionSupported && Boolean(observation.frame);
+  const timeoutMs = deps.timeoutMs ?? resolveRequestTimeoutMs();
 
   try {
-    const { text, usage } = await callProvider(JSON.stringify(requestBody), config, fetchImpl);
+    const { text, usage } = await callProvider(
+      JSON.stringify(requestBody), config, fetchImpl, timeoutMs, model,
+    );
     // The client parses and validates the JSON shape (it owns the action table);
     // here only the raw text travels back, with usage for the UI.
     return { raw: text, usage };
@@ -578,7 +628,9 @@ export async function requestAiPlayerDecision(
     if (!hasFrame || !(error instanceof AiPlayerError)) throw error;
     if (error.code !== "upstream_error") throw error;
     const textOnly = buildRequestForMode(mode, model, { ...observation, frame: undefined }, false);
-    const { text, usage } = await callProvider(JSON.stringify(textOnly), config, fetchImpl);
+    const { text, usage } = await callProvider(
+      JSON.stringify(textOnly), config, fetchImpl, timeoutMs, model,
+    );
     return { raw: text, usage, droppedFrame: true };
   }
 }

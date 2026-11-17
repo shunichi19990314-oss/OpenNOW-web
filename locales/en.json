@@ -1341,11 +1341,13 @@
       "bad_reply": "The AI reply could not be understood. Retrying next round.",
       "unknown_action": "The AI asked for an unsupported action, so nothing was sent.",
       "input_not_ready": "The input channel is not connected yet. Waiting for it.",
-      "frame_rejected": "The AI provider refused the screenshot, so this round used text only. Pick an image-capable model to use the screen."
+      "frame_rejected": "The AI provider refused the screenshot, so this round used text only. Pick an image-capable model to use the screen.",
+      "timeout": "The AI reply timed out. Pick a different model or try again later."
     },
     "lastError": "Latest error (details in the activity log)",
     "visionUnavailableSwitch": "Pick an image-capable model (e.g. {{model}}) to send the screen",
     "statFramesHint": "Frames captured",
-    "statDropped": "Rejected"
+    "statDropped": "Rejected",
+    "modelSlowWarning": "This model responds slowly, so each round takes longer"
   }
 }

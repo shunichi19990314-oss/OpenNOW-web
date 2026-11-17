@@ -2,6 +2,7 @@ import { memo, useCallback, useEffect, useMemo, useRef, useState, type JSX } fro
 
 import { useTranslation } from "../i18n";
 import {
+  AI_PLAYER_SLOW_MODELS,
   AI_PLAYER_SUGGESTED_MODELS,
   AI_PLAYER_VISION_FALLBACK_MODEL,
   modelSupportsVision,
@@ -126,6 +127,7 @@ export const AiPlayerPanel = memo(function AiPlayerPanel({
     abortRef.current?.abort();
   }, []);
 
+  const slowModelNote = AI_PLAYER_SLOW_MODELS[model];
   const canCapture = typeof captureFrame === "function";
   // The panel lets the visitor pick a model, so vision follows the selection,
   // not only the configured default.
@@ -411,6 +413,13 @@ export const AiPlayerPanel = memo(function AiPlayerPanel({
                   <option key={id} value={id}>{id}</option>
                 ))}
               </select>
+              {/* Why the previous session sat on "時間切れ": the model itself is
+                  a thinking model whose measured first token takes seconds. */}
+              {slowModelNote && (
+                <em className="ai-player-model-hint" title={slowModelNote}>
+                  {t("aiPlayer.modelSlowWarning")}
+                </em>
+              )}
             </label>
           )}
 

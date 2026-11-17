@@ -875,11 +875,13 @@
       "bad_reply": "无法解析 AI 的回复，将在下一回合重试。",
       "unknown_action": "AI 请求了不支持的操作，未发送输入。",
       "input_not_ready": "输入通道尚未连接，正在等待。",
-      "frame_rejected": "AI 提供方拒绝了画面图像，因此本轮仅使用文字信息判断。选择支持图像的模型即可使用画面。"
+      "frame_rejected": "AI 提供方拒绝了画面图像，因此本轮仅使用文字信息判断。选择支持图像的模型即可使用画面。",
+      "timeout": "AI 响应超时。请更换模型或稍后重试。"
     },
     "lastError": "最近的错误（详情见动作日志）",
     "visionUnavailableSwitch": "选择支持图像的模型（例如 {{model}}）即可发送画面",
     "statFramesHint": "已获取画面",
-    "statDropped": "被拒"
+    "statDropped": "被拒",
+    "modelSlowWarning": "该模型响应较慢，每轮耗时更长"
   }
 }

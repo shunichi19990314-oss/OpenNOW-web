@@ -68,7 +68,7 @@ describe("AI player translations", () => {
   ];
   const logCodes = [
     "session_expired", "rate_limited", "not_configured", "network",
-    "bad_reply", "unknown_action", "input_not_ready", "frame_rejected",
+    "bad_reply", "unknown_action", "input_not_ready", "frame_rejected", "timeout",
   ];
 
   it("translates every code the loop can emit", () => {
@@ -83,7 +83,7 @@ describe("AI player translations", () => {
 
   it("translates the strings added with the frame-rejection fix", () => {
     for (const [locale, bundle] of bundles) {
-      for (const key of ["lastError", "visionUnavailableSwitch", "statFramesHint", "statDropped", "reload"]) {
+      for (const key of ["lastError", "visionUnavailableSwitch", "statFramesHint", "statDropped", "modelSlowWarning", "reload"]) {
         expect(bundle.aiPlayer[key], `${locale}.aiPlayer.${key}`).toBeTypeOf("string");
       }
     }

@@ -875,11 +875,13 @@
       "bad_reply": "Die Antwort der KI war nicht lesbar. Neuer Versuch in der nächsten Runde.",
       "unknown_action": "Die KI forderte eine nicht unterstützte Aktion an; es wurde nichts gesendet.",
       "input_not_ready": "Der Eingabekanal ist noch nicht verbunden. Warten.",
-      "frame_rejected": "Der KI-Anbieter hat das Bild abgelehnt; diese Runde nutzte nur Text. Für die Bildnutzung ein bildfähiges Modell wählen."
+      "frame_rejected": "Der KI-Anbieter hat das Bild abgelehnt; diese Runde nutzte nur Text. Für die Bildnutzung ein bildfähiges Modell wählen.",
+      "timeout": "Die Antwort der KI ist abgelaufen. Anderes Modell wählen oder später erneut versuchen."
     },
     "lastError": "Letzter Fehler (Details im Aktivitätsprotokoll)",
     "visionUnavailableSwitch": "Wähle ein bildfähiges Modell (z. B. {{model}}), um das Bild zu senden",
     "statFramesHint": "Aufgenommene Bilder",
-    "statDropped": "Abgelehnt"
+    "statDropped": "Abgelehnt",
+    "modelSlowWarning": "Dieses Modell antwortet langsam; jede Runde dauert länger"
   }
 }
