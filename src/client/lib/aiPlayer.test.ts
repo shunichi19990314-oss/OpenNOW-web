@@ -286,5 +286,98 @@ describe("decision failure messages", () => {
     expect(describeDecisionFailure(503, "NUMES_API_KEY is not set.")).toBe("NUMES_API_KEY is not set.");
     expect(describeDecisionFailure(500, "")).toContain("HTTP 500");
   });
+
 });
 
+describe("controller heartbeat", () => {
+  it("keeps the pad advertised while waiting between rounds", async () => {
+    const controller = new AbortController();
+    const keepAlive = vi.fn();
+    const sleeps: number[] = [];
+    await runAiPlayerLoop({
+      sink: { send: () => true, keepAlive },
+      buildObservation: () => OBSERVATION,
+      options: {
+        signal: controller.signal,
+        post: fakePost({ raw: '{"plan":"wait","actions":[]}' }),
+        intervalMs: 300,
+        now: () => 0,
+        sleep: async (ms) => {
+          sleeps.push(ms);
+          if (sleeps.length >= 4) controller.abort();
+        },
+      },
+    });
+    // The 300 ms wait is split into heartbeat-sized slices, so a pad that would
+    // otherwise go silent for a third of a second is refreshed three times.
+    expect(sleeps.every((ms) => ms <= 100)).toBe(true);
+    expect(keepAlive.mock.calls.length).toBeGreaterThan(0);
+  });
+
+  it("still works without a keepalive hook", async () => {
+    const controller = new AbortController();
+    const sleeps: number[] = [];
+    await runAiPlayerLoop({
+      sink: { send: () => true },
+      buildObservation: () => OBSERVATION,
+      options: {
+        signal: controller.signal,
+        post: fakePost({ raw: '{"plan":"wait","actions":[]}' }),
+        intervalMs: 300,
+        now: () => 0,
+        sleep: async (ms) => {
+          sleeps.push(ms);
+          // Let the round finish its own 60 ms settle before aborting, so the
+          // inter-round wait is actually observed.
+          if (ms >= 100) controller.abort();
+        },
+      },
+    });
+    // No slicing: the wait between rounds is one uninterrupted sleep. (The first entry
+    // is the 60 ms release settle inside the round, so check that a full-length
+    // interval of 300 ms appears rather than only heartbeat-sized slices.)
+    expect(sleeps).toContain(300);
+    expect(sleeps.filter((ms) => ms === 100)).toHaveLength(0);
+  });
+
+  it("survives a throwing heartbeat", async () => {
+    const controller = new AbortController();
+    let calls = 0;
+    await expect(runAiPlayerLoop({
+      sink: {
+        send: () => true,
+        keepAlive: () => {
+          calls += 1;
+          throw new Error("boom");
+        },
+      },
+      buildObservation: () => OBSERVATION,
+      options: {
+        signal: controller.signal,
+        post: fakePost({ raw: '{"plan":"wait","actions":[]}' }),
+        intervalMs: 200,
+        now: () => 0,
+        sleep: async () => {
+          if (calls >= 1) controller.abort();
+        },
+      },
+    })).resolves.toBeUndefined();
+    expect(calls).toBeGreaterThan(0);
+  });
+});
+
+describe("input diagnostics", () => {
+  it("logs the button bits it actually sent", async () => {
+    const logs: string[] = [];
+    await runAiPlayerRound({
+      observation: OBSERVATION,
+      sink: { send: () => true },
+      post: fakePost({ raw: '{"actions":[{"action":"a","durationMs":80}]}' }),
+      sleep: async () => {},
+      onLog: (entry) => logs.push(entry.message),
+    });
+    // A session where the game ignores input can then be distinguished from one
+    // where nothing was transmitted.
+    expect(logs.join(" ")).toContain(`buttons=0x${GAMEPAD_A.toString(16)}`);
+  });
+});

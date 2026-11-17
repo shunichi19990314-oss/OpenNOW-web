@@ -205,7 +205,11 @@ export const AiPlayerPanel = memo(function AiPlayerPanel({
               {running ? t("aiPlayer.stop") : t("aiPlayer.start")}
             </button>
             {loopState && running && (
-              <span className="ai-player-round">{t("aiPlayer.round", { count: loopState.rounds })}</span>
+              <span className="ai-player-round">
+                {t("aiPlayer.round", { count: loopState.rounds })}
+                {" · "}
+                {t("aiPlayer.presses", { count: loopState.sentPresses })}
+              </span>
             )}
           </div>
 
