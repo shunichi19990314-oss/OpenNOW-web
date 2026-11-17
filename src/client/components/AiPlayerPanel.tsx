@@ -1,15 +1,16 @@
-import { memo, useCallback, useEffect, useRef, useState, type JSX } from "react";
+import { memo, useCallback, useEffect, useMemo, useRef, useState, type JSX } from "react";
 
 import { useTranslation } from "../i18n";
 import {
   AI_PLAYER_SUGGESTED_MODELS,
-  type AiPlayerDecision,
+  type AiChatTurn,
+  type AiPlayerFrame,
+  type AiPlayerMode,
   type AiPlayerStatus,
 } from "../../shared/aiPlayer";
 import {
   runAiPlayerLoop,
   type AiPlayerInputSink,
-  type AiPlayerLogCode,
   type AiPlayerLoopState,
   type AiPlayerLogEntry,
 } from "../lib/aiPlayerLoop";
@@ -21,14 +22,17 @@ export interface AiPlayerPanelProps {
   sink: AiPlayerInputSink | null;
   /** Actions offered to the model, from the gamepad action table. */
   actionNames: string[];
+  /** Grabs the current stream frame, or null when capture is unavailable. */
+  captureFrame?: (() => AiPlayerFrame | null) | null;
   /** False while connecting or after the stream ended. */
   enabled?: boolean;
 }
 
-const DEFAULT_LOG_LIMIT = 40;
+const DEFAULT_LOG_LIMIT = 60;
+const MAX_CONVERSATION_TURNS = 12;
 
 /**
- * Small overlay that starts and stops the AI player.
+ * AI player overlay: automatic mode and chat mode in one panel.
  *
  * Deliberately outside the stream video element: the pointer-lock surface owns
  * mouse input, and a panel inside it would either be unclickable or steal the
@@ -39,6 +43,7 @@ export const AiPlayerPanel = memo(function AiPlayerPanel({
   sessionStartedAtMs,
   sink,
   actionNames,
+  captureFrame = null,
   enabled = true,
 }: AiPlayerPanelProps): JSX.Element {
   const { t } = useTranslation();
@@ -47,9 +52,16 @@ export const AiPlayerPanel = memo(function AiPlayerPanel({
   const [status, setStatus] = useState<AiPlayerStatus | null>(null);
   const [statusError, setStatusError] = useState<string | null>(null);
   const [model, setModel] = useState<string>("");
+  const [mode, setMode] = useState<AiPlayerMode>("auto");
+  const [sendFrames, setSendFrames] = useState(true);
   const [log, setLog] = useState<AiPlayerLogEntry[]>([]);
   const [loopState, setLoopState] = useState<AiPlayerLoopState | null>(null);
+  const [draft, setDraft] = useState("");
+  const [conversation, setConversation] = useState<AiChatTurn[]>([]);
+  const [chatBusy, setChatBusy] = useState(false);
   const abortRef = useRef<AbortController | null>(null);
+  const logRef = useRef<HTMLOListElement | null>(null);
+  const conversationRef = useRef<HTMLDivElement | null>(null);
 
   // The status call is cheap and cached by the browser, but it still needs the
   // session cookie: it runs only when the panel is first opened.
@@ -60,7 +72,7 @@ export const AiPlayerPanel = memo(function AiPlayerPanel({
       try {
         const response = await fetch("/api/ai/status", { headers: { Accept: "application/json" } });
         if (!response.ok) throw new Error(`HTTP ${response.status}`);
-        const body = await response.json() as AiPlayerStatus & { suggestedModels?: string[] };
+        const body = await response.json() as AiPlayerStatus;
         if (cancelled) return;
         setStatus(body);
         setModel(body.model);
@@ -74,32 +86,27 @@ export const AiPlayerPanel = memo(function AiPlayerPanel({
     };
   }, [open, status, statusError]);
 
-  /**
-   * Localised text for the codes the loop emits.
-   *
-   * The loop's own messages stay Japanese as a fallback (they carry detail such
-   * as which action was unknown), but anything with a known code is shown in
-   * the visitor's language.
-   */
-  const translateLog = useCallback((entry: AiPlayerLogEntry): string => {
-    const code = entry.code as AiPlayerLogCode | undefined;
-    if (code) {
-      const key = `aiPlayer.log.${code}`;
-      const translated = t(key);
-      // `t` returns the key itself when the locale has no entry.
-      if (translated && translated !== key) return translated;
-    }
-    return entry.message;
-  }, [t]);
-
   const appendLog = useCallback((entry: AiPlayerLogEntry) => {
     setLog((current) => [...current.slice(-(DEFAULT_LOG_LIMIT - 1)), entry]);
   }, []);
+
+  // Newest line visible without scrolling: the log is the main feedback surface,
+  // so it should follow the tail like a terminal.
+  useEffect(() => {
+    if (!logRef.current) return;
+    logRef.current.scrollTop = logRef.current.scrollHeight;
+  }, [log]);
+
+  useEffect(() => {
+    if (!conversationRef.current) return;
+    conversationRef.current.scrollTop = conversationRef.current.scrollHeight;
+  }, [conversation]);
 
   const stop = useCallback(() => {
     abortRef.current?.abort();
     abortRef.current = null;
     setRunning(false);
+    setChatBusy(false);
   }, []);
 
   // Leaving the stream must not leave a loop running against a dead channel:
@@ -110,13 +117,87 @@ export const AiPlayerPanel = memo(function AiPlayerPanel({
     abortRef.current?.abort();
     abortRef.current = null;
     setRunning(false);
+    setChatBusy(false);
   }, [enabled]);
 
   useEffect(() => () => {
     abortRef.current?.abort();
   }, []);
 
-  const start = useCallback(() => {
+  const visionAvailable = status?.vision === true && typeof captureFrame === "function";
+
+  const buildObservation = useCallback((state: {
+    rounds: number;
+    lastPlan: string;
+    lastActions: string[];
+    repeatCount: number;
+    frame: AiPlayerFrame | null;
+  }) => ({
+    game: gameTitle,
+    // Read at observation time, not at render time: a React re-render is not
+    // guaranteed between rounds, and a stale clock would tell the model the
+    // wrong amount of time has passed.
+    elapsedSeconds: sessionStartedAtMs
+      ? Math.max(0, Math.floor((Date.now() - sessionStartedAtMs) / 1000))
+      : 0,
+    plan: state.lastPlan || undefined,
+    lastActions: state.lastActions.length > 0 ? state.lastActions : undefined,
+    repeatCount: state.repeatCount,
+    signals: state.rounds > 0 ? [`ラウンド ${state.rounds + 1}`] : undefined,
+    availableActions: actionNames,
+    frame: state.frame ?? undefined,
+  }), [actionNames, gameTitle, sessionStartedAtMs]);
+
+  /**
+   * Chat mode: send one instruction, let the AI answer and act on it.
+   *
+   * Runs the loop for exactly one round (`runs: 1` equivalent) by aborting after
+   * the first completed round, which reuses the whole press/release path rather
+   * than duplicating it here.
+   */
+  const sendChat = useCallback(() => {
+    const message = draft.trim();
+    if (!message || !sink) return;
+    setDraft("");
+    setChatBusy(true);
+    const turn: AiChatTurn = { role: "user", text: message };
+    const history = [...conversation, turn].slice(-MAX_CONVERSATION_TURNS);
+    setConversation(history);
+    abortRef.current?.abort();
+    const controller = new AbortController();
+    abortRef.current = controller;
+
+    void runAiPlayerLoop({
+      sink,
+      buildObservation,
+      options: {
+        signal: controller.signal,
+        mode: "chat",
+        // One instruction, one answer: the visitor then writes the next message.
+        maxRounds: 1,
+        instruction: message,
+        conversation: history.filter((entry) => entry.text !== message),
+        captureFrame: sendFrames && captureFrame ? captureFrame : undefined,
+        onRound: (decision, entry) => {
+          // The loop reports each line; the decision carries the reply, which
+          // is what the visitor is waiting for.
+          appendLog(entry);
+          if (decision?.reply) {
+            const reply: AiChatTurn = { role: "assistant", text: decision.reply };
+            setConversation((current) => [...current, reply].slice(-MAX_CONVERSATION_TURNS));
+          }
+        },
+      },
+      onState: setLoopState,
+    }).catch(() => {
+      // Errors already surface as log lines from the loop.
+    }).finally(() => {
+      setChatBusy(false);
+      abortRef.current = null;
+    });
+  }, [appendLog, buildObservation, captureFrame, conversation, draft, sendFrames, sink]);
+
+  const startAuto = useCallback(() => {
     if (!sink) return;
     stop();
     const controller = new AbortController();
@@ -125,24 +206,12 @@ export const AiPlayerPanel = memo(function AiPlayerPanel({
     setLog([]);
     void runAiPlayerLoop({
       sink,
-      buildObservation: ({ rounds, lastPlan }) => ({
-        game: gameTitle,
-        // Read at observation time, not at render time: a React re-render is
-        // not guaranteed between rounds, and a stale clock would tell the model
-        // the wrong amount of time has passed.
-        elapsedSeconds: sessionStartedAtMs ? Math.max(0, Math.floor((Date.now() - sessionStartedAtMs) / 1000)) : 0,
-        plan: lastPlan || undefined,
-        signals: rounds > 0 ? [`round ${rounds + 1}`] : undefined,
-        availableActions: actionNames,
-      }),
+      buildObservation,
       options: {
         signal: controller.signal,
-        onRound: (decision: AiPlayerDecision | null, entry) => {
-          appendLog(entry);
-          if (decision && decision.plan) {
-            // The plan is already in the log line; nothing else to do here.
-          }
-        },
+        mode: "auto",
+        captureFrame: sendFrames && captureFrame ? captureFrame : undefined,
+        onRound: (_decision, entry) => appendLog(entry),
       },
       onState: setLoopState,
     }).catch((error: unknown) => {
@@ -155,9 +224,7 @@ export const AiPlayerPanel = memo(function AiPlayerPanel({
       setRunning(false);
       abortRef.current = null;
     });
-  }, [actionNames, appendLog, gameTitle, sessionStartedAtMs, sink, stop]);
-
-  if (!enabled) return <></>;
+  }, [appendLog, buildObservation, captureFrame, sendFrames, sink, stop]);
 
   const configured = status?.configured === true;
   const unavailableReason = statusError
@@ -166,11 +233,23 @@ export const AiPlayerPanel = memo(function AiPlayerPanel({
       ? t("aiPlayer.missingKey")
       : null;
 
+  const stats = useMemo(() => {
+    if (!loopState) return null;
+    return {
+      rounds: loopState.rounds,
+      presses: loopState.sentPresses,
+      frames: loopState.framesSent,
+      breaks: loopState.varietyBreaks,
+    };
+  }, [loopState]);
+
+  if (!enabled) return <></>;
+
   return (
     <div className={`ai-player${open ? " ai-player--open" : ""}`} data-testid="ai-player-panel">
       <button
         type="button"
-        className={`ai-player-toggle${running ? " ai-player-toggle--running" : ""}`}
+        className={`ai-player-toggle${running || chatBusy ? " ai-player-toggle--running" : ""}`}
         onClick={() => setOpen((value) => !value)}
         aria-expanded={open}
         title={t("aiPlayer.title")}
@@ -183,40 +262,118 @@ export const AiPlayerPanel = memo(function AiPlayerPanel({
         <section className="ai-player-body" aria-label={t("aiPlayer.title")}>
           <header className="ai-player-head">
             <strong>{t("aiPlayer.title")}</strong>
-            <button type="button" className="ai-player-close" onClick={() => setOpen(false)} aria-label={t("common.close")}>
+            <button type="button" className="ai-player-close" onClick={() => setOpen(false)} aria-label={t("aiPlayer.close")}>
               ×
             </button>
           </header>
 
           {unavailableReason && <p className="ai-player-note ai-player-note--warn">{unavailableReason}</p>}
-          {status && configured && (
-            <p className="ai-player-note">
-              {t("aiPlayer.modelLabel")}: <code>{model || status.model}</code>
-            </p>
-          )}
 
-          <div className="ai-player-controls">
+          {/* Mode switch: the two things the visitor asked for. */}
+          <div className="ai-player-modes" role="tablist" aria-label={t("aiPlayer.modeLabel")}>
             <button
               type="button"
-              className="ai-player-start"
-              onClick={running ? stop : start}
-              disabled={!configured || !sink}
+              role="tab"
+              aria-selected={mode === "auto"}
+              className={`ai-player-mode${mode === "auto" ? " ai-player-mode--active" : ""}`}
+              onClick={() => setMode("auto")}
+              disabled={running || chatBusy}
             >
-              {running ? t("aiPlayer.stop") : t("aiPlayer.start")}
+              {t("aiPlayer.modeAuto")}
             </button>
-            {loopState && running && (
-              <span className="ai-player-round">
-                {t("aiPlayer.round", { count: loopState.rounds })}
-                {" · "}
-                {t("aiPlayer.presses", { count: loopState.sentPresses })}
-              </span>
-            )}
+            <button
+              type="button"
+              role="tab"
+              aria-selected={mode === "chat"}
+              className={`ai-player-mode${mode === "chat" ? " ai-player-mode--active" : ""}`}
+              onClick={() => setMode("chat")}
+              disabled={running || chatBusy}
+            >
+              {t("aiPlayer.modeChat")}
+            </button>
           </div>
 
-          {status && configured && AI_PLAYER_SUGGESTED_MODELS.length > 0 && (
+          <label className="ai-player-frame-toggle">
+            <input
+              type="checkbox"
+              checked={sendFrames && visionAvailable}
+              onChange={(event) => setSendFrames(event.target.checked)}
+              disabled={!visionAvailable || running || chatBusy}
+            />
+            <span>
+              {t("aiPlayer.sendFrames")}
+              {!visionAvailable && status && (
+                <em className="ai-player-frame-hint"> {t("aiPlayer.visionUnavailable")}</em>
+              )}
+            </span>
+          </label>
+
+          {mode === "auto" ? (
+            <div className="ai-player-controls">
+              <button
+                type="button"
+                className="ai-player-start"
+                onClick={running ? stop : startAuto}
+                disabled={!configured || !sink}
+              >
+                {running ? t("aiPlayer.stop") : t("aiPlayer.start")}
+              </button>
+            </div>
+          ) : (
+            <div className="ai-player-chat">
+              <div className="ai-player-conversation" ref={conversationRef} aria-live="polite">
+                {conversation.length === 0 && (
+                  <p className="ai-player-note ai-player-note--muted">{t("aiPlayer.chatEmpty")}</p>
+                )}
+                {conversation.map((turn, index) => (
+                  <p
+                    key={`${index}-${turn.role}`}
+                    className={`ai-player-turn ai-player-turn--${turn.role}`}
+                  >
+                    <span className="ai-player-turn-role">
+                      {turn.role === "user" ? t("aiPlayer.chatYou") : t("aiPlayer.chatAi")}
+                    </span>
+                    {turn.text}
+                  </p>
+                ))}
+                {chatBusy && <p className="ai-player-note ai-player-note--muted">{t("aiPlayer.chatThinking")}</p>}
+              </div>
+              <form
+                className="ai-player-chat-form"
+                onSubmit={(event) => {
+                  event.preventDefault();
+                  sendChat();
+                }}
+              >
+                <input
+                  type="text"
+                  value={draft}
+                  onChange={(event) => setDraft(event.target.value)}
+                  placeholder={t("aiPlayer.chatPlaceholder")}
+                  disabled={!configured || !sink || chatBusy}
+                  maxLength={400}
+                />
+                <button type="submit" disabled={!configured || !sink || chatBusy || draft.trim().length === 0}>
+                  {t("aiPlayer.chatSend")}
+                </button>
+              </form>
+            </div>
+          )}
+
+          {/* Stats row: makes "is it actually doing anything" answerable at a glance. */}
+          {stats && (running || chatBusy || stats.rounds > 0) && (
+            <dl className="ai-player-stats">
+              <div><dt>{t("aiPlayer.statRounds")}</dt><dd>{stats.rounds}</dd></div>
+              <div><dt>{t("aiPlayer.statPresses")}</dt><dd>{stats.presses}</dd></div>
+              <div><dt>{t("aiPlayer.statFrames")}</dt><dd>{stats.frames}</dd></div>
+              <div><dt>{t("aiPlayer.statBreaks")}</dt><dd>{stats.breaks}</dd></div>
+            </dl>
+          )}
+
+          {status && configured && (
             <label className="ai-player-model">
               <span>{t("aiPlayer.modelLabel")}</span>
-              <select value={model} onChange={(event) => setModel(event.target.value)} disabled={running}>
+              <select value={model} onChange={(event) => setModel(event.target.value)} disabled={running || chatBusy}>
                 {Array.from(new Set([status.model, ...AI_PLAYER_SUGGESTED_MODELS])).map((id) => (
                   <option key={id} value={id}>{id}</option>
                 ))}
@@ -226,15 +383,11 @@ export const AiPlayerPanel = memo(function AiPlayerPanel({
 
           {loopState?.lastError && (
             <div className="ai-player-note ai-player-note--warn">
-              <p>{translateLog({ atMs: 0, level: "warn", message: loopState.lastError, code: loopState.lastErrorCode })}</p>
+              <p>{loopState.lastError}</p>
               {loopState.lastErrorCode === "session_expired" && (
                 // Retrying cannot fix a stale session; the visitor needs a fresh
                 // document, so offer the one action that works.
-                <button
-                  type="button"
-                  className="ai-player-reload"
-                  onClick={() => window.location.reload()}
-                >
+                <button type="button" className="ai-player-reload" onClick={() => window.location.reload()}>
                   {t("aiPlayer.reload")}
                 </button>
               )}
@@ -242,13 +395,35 @@ export const AiPlayerPanel = memo(function AiPlayerPanel({
           )}
 
           {log.length > 0 && (
-            <ol className="ai-player-log" aria-live="polite">
-              {log.slice(-8).map((entry, index) => (
-                <li key={`${entry.atMs}-${index}`} className={`ai-player-log-${entry.level}`}>
-                  {translateLog(entry)}
-                </li>
-              ))}
-            </ol>
+            <div className="ai-player-log-wrap">
+              <div className="ai-player-log-head">
+                <span>{t("aiPlayer.logTitle")}</span>
+                <button type="button" className="ai-player-log-clear" onClick={() => setLog([])}>
+                  {t("aiPlayer.logClear")}
+                </button>
+              </div>
+              <ol className="ai-player-log" ref={logRef} aria-live="polite">
+                {log.map((entry, index) => (
+                  <li
+                    key={`${entry.atMs}-${index}`}
+                    className={`ai-player-log-row ai-player-log-${entry.level}`}
+                    data-code={entry.code}
+                  >
+                    <span className="ai-player-log-icon" aria-hidden="true">
+                      {entry.level === "error" ? "✕" : entry.level === "warn" ? "!" : entry.code === "forced_variety" ? "↻" : "·"}
+                    </span>
+                    <span className="ai-player-log-text">{entry.message}</span>
+                    {entry.actions && entry.actions.length > 0 && (
+                      <span className="ai-player-log-actions">
+                        {entry.actions.map((action) => (
+                          <span key={action} className="ai-player-chip">{t(`aiPlayer.actions.${action}`) === `aiPlayer.actions.${action}` ? action : t(`aiPlayer.actions.${action}`)}</span>
+                        ))}
+                      </span>
+                    )}
+                  </li>
+                ))}
+              </ol>
+            </div>
           )}
 
           <p className="ai-player-foot">{t("aiPlayer.disclaimer")}</p>

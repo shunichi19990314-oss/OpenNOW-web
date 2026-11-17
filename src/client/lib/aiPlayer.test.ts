@@ -7,7 +7,7 @@ import {
   NEUTRAL_GAMEPAD_STATE,
   resolveGamepadAction,
 } from "./aiPlayerActions";
-import { parseAiPlayerDecision, buildAiPlayerPrompt } from "../../shared/aiPlayerPrompt";
+import { parseAiPlayerDecision, buildObservationText } from "../../shared/aiPlayerPrompt";
 import {
   describeDecisionFailure,
   runAiPlayerLoop,
@@ -107,13 +107,15 @@ describe("decision parsing", () => {
   });
 
   it("reports unusable replies instead of throwing", () => {
-    expect(parseAiPlayerDecision("", OBSERVATION).problem).toBe("empty reply");
-    expect(parseAiPlayerDecision("not json", OBSERVATION).problem).toBe("reply was not JSON");
-    expect(parseAiPlayerDecision('{"unrelated":true}', OBSERVATION).problem).toBe("no plan and no usable actions");
+    // Messages are shown to the visitor, so they are Japanese like the rest of
+    // the panel.
+    expect(parseAiPlayerDecision("", OBSERVATION).problem).toBe("空の応答でした");
+    expect(parseAiPlayerDecision("not json", OBSERVATION).problem).toContain("JSON");
+    expect(parseAiPlayerDecision('{"unrelated":true}', OBSERVATION).problem).toContain("含まれていません");
   });
 
   it("builds a compact prompt", () => {
-    const prompt = buildAiPlayerPrompt({ ...OBSERVATION, plan: "walk north", signals: ["low health"] });
+    const prompt = buildObservationText({ ...OBSERVATION, plan: "walk north", signals: ["low health"] });
     expect(prompt).toContain("Test Game");
     expect(prompt).toContain("walk north");
     expect(prompt).toContain("a, b, dpad_down");
@@ -378,6 +380,129 @@ describe("input diagnostics", () => {
     });
     // A session where the game ignores input can then be distinguished from one
     // where nothing was transmitted.
-    expect(logs.join(" ")).toContain(`buttons=0x${GAMEPAD_A.toString(16)}`);
+    expect(logs.join(" ")).toContain(`0x${GAMEPAD_A.toString(16)}`);
+  });
+});
+
+describe("vision in the loop", () => {
+  const FRAME = { dataUrl: "data:image/jpeg;base64,AAAA", width: 640, height: 360 };
+
+  it("captures a frame every round and attaches it to the observation", async () => {
+    const controller = new AbortController();
+    const frames = [FRAME, { ...FRAME, width: 320 }];
+    let calls = 0;
+    const seen: Array<number | undefined> = [];
+    await runAiPlayerLoop({
+      sink: { send: () => true },
+      buildObservation: (state) => {
+        seen.push(state.frame?.width);
+        return OBSERVATION;
+      },
+      options: {
+        signal: controller.signal,
+        // A stale screenshot would make the model act on a situation that no
+        // longer exists, so a fresh one per round is the contract.
+        captureFrame: () => frames[calls++] ?? null,
+        post: fakePost({ raw: '{"plan":"look","actions":[]}' }),
+        now: () => 0,
+        intervalMs: 60,
+        sleep: async () => {
+          if (calls >= 2) controller.abort();
+        },
+      },
+      onState: (state) => {
+        if (!state.running) expect(state.framesSent).toBeGreaterThan(0);
+      },
+    });
+    expect(seen[0]).toBe(640);
+    expect(seen[1]).toBe(320);
+  });
+
+  it("runs blind when capture fails, without stalling", async () => {
+    const controller = new AbortController();
+    let rounds = 0;
+    await runAiPlayerLoop({
+      sink: { send: () => true },
+      buildObservation: (state) => {
+        expect(state.frame).toBeNull();
+        return OBSERVATION;
+      },
+      options: {
+        signal: controller.signal,
+        captureFrame: () => null,
+        post: fakePost({ raw: '{"plan":"blind","actions":[]}' }),
+        now: () => 0,
+        intervalMs: 60,
+        sleep: async () => {
+          rounds += 1;
+          controller.abort();
+        },
+      },
+    });
+    expect(rounds).toBeGreaterThan(0);
+  });
+});
+
+describe("chat mode", () => {
+  it("sends the instruction and stops after one round", async () => {
+    const calls: Array<{ path: string; body: unknown }> = [];
+    const post: AiPlayerPost<never> = async (path, body) => {
+      calls.push({ path, body });
+      return { raw: '{"reply":"了解しました。決定を押します","actions":[{"action":"a","durationMs":80}]}' };
+    };
+    const replies: string[] = [];
+    const log: string[] = [];
+    await runAiPlayerLoop({
+      sink: { send: () => true },
+      buildObservation: () => OBSERVATION,
+      options: {
+        mode: "chat",
+        maxRounds: 1,
+        instruction: "決定を押して",
+        // Cast: the test double ignores the body type.
+        post: post as unknown as AiPlayerPost,
+        now: () => 0,
+        sleep: async () => {},
+        onRound: (decision, entry) => {
+          log.push(entry.message);
+          if (decision?.reply) replies.push(decision.reply);
+        },
+      },
+    });
+    // Hits the chat route, not the auto one.
+    expect(calls[0].path).toContain("/chat");
+    expect(String((calls[0].body as { message?: string }).message)).toBe("決定を押して");
+    expect(replies.join(" ")).toContain("了解しました");
+    expect(log.join(" ")).toContain("了解しました");
+  });
+
+  it("does not repeat a consumed instruction on the next round", async () => {
+    const messages: Array<string | undefined> = [];
+    const post: AiPlayerPost<never> = async (_path, body) => {
+      messages.push((body as { message?: string }).message);
+      return { raw: '{"reply":"はい","actions":[]}' };
+    };
+    const controller = new AbortController();
+    let sleeps = 0;
+    await runAiPlayerLoop({
+      sink: { send: () => true },
+      buildObservation: () => OBSERVATION,
+      options: {
+        mode: "chat",
+        instruction: "一回だけ",
+        post: post as unknown as AiPlayerPost,
+        signal: controller.signal,
+        now: () => 0,
+        intervalMs: 60,
+        sleep: async () => {
+          sleeps += 1;
+          if (sleeps >= 2) controller.abort();
+        },
+      },
+    });
+    expect(messages[0]).toBe("一回だけ");
+    // Later rounds carry no instruction: repeating it would turn one request
+    // into a permanent command.
+    expect(messages.slice(1).every((message) => message === undefined)).toBe(true);
   });
 });

@@ -13,6 +13,7 @@ import { getSession } from "./sessionStore";
 import {
   AiPlayerError,
   describeAiPlayerStatus,
+  requestAiPlayerChat,
   requestAiPlayerDecision,
 } from "./aiPlayer";
 import { AI_PLAYER_SUGGESTED_MODELS } from "@shared/aiPlayer";
@@ -177,6 +178,22 @@ export function registerApi(app: Express): void {
     });
   }));
 
+  /**
+   * Shared error shape for the AI routes.
+   *
+   * `AiPlayerError` carries the code, HTTP status and (for rate limits) the
+   * retry hint; anything else is a genuine bug and rethrows into the generic
+   * handler so it is logged once, in one place.
+   */
+  const sendAiError = (error: unknown, response: import("express").Response): boolean => {
+    if (!(error instanceof AiPlayerError)) return false;
+    if (error.retryAfterSeconds !== undefined) {
+      response.setHeader("Retry-After", String(error.retryAfterSeconds));
+    }
+    response.status(error.statusCode).json(error.toBody());
+    return true;
+  };
+
   app.post("/api/ai/decide", asyncRoute(async (request, response) => {
     response.setHeader("Cache-Control", "no-store");
     const auth = await getSession(request, response).requireAuth();
@@ -184,17 +201,19 @@ export function registerApi(app: Express): void {
     // only identity this app has, and it is not the API key.
     const userId = auth.user.userId;
     try {
-      const decision = await requestAiPlayerDecision(request.body, userId);
-      response.json(decision);
+      response.json(await requestAiPlayerDecision(request.body, userId));
     } catch (error) {
-      if (error instanceof AiPlayerError) {
-        if (error.retryAfterSeconds !== undefined) {
-          response.setHeader("Retry-After", String(error.retryAfterSeconds));
-        }
-        response.status(error.statusCode).json(error.toBody());
-        return;
-      }
-      throw error;
+      if (!sendAiError(error, response)) throw error;
+    }
+  }));
+
+  app.post("/api/ai/chat", asyncRoute(async (request, response) => {
+    response.setHeader("Cache-Control", "no-store");
+    const auth = await getSession(request, response).requireAuth();
+    try {
+      response.json(await requestAiPlayerChat(request.body, auth.user.userId));
+    } catch (error) {
+      if (!sendAiError(error, response)) throw error;
     }
   }));
 

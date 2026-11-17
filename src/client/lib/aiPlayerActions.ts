@@ -46,6 +46,8 @@ export const NEUTRAL_GAMEPAD_STATE: InjectedGamepadState = {
 };
 
 const STICK_FULL = 32767;
+/** Camera nudge: enough to turn the view, small enough not to spin it. */
+const LOOK_STEP = Math.round(STICK_FULL * 0.4);
 
 type ActionBuilder = () => Partial<InjectedGamepadState>;
 
@@ -87,18 +89,27 @@ const ACTION_TABLE: Record<string, ActionBuilder> = {
   rb: () => ({ buttons: GAMEPAD_RB }),
   l3: () => ({ buttons: GAMEPAD_LS }),
   r3: () => ({ buttons: GAMEPAD_RS }),
-  // Analog inputs. A full deflection is the useful default for a turn-based
-  // agent: partial values only matter for aiming, which the model cannot see.
+  // Analog inputs. Movement is a full deflection: partial values only matter
+  // for fine aiming, which the model cannot measure from a screenshot.
   move_forward: () => ({ leftStickY: STICK_FULL }),
   move_back: () => ({ leftStickY: -STICK_FULL }),
   move_left: () => ({ leftStickX: -STICK_FULL }),
   move_right: () => ({ leftStickX: STICK_FULL }),
-  look_up: () => ({ rightStickY: STICK_FULL }),
-  look_down: () => ({ rightStickY: -STICK_FULL }),
-  look_left: () => ({ rightStickX: -STICK_FULL }),
-  look_right: () => ({ rightStickX: STICK_FULL }),
+  // Camera steps are deliberately *partial* (~40 %). A full-deflection flick
+  // snaps the view to a new direction and makes a mostly-static screen look
+  // identical, which is what let the earlier loop repeat itself forever.
+  look_up: () => ({ rightStickY: LOOK_STEP }),
+  look_down: () => ({ rightStickY: -LOOK_STEP }),
+  look_left: () => ({ rightStickX: -LOOK_STEP }),
+  look_right: () => ({ rightStickX: LOOK_STEP }),
   attack: () => ({ rightTrigger: 255 }),
   aim: () => ({ leftTrigger: 255 }),
+  // Combos that a menu-driven game needs and that are awkward to express as a
+  // sequence of separate taps.
+  interact: () => ({ buttons: GAMEPAD_A }),
+  menu: () => ({ buttons: GAMEPAD_START }),
+  sprint: () => ({ leftStickY: STICK_FULL, buttons: GAMEPAD_LS }),
+  jump: () => ({ buttons: GAMEPAD_A, rightTrigger: 0 }),
 };
 
 /** Names the prompt offers to the model, in a stable order. */
