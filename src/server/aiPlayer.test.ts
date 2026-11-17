@@ -4,6 +4,7 @@ import { buildObservationText } from "@shared/aiPlayerPrompt";
 import {
   AiPlayerError,
   buildChatCompletionRequest,
+  describeUpstreamError,
   buildRequestForMode,
   modelSupportsVision,
   requestAiPlayerChat,
@@ -195,7 +196,7 @@ describe("AI player proxy round trip", () => {
     )).rejects.toMatchObject({ code: "rate_limited", retryAfterSeconds: 17 });
   });
 
-  it("does not relay the provider's error body", async () => {
+  it("relays only a scrubbed reason from the provider's error body", async () => {
     const fetchImpl = vi.fn(async () => fakeResponse(
       { error: "invalid api key sk-test-key" },
       { status: 401 },
@@ -212,8 +213,97 @@ describe("AI player proxy round trip", () => {
     }
     expect(failure).toBeInstanceOf(AiPlayerError);
     const message = (failure as AiPlayerError).message;
+    // The key must never reach the visitor, even when the provider echoes it.
     expect(message).not.toContain("sk-test-key");
     expect(message).toContain("401");
+    expect(message).toContain("invalid api key");
+  });
+
+  it("surfaces which field a 400 rejected", async () => {
+    const fetchImpl = vi.fn(async () => fakeResponse(
+      {
+        error: {
+          code: 400,
+          message: "messages[0].content[1].image_url.url: unsupported media type",
+          metadata: { error_type: "invalid_request" },
+        },
+      },
+      { status: 400 },
+    ));
+    await expect(requestAiPlayerDecision(
+      { observation: OBSERVATION },
+      "user-1",
+      { fetchImpl: fetchImpl as unknown as typeof fetch, config: CONFIG },
+    )).rejects.toMatchObject({
+      code: "upstream_error",
+      statusCode: 502,
+      message: expect.stringContaining("messages[0].content[1].image_url.url"),
+    });
+  });
+
+  it("keeps the error text on one line and drops echoed image data", async () => {
+    const detail = describeUpstreamError(
+      {
+        error: {
+          message: `bad frame\n${"A".repeat(64)} data:image/jpeg;base64,${"B".repeat(500)}`,
+          metadata: { error_type: "invalid_request" },
+        },
+      },
+      "sk-test-key",
+    );
+    expect(detail).not.toContain("\n");
+    expect(detail).not.toContain("BBBB");
+    expect(detail).toContain("[image]");
+    expect(detail).toContain("invalid_request");
+    expect(detail.length).toBeLessThanOrEqual(240);
+    expect(describeUpstreamError(null, "k")).toBe("");
+  });
+
+  it("retries text-only when the provider refuses the image", async () => {
+    const calls: Array<{ body: Record<string, unknown> }> = [];
+    const fetchImpl = vi.fn(async (_url: string, init: RequestInit) => {
+      const body = JSON.parse(String(init.body)) as Record<string, unknown>;
+      calls.push({ body });
+      const messages = body.messages as Array<{ content: unknown }>;
+      const isVision = Array.isArray(messages[1].content);
+      if (isVision) {
+        return fakeResponse(
+          { error: { message: "messages[1].content[1].image_url.url: no endpoint accepts image input" } },
+          { status: 400 },
+        );
+      }
+      return fakeResponse({ choices: [{ message: { content: '{"plan":"walk","actions":[]}' } }] });
+    });
+
+    const result = await requestAiPlayerDecision(
+      {
+        observation: {
+          ...OBSERVATION,
+          frame: { dataUrl: "data:image/jpeg;base64,AAAA", width: 960, height: 540 },
+        } as unknown as typeof OBSERVATION,
+      },
+      "user-1",
+      {
+        fetchImpl: fetchImpl as unknown as typeof fetch,
+        config: { ...CONFIG, model: "qwen/qwen3.8-27b" },
+      },
+    );
+
+    expect(result.droppedFrame).toBe(true);
+    expect(result.raw).toContain("walk");
+    expect(calls).toHaveLength(2);
+    const secondMessages = calls[1].body.messages as Array<{ content: unknown }>;
+    expect(typeof secondMessages[1].content).toBe("string");
+  });
+
+  it("does not retry a text-only round, so a broken request is not billed twice", async () => {
+    const fetchImpl = vi.fn(async () => fakeResponse({ error: { message: "no endpoint" } }, { status: 400 }));
+    await expect(requestAiPlayerDecision(
+      { observation: OBSERVATION },
+      "user-1",
+      { fetchImpl: fetchImpl as unknown as typeof fetch, config: CONFIG },
+    )).rejects.toBeInstanceOf(AiPlayerError);
+    expect(fetchImpl).toHaveBeenCalledTimes(1);
   });
 
   it("reports an empty reply instead of returning a blank plan", async () => {
@@ -283,9 +373,15 @@ describe("vision frames", () => {
   });
 
   it("reports vision support in the status payload", () => {
-    expect(modelSupportsVision("z-ai/glm-5.3")).toBe(true);
+    // The regression behind the endless HTTP 400: z-ai/glm-5.3 is text-only in
+    // the Numes catalogue, so attaching a frame to it is a rejected request.
+    expect(modelSupportsVision("z-ai/glm-5.3")).toBe(false);
     expect(modelSupportsVision("deepseek/deepseek-v4.1-flash")).toBe(false);
-    expect(describeAiPlayerStatus(CONFIG).vision).toBe(true);
+    expect(modelSupportsVision("qwen/qwen3.8-27b")).toBe(true);
+    expect(modelSupportsVision("uniboshi/kimi-k3-abliterated-v1")).toBe(true);
+    // The default model is text-only, so the status must say so.
+    expect(describeAiPlayerStatus(CONFIG).vision).toBe(false);
+    expect(describeAiPlayerStatus({ ...CONFIG, model: "qwen/qwen3.8-27b" }).vision).toBe(true);
   });
 
   it("tells the model what it just did and that it is repeating", () => {

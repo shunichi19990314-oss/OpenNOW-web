@@ -874,7 +874,12 @@
       "network": "Brak połączenia z serwerem AI. Sprawdź sieć.",
       "bad_reply": "Nie udało się odczytać odpowiedzi AI. Ponowna próba w kolejnej rundzie.",
       "unknown_action": "AI zażądało nieobsługiwanej akcji, więc nic nie wysłano.",
-      "input_not_ready": "Kanał wejściowy nie jest jeszcze połączony. Czekam."
-    }
+      "input_not_ready": "Kanał wejściowy nie jest jeszcze połączony. Czekam.",
+      "frame_rejected": "Dostawca AI odrzucił zrzut ekranu, więc ta runda użyła tylko tekstu. Wybierz model obsługujący obrazy, aby korzystać z ekranu."
+    },
+    "lastError": "Ostatni błąd (szczegóły w dzienniku)",
+    "visionUnavailableSwitch": "Wybierz model obsługujący obrazy (np. {{model}}), aby wysłać ekran",
+    "statFramesHint": "Przechwycone obrazy",
+    "statDropped": "Odrzucone"
   }
 }

@@ -7892,12 +7892,13 @@ button.game-card-store-chip.owned.active:hover {
 
 .ai-player-frame-hint {
   font-style: normal;
-  color: var(--warning, #e0b252);
+  color: #ffd479;
 }
 
 .ai-player-stats {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
+  /* 4 tiles, or 5 when frames were rejected. */
+  grid-template-columns: repeat(auto-fit, minmax(0, 1fr));
   gap: 6px;
   margin: 0;
   padding: 7px 8px;
@@ -7913,8 +7914,8 @@ button.game-card-store-chip.owned.active:hover {
 }
 
 .ai-player-stats dt {
-  font-size: 0.6rem;
-  color: var(--ink-muted);
+  font-size: 0.62rem;
+  color: #a8a8b6;
 }
 
 .ai-player-stats dd {
@@ -8017,15 +8018,15 @@ button.game-card-store-chip.owned.active:hover {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  font-size: 0.64rem;
+  font-size: 0.66rem;
   font-weight: 700;
-  color: var(--ink-muted);
+  color: #a8a8b6;
 }
 
 .ai-player-log-clear {
   padding: 2px 6px;
-  font-size: 0.62rem;
-  color: var(--ink-muted);
+  font-size: 0.64rem;
+  color: #a8a8b6;
   background: none;
   border: 1px solid var(--panel-border);
   border-radius: 4px;
@@ -8038,13 +8039,23 @@ button.game-card-store-chip.owned.active:hover {
 
 .ai-player-note {
   margin: 0;
-  font-size: 0.7rem;
-  color: var(--ink-muted);
+  font-size: 0.72rem;
+  color: #a8a8b6;
   line-height: 1.45;
 }
 
+.ai-player-note--muted {
+  color: #a8a8b6;
+}
+
+/* A warning the visitor must read: tinted, not just tinted text. */
 .ai-player-note--warn {
-  color: var(--warning, #e0b252);
+  padding: 6px 8px;
+  font-weight: 600;
+  color: #ffe6a8;
+  background: rgba(251, 191, 36, 0.12);
+  border: 1px solid rgba(251, 191, 36, 0.32);
+  border-radius: var(--r-sm);
 }
 
 .ai-player-note code,
@@ -8084,8 +8095,8 @@ button.game-card-store-chip.owned.active:hover {
 }
 
 .ai-player-round {
-  font-size: 0.68rem;
-  color: var(--ink-muted);
+  font-size: 0.7rem;
+  color: #a8a8b6;
   font-variant-numeric: tabular-nums;
 }
 
@@ -8113,8 +8124,8 @@ button.game-card-store-chip.owned.active:hover {
   display: flex;
   flex-direction: column;
   gap: 4px;
-  font-size: 0.68rem;
-  color: var(--ink-muted);
+  font-size: 0.7rem;
+  color: #a8a8b6;
 }
 
 .ai-player-model select {
@@ -8126,33 +8137,67 @@ button.game-card-store-chip.owned.active:hover {
   border-radius: var(--r-sm);
 }
 
+/*
+ * The panel body is a near-black sheet (rgba(12,12,14,0.96)), so the global
+ * muted ink (#5c5c66, meant for #19191e cards) collapsed to ~3:1 here and the
+ * log read as a grey smear — the exact complaint that produced these rules.
+ * The log therefore carries its own, brighter ramp measured against the panel
+ * sheet: body 16:1, secondary 8.3:1, warn 13.5:1, error 12.6:1, footer 7.2:1.
+ * Warn/error rows also get a tint so severity is visible without relying on
+ * hue alone (colour-blind safe: the tint is a luma change, not just a hue).
+ */
 .ai-player-log {
+  --ai-log-ink: #e8e8ee;
+  --ai-log-ink-soft: #a8a8b6;
+
   margin: 0;
-  padding: 0;
+  padding: 4px 6px;
   list-style: none;
   max-height: 168px;
   overflow-y: auto;
-  font-size: 0.7rem;
-  line-height: 1.45;
-  color: var(--ink-soft);
+  font-size: 0.72rem;
+  line-height: 1.5;
+  color: var(--ai-log-ink);
   font-variant-numeric: tabular-nums;
+  background: rgba(0, 0, 0, 0.32);
+  border: 1px solid color-mix(in srgb, var(--ink) 8%, transparent);
+  border-radius: var(--r-sm);
 }
 
 .ai-player-log-row {
   display: grid;
   grid-template-columns: 14px 1fr;
-  gap: 5px;
-  padding: 3px 2px;
-  border-bottom: 1px solid color-mix(in srgb, var(--ink) 5%, transparent);
+  gap: 6px;
+  padding: 4px 5px;
+  border-radius: 4px;
+  border-bottom: 1px solid color-mix(in srgb, var(--ink) 6%, transparent);
 }
 
 .ai-player-log-row:last-child {
   border-bottom: none;
 }
 
+/* Severity: a tinted row behind the text, not just coloured text. */
+.ai-player-log-row.ai-player-log-warn {
+  background: rgba(251, 191, 36, 0.1);
+}
+
+.ai-player-log-row.ai-player-log-error {
+  background: rgba(248, 113, 113, 0.12);
+}
+
 .ai-player-log-icon {
-  color: var(--ink-muted);
+  color: var(--ai-log-ink-soft);
   text-align: center;
+  font-weight: 700;
+}
+
+.ai-player-log-warn .ai-player-log-icon {
+  color: #ffd479;
+}
+
+.ai-player-log-error .ai-player-log-icon {
+  color: #ff9b9b;
 }
 
 .ai-player-log-text {
@@ -8170,21 +8215,23 @@ button.game-card-store-chip.owned.active:hover {
 
 .ai-player-chip {
   padding: 1px 5px;
-  font-size: 0.6rem;
+  font-size: 0.62rem;
   font-weight: 700;
-  color: var(--ink);
-  background: color-mix(in srgb, var(--accent) 18%, transparent);
+  color: #d6ffe6;
+  background: color-mix(in srgb, var(--accent) 24%, transparent);
+  border: 1px solid color-mix(in srgb, var(--accent) 40%, transparent);
   border-radius: 4px;
 }
 
-.ai-player-log-warn { color: var(--warning, #e0b252); }
-.ai-player-log-error { color: var(--error); }
+/* Bright enough to read on the warn/error tints above (was --warning at 4.4:1). */
+.ai-player-log-row.ai-player-log-warn { color: #ffe6a8; }
+.ai-player-log-row.ai-player-log-error { color: #ffd4d4; }
 
 .ai-player-foot {
   margin: 0;
-  font-size: 0.63rem;
-  color: var(--ink-muted);
-  line-height: 1.4;
+  font-size: 0.65rem;
+  color: #9c9caa;
+  line-height: 1.45;
 }
 
 .sv-mic {

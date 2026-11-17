@@ -73,7 +73,8 @@ export type AiPlayerLogCode =
   | "unknown_action"
   | "input_not_ready"
   | "frame_captured"
-  | "forced_variety";
+  | "forced_variety"
+  | "frame_rejected";
 
 export interface AiPlayerLoopOptions {
   mode?: AiPlayerMode;
@@ -118,8 +119,16 @@ export interface AiPlayerLoopState {
    * it — the session that prompted this ran 51 rounds and reported nothing.
    */
   sentPresses: number;
-  /** Frames attached so far, so the visitor can confirm vision is working. */
-  framesSent: number;
+  /**
+   * Frames captured so far.
+   *
+   * Named for what it counts: the capture happens per round whether or not the
+   * provider accepts it, and the panel pairs it with `framesDropped` so a "0
+   * frames delivered" session is distinguishable from "capture never ran".
+   */
+  framesCaptured: number;
+  /** Rounds where the provider refused the image and text-only was used. */
+  framesDropped: number;
   /** Rounds where the fallback rotation replaced the model's choice. */
   varietyBreaks: number;
   /** Last reply addressed to the visitor (chat mode). */
@@ -133,7 +142,8 @@ const EMPTY_STATE: AiPlayerLoopState = {
   lastError: null,
   lastErrorCode: undefined,
   sentPresses: 0,
-  framesSent: 0,
+  framesCaptured: 0,
+  framesDropped: 0,
   varietyBreaks: 0,
   lastReply: null,
 };
@@ -220,6 +230,8 @@ export async function runAiPlayerRound(params: {
   /** Chat message; switches the request to `/api/ai/chat`. */
   message?: string;
   conversation?: AiChatTurn[];
+  /** Called when the proxy had to drop the screenshot to get an answer. */
+  onFrameDropped?: () => void;
 }): Promise<AiPlayerDecision | null> {
   const sleep = params.sleep ?? defaultSleep;
   const now = params.now ?? Date.now;
@@ -266,6 +278,18 @@ export async function runAiPlayerRound(params: {
           ? "not_configured"
           : undefined);
     return null;
+  }
+
+  // The proxy retried without the picture because the provider refused it.
+  // Saying so is the difference between "the AI is blind" and "the AI was told
+  // the screenshot was dropped" for whoever reads the log.
+  if (payload?.droppedFrame) {
+    params.onFrameDropped?.();
+    log(
+      "warn",
+      "画面画像が AI プロバイダに拒否されたため、このラウンドは文字情報だけで判断しました。モデルを画像対応のものに変えると画面が使えます。",
+      "frame_rejected",
+    );
   }
 
   const { decision, problem } = parseAiPlayerDecision(payload?.raw ?? "", params.observation);
@@ -388,7 +412,7 @@ export async function runAiPlayerLoop(params: AiPlayerLoopParams): Promise<void>
     // the screen shows *now*.
     frame = options.captureFrame?.() ?? null;
     if (frame) {
-      state.framesSent += 1;
+      state.framesCaptured += 1;
       options.onRound?.(null, {
         atMs: (options.now ?? Date.now)(),
         level: "info",
@@ -423,6 +447,9 @@ export async function runAiPlayerLoop(params: AiPlayerLoopParams): Promise<void>
       post: options.post,
       message: instruction,
       conversation: options.conversation,
+      onFrameDropped: () => {
+        state.framesDropped += 1;
+      },
       onLog: (entry) => {
         if (entry.level !== "info") failure.entry = entry;
         if (entry.sentPress) state.sentPresses += 1;
