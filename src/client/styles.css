@@ -8128,6 +8128,13 @@ button.game-card-store-chip.owned.active:hover {
   color: #a8a8b6;
 }
 
+.ai-player-model-hint {
+  font-size: 0.66rem;
+  font-style: normal;
+  line-height: 1.4;
+  color: #ffd479;
+}
+
 .ai-player-model select {
   padding: 5px 6px;
   font-size: 0.7rem;

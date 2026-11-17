@@ -61,6 +61,7 @@ Numes(<https://numes.ai>)で発行した API キーを使い、AI にゲーム�
 | `NUMES_BASE_URL` | `https://api.numes.ai/api/v1` | 省略可(既定値) |
 | `AI_PLAYER_MODEL` | `z-ai/glm-5.3` | 省略可。既定モデル |
 | `AI_PLAYER_DAILY_REQUESTS` | `200` | 省略可。1 アカウントあたりの 1 日上限(`0` で無制限) |
+| `AI_PLAYER_TIMEOUT_MS` | `60000` | 省略可。1 リクエストの期限(5,000〜180,000)。思考モデルは 90,000 程度を推奨 |
 
 3. Redeploy します。`GET /api/ai/status` が `{"configured":true,...}` を返せば有効です。
 4. 配信画面の右下に **AI** ボタンが出ます。パネルには 2 つのモードがあります。
@@ -86,6 +87,12 @@ Numes(<https://numes.ai>)で発行した API キーを使い、AI にゲーム�
 
 トークン消費が増えるため、`AI_PLAYER_DAILY_REQUESTS` で上限を設定することを推奨します。
 非対応モデルでは自動的にテキストのみで動作します。
+
+**応答速度について**: 思考モデルは 1 ラウンドに数秒〜数十秒かかります。Numes の実測(7 日)では
+`moonshotai/kimi-k3.1-pro` が最初の 1 文字まで中央値 8.4 秒 / p90 約 40 秒、
+`deepseek/deepseek-v4.1-flash` は約 1.4 秒です。既定の期限は 60 秒で、超えた場合は
+「何秒待って諦めたか + モデル名」を日本語で表示します(パネルにも遅いモデルの注意を表示)。
+自動操作を軽快に回したい場合は `AI_PLAYER_MODEL=deepseek/deepseek-v4.1-flash` を推奨します。
 
 **セキュリティ上の注意**
 

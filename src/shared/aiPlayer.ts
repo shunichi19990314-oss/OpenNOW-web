@@ -153,6 +153,8 @@ export type AiPlayerErrorCode =
   | "disabled"
   | "rate_limited"
   | "upstream_error"
+  /** Our own deadline expired before the provider answered. */
+  | "upstream_timeout"
   | "invalid_response"
   | "budget_exceeded"
   | "frame_too_large";
@@ -162,6 +164,15 @@ export interface AiPlayerErrorBody {
   message: string;
   /** Seconds until the caller may retry (rate limiting). */
   retryAfterSeconds?: number;
+  /**
+   * How long the round actually waited, in milliseconds.
+   *
+   * A timeout message without a number is unfalsifiable: "took too long" cannot
+   * be told apart from "we gave up after 3 s while the model needed 9 s".
+   */
+  waitedMs?: number;
+  /** The model that was asked, so a slow model is identifiable in the log. */
+  model?: string;
 }
 
 export const AI_PLAYER_DECIDE_PATH = "/api/ai/decide";
@@ -204,6 +215,20 @@ export const AI_PLAYER_VISION_MODELS = [
   "dealignai/deepseek-v4.1-flash-uncensored-fp8",
   "uniboshi/kimi-k3-abliterated-v1",
 ] as const;
+
+/**
+ * Models whose measured latency makes them a poor fit for a per-round loop.
+ *
+ * These are thinking models: Numes' own 7-day statistics show
+ * `moonshotai/kimi-k3.1-pro` at 8.4 s median / ~40 s p90 to first token. They
+ * work — they are just slow enough that auto mode feels stuck, so the picker
+ * says so instead of letting the visitor conclude the AI is broken.
+ */
+export const AI_PLAYER_SLOW_MODELS: Readonly<Record<string, string>> = {
+  "moonshotai/kimi-k3.1-pro": "応答が遅いモデルです(実測: 最初の 1 文字まで約 8 秒、遅いときは 40 秒)。自動操作には不向きです。",
+  "moonshotai/kimi-k3": "応答が遅いモデルです(思考モデルのため)。自動操作には不向きです。",
+  "z-ai/glm-5.3": "応答が遅いモデルです(思考が常に有効)。自動操作には不向きです。",
+};
 
 /**
  * Model to switch to when the visitor turns screen-send on for a model that
