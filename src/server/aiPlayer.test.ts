@@ -1,8 +1,13 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
+import { buildObservationText } from "@shared/aiPlayerPrompt";
 import {
   AiPlayerError,
   buildChatCompletionRequest,
+  buildRequestForMode,
+  modelSupportsVision,
+  requestAiPlayerChat,
+  sanitizeFrame,
   describeAiPlayerStatus,
   extractAssistantText,
   aiPlayerInternals,
@@ -242,3 +247,96 @@ describe("AI player proxy round trip", () => {
     aiPlayerInternals.clearUsage();
   });
 });
+
+describe("vision frames", () => {
+  const FRAME = {
+    dataUrl: "data:image/jpeg;base64,AAAA",
+    width: 960,
+    height: 540,
+  };
+
+  it("accepts a JPEG data URL and rejects anything else", () => {
+    expect(sanitizeFrame(FRAME)).toEqual(FRAME);
+    // An arbitrary URL would make the server fetch a third-party resource with
+    // the operator's key attached to the request chain; SVG can carry script.
+    expect(sanitizeFrame({ ...FRAME, dataUrl: "https://evil.example/x.png" })).toBeUndefined();
+    expect(sanitizeFrame({ ...FRAME, dataUrl: "data:image/svg+xml;base64,AAAA" })).toBeUndefined();
+    expect(sanitizeFrame(null)).toBeUndefined();
+    expect(sanitizeFrame({ dataUrl: FRAME.dataUrl, width: 0, height: 0 })).toBeUndefined();
+  });
+
+  it("refuses an oversized frame instead of truncating it", () => {
+    const huge = `data:image/jpeg;base64,${"A".repeat(3_000_000)}`;
+    expect(() => sanitizeFrame({ ...FRAME, dataUrl: huge })).toThrow(AiPlayerError);
+  });
+
+  it("attaches the image only when the model can read it", () => {
+    const withVision = buildRequestForMode("auto", "z-ai/glm-5.3", { ...OBSERVATION, frame: FRAME }, true);
+    const userMessage = withVision.messages[1].content as unknown as Array<{ type: string }>;
+    expect(Array.isArray(userMessage)).toBe(true);
+    expect(userMessage.some((part) => part.type === "image_url")).toBe(true);
+
+    const withoutVision = buildRequestForMode("auto", "deepseek/deepseek-v4.1-flash", { ...OBSERVATION, frame: FRAME }, false);
+    // Text-only models get a string; sending parts would be a 400 from most
+    // providers, and the tokens would be billed for nothing.
+    expect(typeof withoutVision.messages[1].content).toBe("string");
+  });
+
+  it("reports vision support in the status payload", () => {
+    expect(modelSupportsVision("z-ai/glm-5.3")).toBe(true);
+    expect(modelSupportsVision("deepseek/deepseek-v4.1-flash")).toBe(false);
+    expect(describeAiPlayerStatus(CONFIG).vision).toBe(true);
+  });
+
+  it("tells the model what it just did and that it is repeating", () => {
+    const text = buildObservationText({
+      ...OBSERVATION,
+      lastActions: ["a"],
+      repeatCount: 4,
+      frame: FRAME,
+    });
+    expect(text).toContain("前回の操作: a");
+    expect(text).toContain("同じ操作を 4 回");
+    expect(text).toContain("画面画像を添付");
+  });
+});
+
+describe("chat mode", () => {
+  it("uses the chat prompt and carries the instruction", () => {
+    const request = buildRequestForMode(
+      "chat",
+      "z-ai/glm-5.3",
+      { ...OBSERVATION, instruction: "左の扉を開けて" },
+      true,
+    );
+    expect(request.messages[0].content).toContain("会話");
+    const text = request.messages[1].content as unknown as Array<{ type: string; text?: string }>;
+    const joined = Array.isArray(text) ? text.map((part) => part.text ?? "").join(" ") : String(text);
+    expect(joined).toContain("左の扉を開けて");
+  });
+
+  it("rejects an empty chat message before spending a request", async () => {
+    const fetchImpl = vi.fn();
+    await expect(requestAiPlayerChat(
+      { observation: OBSERVATION, message: "   " },
+      "user-1",
+      { fetchImpl: fetchImpl as unknown as typeof fetch, config: CONFIG },
+    )).rejects.toMatchObject({ code: "invalid_response", statusCode: 400 });
+    expect(fetchImpl).not.toHaveBeenCalled();
+  });
+
+  it("routes a chat turn through the same transport", async () => {
+    const fetchImpl = vi.fn(async () => fakeResponse({
+      choices: [{ message: { content: '{"reply":"了解しました","actions":[]}' } }],
+    }));
+    const result = await requestAiPlayerChat(
+      { observation: OBSERVATION, message: "こんにちは", includeFrame: false },
+      "user-1",
+      { fetchImpl: fetchImpl as unknown as typeof fetch, config: CONFIG },
+    );
+    expect(result.raw).toContain("了解しました");
+    const [, init] = fetchImpl.mock.calls[0] as unknown as [string, RequestInit];
+    expect(String(init.body)).toContain("こんにちは");
+  });
+});
+

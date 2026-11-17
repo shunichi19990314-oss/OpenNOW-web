@@ -137,6 +137,7 @@ import { StreamLoading } from "./components/StreamLoading";
 import { StreamView } from "./components/StreamView";
 import { AiPlayerPanel } from "./components/AiPlayerPanel";
 import { AI_PLAYER_ACTION_NAMES } from "./lib/aiPlayerActions";
+import { captureFrameFromVideo } from "./lib/aiPlayerCapture";
 import { QueueServerSelectModal } from "./components/QueueServerSelectModal";
 import { CommandPalette } from "./components/CommandPalette";
 import { ReleaseHighlightsModal } from "./components/ReleaseHighlightsModal";
@@ -408,6 +409,19 @@ export function App(): JSX.Element {
      */
     keepAlive: (): void => clientRef.current?.maintainAiGamepad(),
   }), []);
+
+  /**
+   * Frame capture for the AI.
+   *
+   * Bound to `videoRef` at call time rather than captured, because the element
+   * is mounted by StreamView and is null on the first renders. Returning null
+   * (no video, tainted canvas) simply means that round runs blind.
+   */
+  const aiPlayerCaptureFrame = useCallback(() => {
+    const video = videoRef.current;
+    if (!video || video.videoWidth === 0) return null;
+    return captureFrameFromVideo(video);
+  }, []);
 
   // Touch gamepad: only offer the overlay when the device actually has a
   // coarse pointer, so desktop users never pay for an unused rAF loop.
@@ -4083,6 +4097,7 @@ export function App(): JSX.Element {
                 sessionStartedAtMs={sessionStartedAtMs}
                 sink={aiPlayerSink}
                 actionNames={AI_PLAYER_ACTION_NAMES}
+                captureFrame={aiPlayerCaptureFrame}
                 enabled={isStreaming}
               />
             )}
