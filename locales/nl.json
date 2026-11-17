@@ -811,6 +811,7 @@
       "unknown_action": "De AI vroeg een niet-ondersteunde actie; er is niets verzonden.",
       "input_not_ready": "Het invoerkanaal is nog niet verbonden. Even wachten."
     },
-    "reload": "Pagina herladen"
+    "reload": "Pagina herladen",
+    "presses": "{{count}} invoer verzonden"
   }
 }

@@ -811,6 +811,7 @@
       "unknown_action": "L'IA a demandé une action non prise en charge ; rien n'a été envoyé.",
       "input_not_ready": "Le canal d'entrée n'est pas encore connecté. Attente."
     },
-    "reload": "Recharger la page"
+    "reload": "Recharger la page",
+    "presses": "{{count}} entrées envoyées"
   }
 }

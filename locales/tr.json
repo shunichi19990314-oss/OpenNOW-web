@@ -811,6 +811,7 @@
       "unknown_action": "Yapay zekâ desteklenmeyen bir işlem istedi, girdi gönderilmedi.",
       "input_not_ready": "Giriş kanalı henüz bağlı değil. Bekleniyor."
     },
-    "reload": "Sayfayı yenile"
+    "reload": "Sayfayı yenile",
+    "presses": "{{count}} giriş gönderildi"
   }
 }

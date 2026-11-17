@@ -516,6 +516,15 @@ export class GfnWebRtcClient {
   private userBitrateCeilingKbps = 0;
   // On-screen touch gamepad (settings.touchGamepadEnabled).
   private virtualGamepadSlot: number | null = null;
+  /**
+   * Last state sent through `sendAiGamepadState`, keyed by controller slot.
+   *
+   * A game infers "controller present" from repeated packets, so the injected
+   * pad needs the same ~100 ms keepalive a physical pad gets from the poll
+   * loop. Without it a press/release pair was followed by silence, the remote
+   * side decided no pad was attached, and later presses were ignored.
+   */
+  private aiGamepadState: VirtualGamepadFrame | null = null;
   private decoderPressureConsecutivePolls = 0;
   private decoderStableConsecutivePolls = 0;
   private decoderRecoveryAttemptCount = 0;
@@ -3322,14 +3331,20 @@ export class GfnWebRtcClient {
   }
 
   /**
-   * Injects a synthetic gamepad state, as if a locally connected controller had
-   * reported it.
+   * Injects a synthetic gamepad state for the AI player.
    *
-   * Used by the AI player: the automation loop lives in the browser and owns
-   * the decision making, while the packet encoding and channel selection stay
-   * here so injected input is byte-identical to real input. Returns false when
-   * the input path is not ready yet, so the caller can retry instead of
-   * pretending the press landed.
+   * Delegates to the touch-gamepad path (`sendVirtualGamepadFrame`) instead of
+   * hand-rolling packets. That path is already proven in production and owns
+   * the parts a raw send got wrong: it announces the controller in the slot
+   * bitmap before the first packet, mirrors the physical pad's change detection
+   * and ~100 ms keepalive, and applies the XInput Y inversion.
+   *
+   * The bug this replaces: a session ran 51 decision rounds with the game never
+   * reacting, because packets were addressed to a controller slot that had
+   * never been announced and there was no keepalive to keep it alive.
+   *
+   * Inputs are given in the intuitive convention (forward = +, trigger 0..255,
+   * stick -32768..32767) and converted here.
    */
   public sendAiGamepadState(
     state: {
@@ -3341,40 +3356,45 @@ export class GfnWebRtcClient {
       rightStickX?: number;
       rightStickY?: number;
     },
-    controllerId = 0,
   ): boolean {
-    if (!this.inputReady || !this.reliableInputChannel || this.reliableInputChannel.readyState !== "open") {
-      return false;
-    }
-    const clampStick = (value: number | undefined): number => {
+    const unit = (value: number | undefined): number => {
       if (!value || !Number.isFinite(value)) return 0;
-      return Math.max(-32768, Math.min(32767, Math.round(value)));
+      return Math.max(-1, Math.min(1, value / 32767));
     };
-    const clampTrigger = (value: number | undefined): number => {
+    const trigger = (value: number | undefined): number => {
       if (!value || !Number.isFinite(value)) return 0;
-      return Math.max(0, Math.min(255, Math.round(value)));
+      return Math.max(0, Math.min(1, value / 255));
     };
-    const payload: GamepadInput = {
-      controllerId: controllerId & 0x03,
+    const frame: VirtualGamepadFrame = {
       buttons: state.buttons & 0xffff,
-      leftTrigger: clampTrigger(state.leftTrigger),
-      rightTrigger: clampTrigger(state.rightTrigger),
-      leftStickX: clampStick(state.leftStickX),
-      leftStickY: clampStick(state.leftStickY),
-      rightStickX: clampStick(state.rightStickX),
-      rightStickY: clampStick(state.rightStickY),
-      connected: true,
-      timestampUs: timestampUs(),
+      leftTrigger: trigger(state.leftTrigger),
+      rightTrigger: trigger(state.rightTrigger),
+      leftStickX: unit(state.leftStickX),
+      leftStickY: unit(state.leftStickY),
+      rightStickX: unit(state.rightStickX),
+      rightStickY: unit(state.rightStickY),
     };
-    const usePR = this.canSendGamepadPartiallyReliable(payload.controllerId);
-    const bytes = this.inputEncoder.encodeGamepadState(payload, this.gamepadBitmap, usePR);
-    if (usePR) {
-      this.sendGamepad(bytes);
-    } else {
-      this.sendReliable(bytes);
-    }
-    this.lastGamepadSendMs = performance.now();
-    return true;
+    // Remember the frame so `maintainAiGamepad` can repeat it between rounds.
+    this.aiGamepadState = frame;
+    return this.sendVirtualGamepadFrame(frame);
+  }
+
+  /**
+   * Heartbeat for the injected pad.
+   *
+   * `sendVirtualGamepadFrame` already resends on its own 100 ms keepalive, so
+   * this only needs to tick it; without any call the pad would fall silent
+   * between AI rounds and the remote side would consider it disconnected.
+   */
+  public maintainAiGamepad(): void {
+    if (!this.aiGamepadState) return;
+    this.sendVirtualGamepadFrame(this.aiGamepadState);
+  }
+
+  /** Detaches the AI pad so the server stops expecting input from that slot. */
+  public releaseAiGamepad(): void {
+    this.aiGamepadState = null;
+    this.releaseVirtualGamepad();
   }
 
   private installInputCapture(videoElement: HTMLVideoElement): void {

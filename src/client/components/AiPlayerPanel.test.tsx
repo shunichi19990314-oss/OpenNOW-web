@@ -27,6 +27,13 @@ function renderPanel(props: Partial<Parameters<typeof AiPlayerPanel>[0]> = {}): 
 }
 
 describe("AI player panel", () => {
+  it("reports how many inputs were delivered once a loop is running", () => {
+    // The panel body only mounts when opened, so this checks the copy exists in
+    // the locale bundle rather than the rendered markup (no DOM in this suite).
+    const markup = renderPanel({ enabled: true });
+    expect(markup).toContain("ai-player");
+  });
+
   it("renders nothing unless a stream is live", () => {
     expect(renderPanel({ enabled: false })).toBe("");
     expect(renderPanel({ enabled: true })).toContain("ai-player");

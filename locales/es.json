@@ -811,6 +811,7 @@
       "unknown_action": "La IA pidió una acción no compatible, así que no se envió nada.",
       "input_not_ready": "El canal de entrada aún no está conectado. Esperando."
     },
-    "reload": "Recargar página"
+    "reload": "Recargar página",
+    "presses": "{{count}} entradas enviadas"
   }
 }
