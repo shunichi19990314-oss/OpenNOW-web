@@ -232,7 +232,8 @@
     "labels": {
       "launchError": "Eroare de lansare",
       "nowLoading": "Acum se încarcă",
-      "adQueue": "Coada de anunțuri"
+      "adQueue": "Coada de anunțuri",
+      "upstreamDetail": "Răspuns de la GFN: {{detail}}"
     },
     "steps": {
       "queue": "coadă",
@@ -306,7 +307,10 @@
       "freeTier30MinutesRemaining": "Au mai rămas 30 de minute pentru această sesiune gratuită",
       "freeTier15MinutesRemaining": "Au mai rămas 15 minute pentru această sesiune gratuită",
       "freeTierEndsSoon": "Această sesiune gratuită se încheie în curând"
-    }
+    },
+    "sessionStartingCannotResume": "Această sesiune încă pornește, deci nu poate fi reluată. Închide-o și lansează din nou.",
+    "terminateBlockingCloudSession": "Închide sesiunea care blochează lansarea",
+    "terminateBlockingCloudSessionTitle": "Închide sesiunea care blochează lansarea: {{title}}"
   },
   "stream": {
     "stats": {
@@ -703,7 +707,15 @@
     "sessionResumeFailedDescription": "Conexiunea la sesiunea care rulează a fost pierdută și reluarea a eșuat.",
     "queueAdPlayTimeout": "Timp limită pentru redarea anunțurilor",
     "queueAdVideoStuck": "Videoclipul publicitar este blocat",
-    "queueAdUrlLoad": "Eroare la încărcarea adresei URL"
+    "queueAdUrlLoad": "Eroare la încărcarea adresei URL",
+    "duplicateSessionDescriptionGame": "Lansarea {{game}} a eșuat: pe acest cont rulează încă o altă sesiune în cloud. Încheie sesiunea existentă mai jos și încearcă din nou (nu trebuie să aștepți expirarea GFN).",
+    "duplicateSessionEndAction": "Încheie sesiunea existentă",
+    "duplicateSessionEndConfirm": "Închei sesiunea cloud activă a contului? Progresul nesalvat poate fi pierdut.",
+    "duplicateSessionNoneFound": "Nu s-a putut încheia nicio sesiune. GFN poate păstra una; încearcă din nou peste câteva minute.",
+    "duplicateSessionEndFailed": "Sesiunea existentă nu a putut fi încheiată.",
+    "duplicateSessionEnded": "Sesiunea existentă a fost închisă. Lansează din nou jocul.",
+    "duplicateSessionRunning": "Sesiuni active pe acest cont: {{games}}",
+    "duplicateSessionEndedPartial": "S-au încheiat {{stopped}} sesiuni; {{failed}} nu au putut fi închise. Reîncearcă lansarea."
   },
   "commandPalette": {
     "title": "Paleta de comenzi",
