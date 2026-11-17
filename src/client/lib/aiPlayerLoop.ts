@@ -74,7 +74,8 @@ export type AiPlayerLogCode =
   | "input_not_ready"
   | "frame_captured"
   | "forced_variety"
-  | "frame_rejected";
+  | "frame_rejected"
+  | "timeout";
 
 export interface AiPlayerLoopOptions {
   mode?: AiPlayerMode;
@@ -149,8 +150,16 @@ const EMPTY_STATE: AiPlayerLoopState = {
 };
 
 const DEFAULT_INTERVAL_MS = AI_PLAYER_AUTO_INTERVAL_MS;
-/** Extra wait after a failed round, so a broken provider is not hammered. */
+/**
+ * Extra wait after a failed round, so a broken provider is not hammered.
+ *
+ * Doubles per consecutive failure up to the cap: with a 60 s provider deadline a
+ * fixed 5 s gap means the next round starts while the previous one is still
+ * being given up on, which at best wastes requests and at worst looks like the
+ * loop is spamming a provider that is merely slow.
+ */
 const ERROR_BACKOFF_MS = 5_000;
+const ERROR_BACKOFF_MAX_MS = 60_000;
 const RELEASE_SETTLE_MS = 60;
 /** Interval for the controller heartbeat, matching the physical pad path. */
 const KEEPALIVE_MS = 100;
@@ -195,6 +204,11 @@ export function describeDecisionFailure(status: number, serverMessage: string): 
   }
   if (status === 429) {
     return serverMessage || "リクエストが集中しています。しばらく待って再試行します。";
+  }
+  if (status === 504) {
+    // The proxy already states the wait and the model; a generic sentence would
+    // replace the only useful fact (how long we actually waited).
+    return serverMessage || "AI の応答が時間切れになりました。別のモデルを選ぶか、時間をおいて再試行します。";
   }
   if (serverMessage) return serverMessage;
   return `AI リクエストが失敗しました (HTTP ${status})。`;
@@ -269,14 +283,17 @@ export async function runAiPlayerRound(params: {
       log("error", "AI サーバーに接続できませんでした。通信環境を確認してください。", "network");
       return null;
     }
+    const errorCode = (error as { errorCode?: string }).errorCode;
     const message = describeDecisionFailure(status, error instanceof Error ? error.message : "");
-    log("warn", message, status === 401 || status === 403
-      ? "session_expired"
-      : status === 429
-        ? "rate_limited"
-        : (error as { errorCode?: string }).errorCode === "missing_key"
-          ? "not_configured"
-          : undefined);
+    log("warn", message, errorCode === "upstream_timeout"
+      ? "timeout"
+      : status === 401 || status === 403
+        ? "session_expired"
+        : status === 429
+          ? "rate_limited"
+          : errorCode === "missing_key"
+            ? "not_configured"
+            : undefined);
     return null;
   }
 
@@ -405,6 +422,7 @@ export async function runAiPlayerLoop(params: AiPlayerLoopParams): Promise<void>
   let tracker: RepeatTracker = INITIAL_REPEAT_TRACKER;
   let frame: AiPlayerFrame | null = null;
   let instruction = options.instruction;
+  let consecutiveFailures = 0;
   params.onState?.({ ...state });
 
   while (!options.signal?.aborted) {
@@ -508,8 +526,15 @@ export async function runAiPlayerLoop(params: AiPlayerLoopParams): Promise<void>
     if (options.maxRounds !== undefined && state.rounds >= options.maxRounds) {
       break;
     }
+    if (decision) {
+      consecutiveFailures = 0;
+    } else {
+      consecutiveFailures += 1;
+    }
     await waitWithKeepAlive(
-      decision ? intervalMs : ERROR_BACKOFF_MS,
+      decision
+        ? intervalMs
+        : Math.min(ERROR_BACKOFF_MAX_MS, ERROR_BACKOFF_MS * 2 ** Math.min(consecutiveFailures - 1, 4)),
       params.sink,
       sleep,
       options.signal,
