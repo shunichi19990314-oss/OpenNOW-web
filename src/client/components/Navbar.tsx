@@ -148,6 +148,10 @@ export function Navbar({
   const firstEntitlementStart = formatDateTime(subscription?.firstEntitlementStartDateTime);
   const modalTitle = modalType === "time" ? t("navbar.playtimeDetails") : t("navbar.storageDetails");
   const activeSessionTitle = activeSessionGameTitle?.trim() || null;
+  // Status 1 = queued/setup. GFN still counts it against the account's session
+  // limit, but it cannot be claimed, so the resume action must say so instead of
+  // blaming a missing server address.
+  const activeSessionResumable = activeSession !== null && (activeSession.status === 2 || activeSession.status === 3);
   const activeUserId = user?.userId ?? null;
 
   useEffect(() => {
@@ -326,14 +330,21 @@ export function Navbar({
               type="button"
               className={`navbar-session-resume${isResumingSession ? " is-loading" : ""}`}
               title={
-                activeSession.serverIp
-                  ? activeSessionTitle
-                    ? t("session.resumeActiveCloudSessionTitle", { title: activeSessionTitle })
-                    : t("session.resumeActiveCloudSession")
-                  : t("session.activeSessionMissingServerAddress")
+                !activeSessionResumable
+                  ? t("session.sessionStartingCannotResume")
+                  : activeSession.serverIp
+                    ? activeSessionTitle
+                      ? t("session.resumeActiveCloudSessionTitle", { title: activeSessionTitle })
+                      : t("session.resumeActiveCloudSession")
+                    : t("session.activeSessionMissingServerAddress")
               }
               onClick={onResumeSession}
-              disabled={isResumingSession || isTerminatingSession || !activeSession.serverIp}
+              disabled={
+                isResumingSession
+                || isTerminatingSession
+                || !activeSessionResumable
+                || !activeSession.serverIp
+              }
             >
               {isResumingSession ? <MotionSpinner size={14} label={t("accessibility.resumingSession")} /> : <PlayCircle size={14} />}
               <span className="navbar-session-resume-text">{t("app.actions.resume")}</span>
@@ -343,9 +354,11 @@ export function Navbar({
               type="button"
               className={`navbar-session-terminate${isTerminatingSession ? " is-loading" : ""}`}
               title={
-                activeSessionTitle
+                activeSessionResumable && activeSessionTitle
                   ? t("session.terminateActiveCloudSessionTitle", { title: activeSessionTitle })
-                  : t("session.terminateActiveCloudSession")
+                  : activeSessionTitle
+                    ? t("session.terminateBlockingCloudSessionTitle", { title: activeSessionTitle })
+                    : t("session.terminateBlockingCloudSession")
               }
               onClick={onTerminateSession}
               disabled={isResumingSession || isTerminatingSession}

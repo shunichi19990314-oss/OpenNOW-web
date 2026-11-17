@@ -22,16 +22,51 @@ export function isSessionInQueue(session: SessionInfo): boolean {
   return isGfnSessionInQueue(session);
 }
 
+/**
+ * Codes that mean "this account already has a session".
+ *
+ * `SessionLimitExceeded` alone was too narrow: GFN also answers with
+ * `SessionLimitPerDeviceReached` (a second tab or device on the same account)
+ * and `MaxSessionNumberLimitExceeded`. Those produced the generic "起動に失敗
+ * しました" screen with no explanation at all.
+ */
+const SESSION_CONFLICT_CODES = new Set<number>([
+  3237093643, // SessionLimitExceeded
+  3237093682, // SessionLimitPerDeviceReached
+  3237093715, // MaxSessionNumberLimitExceeded
+]);
+
+const SESSION_CONFLICT_NAMES = [
+  "SESSIONLIMIT",
+  "DUPLICATESESSION",
+  "MAXSESSIONNUMBER",
+  "SESSION_LIMIT_EXCEEDED",
+];
+
 export function isSessionLimitError(error: unknown): boolean {
-  if (error && typeof error === "object" && "gfnErrorCode" in error) {
-    const candidate = error.gfnErrorCode;
-    if (typeof candidate === "number") {
-      return candidate === GFN_SESSION_LIMIT_EXCEEDED_CODE;
+  if (error && typeof error === "object") {
+    if ("gfnErrorCode" in error) {
+      const candidate = error.gfnErrorCode;
+      if (typeof candidate === "number" && SESSION_CONFLICT_CODES.has(candidate)) {
+        return true;
+      }
+    }
+    // The proxy now ships the provider's machine-readable error name, so a
+    // localized or merely reworded upstream message cannot defeat the check.
+    const errorCode = "errorCode" in error ? error.errorCode : undefined;
+    if (typeof errorCode === "string") {
+      const normalized = errorCode.replace(/[^A-Z]/gi, "").toUpperCase();
+      if (SESSION_CONFLICT_NAMES.some((name) => normalized.includes(name))) {
+        return true;
+      }
     }
   }
   if (error instanceof Error) {
-    const msg = error.message.toUpperCase();
-    return msg.includes("SESSION LIMIT") || msg.includes("DUPLICATE SESSION");
+    const statusDescription = (error as { statusDescription?: unknown }).statusDescription;
+    const haystack = `${error.message} ${typeof statusDescription === "string" ? statusDescription : ""}`
+      .replace(/[^A-Za-z]/g, "")
+      .toUpperCase();
+    return SESSION_CONFLICT_NAMES.some((name) => haystack.includes(name));
   }
   return false;
 }
@@ -230,11 +265,23 @@ export function toLaunchErrorState(
     combined.includes("SESSION_LIMIT") ||
     combined.includes("DUPLICATE SESSION")
   ) {
+    // Name the game. The old text was identical for every game, so launching
+    // "崩壊:スターレイル" and being told about "a session" gave no clue which
+    // one to end — and the running session was for a *different* game.
+    const runningTitle = game?.title?.trim();
     return {
       stage,
       title: t("errors.duplicateSessionTitle"),
-      description: t("errors.duplicateSessionDescription"),
+      description: t(runningTitle ? "errors.duplicateSessionDescriptionGame" : "errors.duplicateSessionDescription", {
+        ...(runningTitle ? { game: runningTitle } : {}),
+      }),
       codeLabel: toCodeLabel(code),
+      action: "end-active-session",
+      actionLabel: t("errors.duplicateSessionEndAction"),
+      // Showing the raw provider text as well is deliberate: the visitor can
+      // tell support exactly what GFN said, and we stop inventing a story when
+      // the upstream reason was something else that merely looked similar.
+      detail: statusDescription || messageFromError || undefined,
     };
   }
 

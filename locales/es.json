@@ -232,7 +232,8 @@
     "labels": {
       "launchError": "Error de inicio",
       "nowLoading": "Ahora cargando",
-      "adQueue": "Cola de anuncios"
+      "adQueue": "Cola de anuncios",
+      "upstreamDetail": "Respuesta de GFN: {{detail}}"
     },
     "steps": {
       "queue": "cola",
@@ -306,7 +307,10 @@
       "freeTier30MinutesRemaining": "Quedan 30 minutos en esta sesión de nivel gratuito",
       "freeTier15MinutesRemaining": "Quedan 15 minutos en esta sesión de nivel gratuito",
       "freeTierEndsSoon": "Esta sesión de nivel gratuito finalizará pronto"
-    }
+    },
+    "sessionStartingCannotResume": "Esta sesión aún se está iniciando, así que no se puede reanudar. Ciérrala y vuelve a iniciar el juego.",
+    "terminateBlockingCloudSession": "Cerrar la sesión que bloquea el inicio",
+    "terminateBlockingCloudSessionTitle": "Cerrar la sesión que bloquea el inicio: {{title}}"
   },
   "stream": {
     "stats": {
@@ -703,7 +707,15 @@
     "sessionResumeFailedDescription": "La conexión con la sesión en ejecución se perdió y la reanudación falló.",
     "queueAdPlayTimeout": "Tiempo de espera de reproducción de anuncios",
     "queueAdVideoStuck": "El vídeo del anuncio está bloqueado.",
-    "queueAdUrlLoad": "Error al cargar la URL"
+    "queueAdUrlLoad": "Error al cargar la URL",
+    "duplicateSessionDescriptionGame": "Se intentó iniciar {{game}}, pero sigue activa otra sesión en la nube de esta cuenta. Finaliza la sesión existente abajo y vuelve a iniciar (no hace falta esperar al tiempo límite de GFN).",
+    "duplicateSessionEndAction": "Finalizar la sesión existente",
+    "duplicateSessionEndConfirm": "¿Finalizar la sesión en la nube activa de tu cuenta? El progreso sin guardar puede perderse.",
+    "duplicateSessionNoneFound": "No se pudo finalizar ninguna sesión. GFN puede mantener una activa; inténtalo de nuevo en unos minutos.",
+    "duplicateSessionEndFailed": "No se pudo finalizar la sesión existente.",
+    "duplicateSessionEnded": "Se finalizó la sesión existente. Inicia el juego de nuevo.",
+    "duplicateSessionRunning": "Sesiones activas en esta cuenta: {{games}}",
+    "duplicateSessionEndedPartial": "Se cerraron {{stopped}} sesión(es); {{failed}} no se pudieron cerrar. Inténtalo de nuevo."
   },
   "commandPalette": {
     "title": "Paleta de comandos",

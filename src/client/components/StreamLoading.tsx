@@ -39,6 +39,8 @@ export interface StreamLoadingProps {
     description: string;
     code?: string;
     actionLabel?: string;
+    /** Raw upstream wording, kept verbatim for support and for honesty. */
+    detail?: string;
   };
   onAdPlaybackEvent?: (event: QueueAdPlaybackEvent, adId: string) => void;
   adPreviewRef?: Ref<QueueAdPreviewHandle>;
@@ -222,6 +224,9 @@ export function StreamLoading({
               <>
                 <p className="sload-error-title">{error.title}</p>
                 <p className="sload-error-desc">{error.description}</p>
+                {error.detail && (
+                  <p className="sload-error-detail">{t("streamLoading.labels.upstreamDetail", { detail: error.detail })}</p>
+                )}
                 {error.code && <p className="sload-error-code">{error.code}</p>}
               </>
             )}
