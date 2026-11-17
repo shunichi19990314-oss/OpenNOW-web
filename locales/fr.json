@@ -875,11 +875,13 @@
       "bad_reply": "La réponse de l'IA est illisible. Nouvel essai au prochain tour.",
       "unknown_action": "L'IA a demandé une action non prise en charge ; rien n'a été envoyé.",
       "input_not_ready": "Le canal d'entrée n'est pas encore connecté. Attente.",
-      "frame_rejected": "Le fournisseur d'IA a refusé la capture ; cette manche n'a utilisé que le texte. Choisissez un modèle compatible images pour utiliser l'écran."
+      "frame_rejected": "Le fournisseur d'IA a refusé la capture ; cette manche n'a utilisé que le texte. Choisissez un modèle compatible images pour utiliser l'écran.",
+      "timeout": "La réponse de l'IA a expiré. Choisissez un autre modèle ou réessayez plus tard."
     },
     "lastError": "Dernière erreur (détails dans le journal d'activité)",
     "visionUnavailableSwitch": "Choisissez un modèle compatible images (ex. {{model}}) pour envoyer l'écran",
     "statFramesHint": "Captures prises",
-    "statDropped": "Refusées"
+    "statDropped": "Refusées",
+    "modelSlowWarning": "Ce modèle répond lentement ; chaque manche prend plus de temps"
   }
 }

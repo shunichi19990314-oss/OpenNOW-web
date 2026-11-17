@@ -875,11 +875,13 @@
       "bad_reply": "No se pudo interpretar la respuesta de la IA. Se reintentará en la próxima ronda.",
       "unknown_action": "La IA pidió una acción no compatible, así que no se envió nada.",
       "input_not_ready": "El canal de entrada aún no está conectado. Esperando.",
-      "frame_rejected": "El proveedor de IA rechazó la captura, así que esta ronda usó solo texto. Elige un modelo con imágenes para usar la pantalla."
+      "frame_rejected": "El proveedor de IA rechazó la captura, así que esta ronda usó solo texto. Elige un modelo con imágenes para usar la pantalla.",
+      "timeout": "La respuesta de la IA agotó el tiempo. Elige otro modelo o inténtalo más tarde."
     },
     "lastError": "Último error (detalles en el registro de actividad)",
     "visionUnavailableSwitch": "Elige un modelo con imágenes (p. ej. {{model}}) para enviar la pantalla",
     "statFramesHint": "Capturas tomadas",
-    "statDropped": "Rechazadas"
+    "statDropped": "Rechazadas",
+    "modelSlowWarning": "Este modelo responde despacio; cada ronda tarda más"
   }
 }

@@ -330,6 +330,61 @@ describe("provider-refused frames", () => {
   });
 });
 
+describe("slow-provider handling", () => {
+  it("tags a gateway timeout so the panel can blame the clock, not the model", async () => {
+    const entries: Array<{ level: string; message: string; code?: string }> = [];
+    const error = new Error(
+      "AI プロバイダの応答が 60 秒以内に返りませんでした(モデル: moonshotai/kimi-k3.1-pro)。",
+    ) as Error & { httpStatus?: number; errorCode?: string };
+    error.httpStatus = 504;
+    error.errorCode = "upstream_timeout";
+
+    await runAiPlayerRound({
+      observation: OBSERVATION,
+      sink: { send: () => true },
+      now: () => 0,
+      sleep: async () => {},
+      onLog: (entry) => entries.push(entry),
+      post: async () => { throw error; },
+    });
+
+    const warning = entries.find((entry) => entry.code === "timeout");
+    expect(warning?.level).toBe("warn");
+    // The proxy's own sentence is kept: it carries the wait and the model.
+    expect(warning?.message).toContain("60 秒");
+    expect(warning?.message).toContain("moonshotai/kimi-k3.1-pro");
+  });
+
+  it("keeps the server's timeout sentence instead of a generic one", () => {
+    const server = "AI プロバイダの応答が 42 秒以内に返りませんでした(モデル: x/y)。";
+    expect(describeDecisionFailure(504, server)).toBe(server);
+    expect(describeDecisionFailure(504, "")).toContain("時間切れ");
+  });
+
+  it("backs off further on each consecutive failure instead of hammering", async () => {
+    const controller = new AbortController();
+    const sleeps: number[] = [];
+    await runAiPlayerLoop({
+      sink: { send: () => true },
+      buildObservation: () => OBSERVATION,
+      options: {
+        signal: controller.signal,
+        post: async () => { throw Object.assign(new Error("boom"), { httpStatus: 504 }); },
+        now: () => 0,
+        intervalMs: 1_500,
+        sleep: async (ms) => {
+          sleeps.push(ms);
+          if (sleeps.length >= 3) controller.abort();
+        },
+      },
+    });
+    // 5 s, then 10 s, then 20 s — each wait strictly longer than the last.
+    expect(sleeps[0]).toBeGreaterThanOrEqual(5_000);
+    expect(sleeps[1]).toBeGreaterThan(sleeps[0]);
+    expect(sleeps[2]).toBeGreaterThan(sleeps[1]);
+  });
+});
+
 describe("decision failure messages", () => {
   it("guides the visitor to re-authenticate on 401/403", () => {
     for (const status of [401, 403]) {

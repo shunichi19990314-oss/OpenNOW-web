@@ -5,6 +5,7 @@ import {
   AiPlayerError,
   buildChatCompletionRequest,
   describeUpstreamError,
+  resolveRequestTimeoutMs,
   buildRequestForMode,
   modelSupportsVision,
   requestAiPlayerChat,
@@ -303,6 +304,65 @@ describe("AI player proxy round trip", () => {
       "user-1",
       { fetchImpl: fetchImpl as unknown as typeof fetch, config: CONFIG },
     )).rejects.toBeInstanceOf(AiPlayerError);
+    expect(fetchImpl).toHaveBeenCalledTimes(1);
+  });
+
+  it("waits long enough for a thinking model, and says how long it waited", async () => {
+    // kimi-k3.1-pro's measured p90 to first token is ~40 s; the old 20 s cap
+    // aborted calls that would have answered.
+    expect(resolveRequestTimeoutMs({})).toBe(60_000);
+    expect(resolveRequestTimeoutMs({ AI_PLAYER_TIMEOUT_MS: "90000" })).toBe(90_000);
+    // A misconfigured value must not disable the deadline entirely.
+    expect(resolveRequestTimeoutMs({ AI_PLAYER_TIMEOUT_MS: "0" })).toBe(5_000);
+    expect(resolveRequestTimeoutMs({ AI_PLAYER_TIMEOUT_MS: "600000" })).toBe(180_000);
+
+    // Simulate the abort path: the fetch rejects the way undici does.
+    const fetchImpl = vi.fn(async () => {
+      const abort = new Error("This operation was aborted");
+      abort.name = "AbortError";
+      throw abort;
+    });
+    let failure: AiPlayerError | null = null;
+    try {
+      await requestAiPlayerDecision(
+        { observation: OBSERVATION, model: "moonshotai/kimi-k3.1-pro" },
+        "user-timeout",
+        {
+          fetchImpl: fetchImpl as unknown as typeof fetch,
+          config: CONFIG,
+          timeoutMs: 1_500,
+        },
+      );
+    } catch (error) {
+      failure = error as AiPlayerError;
+    }
+    expect(failure?.code).toBe("upstream_timeout");
+    expect(failure?.statusCode).toBe(504);
+    // The message names the model and the wait, in Japanese.
+    expect(failure?.message).toContain("moonshotai/kimi-k3.1-pro");
+    expect(failure?.message).toMatch(/秒以内に返りませんでした/);
+    expect(failure?.message).toMatch(/[\u3040-\u30ff]/);
+    expect(failure?.toBody().model).toBe("moonshotai/kimi-k3.1-pro");
+    expect(typeof failure?.toBody().waitedMs).toBe("number");
+  });
+
+  it("does not retry a timeout as text-only, which would double the wait", async () => {
+    const fetchImpl = vi.fn(async () => {
+      const abort = new Error("aborted");
+      abort.name = "AbortError";
+      throw abort;
+    });
+    await expect(requestAiPlayerDecision(
+      {
+        observation: {
+          ...OBSERVATION,
+          frame: { dataUrl: "data:image/jpeg;base64,AAAA", width: 960, height: 540 },
+        } as unknown as typeof OBSERVATION,
+        model: "qwen/qwen3.8-27b",
+      },
+      "user-timeout-2",
+      { fetchImpl: fetchImpl as unknown as typeof fetch, config: CONFIG, timeoutMs: 1_000 },
+    )).rejects.toMatchObject({ code: "upstream_timeout" });
     expect(fetchImpl).toHaveBeenCalledTimes(1);
   });
 
