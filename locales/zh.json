@@ -811,6 +811,7 @@
       "unknown_action": "AI 请求了不支持的操作，未发送输入。",
       "input_not_ready": "输入通道尚未连接，正在等待。"
     },
-    "reload": "刷新页面"
+    "reload": "刷新页面",
+    "presses": "已发送 {{count}} 次输入"
   }
 }

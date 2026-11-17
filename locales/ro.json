@@ -811,6 +811,7 @@
       "unknown_action": "AI a cerut o acțiune neacceptată, așa că nu s-a trimis nimic.",
       "input_not_ready": "Canalul de intrare nu este încă conectat. Se așteaptă."
     },
-    "reload": "Reîncarcă pagina"
+    "reload": "Reîncarcă pagina",
+    "presses": "{{count}} intrări trimise"
   }
 }

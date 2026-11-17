@@ -811,6 +811,7 @@
       "unknown_action": "AI zażądało nieobsługiwanej akcji, więc nic nie wysłano.",
       "input_not_ready": "Kanał wejściowy nie jest jeszcze połączony. Czekam."
     },
-    "reload": "Odśwież stronę"
+    "reload": "Odśwież stronę",
+    "presses": "Wysłano wejść: {{count}}"
   }
 }
