@@ -874,7 +874,12 @@
       "network": "Yapay zekâ sunucusuna ulaşılamadı. Bağlantınızı kontrol edin.",
       "bad_reply": "Yapay zekâ yanıtı okunamadı. Sonraki turda yeniden denenecek.",
       "unknown_action": "Yapay zekâ desteklenmeyen bir işlem istedi, girdi gönderilmedi.",
-      "input_not_ready": "Giriş kanalı henüz bağlı değil. Bekleniyor."
-    }
+      "input_not_ready": "Giriş kanalı henüz bağlı değil. Bekleniyor.",
+      "frame_rejected": "AI sağlayıcısı ekran görüntüsünü reddetti; bu tur yalnızca metinle karar verdi. Ekranı kullanmak için görsel destekli bir model seçin."
+    },
+    "lastError": "Son hata (ayrıntılar etkinlik günlüğünde)",
+    "visionUnavailableSwitch": "Ekranı göndermek için görsel destekli bir model seçin (örn. {{model}})",
+    "statFramesHint": "Alınan görüntüler",
+    "statDropped": "Reddedilen"
   }
 }
