@@ -398,6 +398,15 @@ export function App(): JSX.Element {
       rightStickX: number;
       rightStickY: number;
     }): boolean => clientRef.current?.sendAiGamepadState(state) ?? false,
+    /**
+     * Resend the last frame roughly every 100 ms.
+     *
+     * The remote side drops a virtual controller when packets stop arriving,
+     * which is why a physical pad gets a keepalive from the poll loop. Without
+     * this the AI could press once and then be ignored for the rest of the
+     * session — the reported "51 rounds, nothing happened".
+     */
+    keepAlive: (): void => clientRef.current?.maintainAiGamepad(),
   }), []);
 
   // Touch gamepad: only offer the overlay when the device actually has a

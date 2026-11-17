@@ -25,6 +25,14 @@ import { parseAiPlayerDecision } from "../../shared/aiPlayerPrompt";
 export interface AiPlayerInputSink {
   /** Returns false when the stream is not accepting input yet. */
   send(state: InjectedGamepadState): boolean;
+  /**
+   * Optional heartbeat.
+   *
+   * A game treats a silent controller as disconnected and ignores later input,
+   * so the sink can be asked to repeat the last frame while the loop waits
+   * between rounds.
+   */
+  keepAlive?: () => void;
 }
 
 export interface AiPlayerLogEntry {
@@ -39,6 +47,8 @@ export interface AiPlayerLogEntry {
    * Japanese error text.
    */
   code?: AiPlayerLogCode;
+  /** Set when this entry records a button press that reached the wire. */
+  sentPress?: boolean;
 }
 
 export type AiPlayerLogCode =
@@ -68,6 +78,14 @@ export interface AiPlayerLoopState {
   lastError: string | null;
   /** Code for `lastError`, so the UI can localise it. */
   lastErrorCode?: AiPlayerLogCode;
+  /**
+   * Button presses delivered to the stream so far.
+   *
+   * Shown in the panel because "the AI is thinking but nothing happens" was
+   * indistinguishable from "the AI is sending input the game ignores" without
+   * it — the session that prompted this ran 51 rounds and reported nothing.
+   */
+  sentPresses: number;
 }
 
 const DEFAULT_INTERVAL_MS = 1_500;
@@ -136,8 +154,13 @@ export async function runAiPlayerRound(params: {
 }): Promise<AiPlayerDecision | null> {
   const sleep = params.sleep ?? defaultSleep;
   const now = params.now ?? Date.now;
-  const log = (level: AiPlayerLogEntry["level"], message: string, code?: AiPlayerLogCode): void => {
-    params.onLog?.({ atMs: now(), level, message, code });
+  const log = (
+    level: AiPlayerLogEntry["level"],
+    message: string,
+    code?: AiPlayerLogCode,
+    sentPress?: boolean,
+  ): void => {
+    params.onLog?.({ atMs: now(), level, message, code, ...(sentPress ? { sentPress } : {}) });
   };
 
   // Uses the shared `api()` helper rather than a bare fetch: it sends the
@@ -183,6 +206,11 @@ export async function runAiPlayerRound(params: {
   for (const step of sequence) {
     if (params.signal?.aborted) return decision;
     const delivered = params.sink.send(step.state);
+    if (delivered && step.state.buttons !== 0) {
+      // One diagnostic line per distinct button press, so a session where the
+      // game ignores input can be told apart from one where nothing was sent.
+      log("info", `入力送信: buttons=0x${step.state.buttons.toString(16)} (${step.durationMs}ms)`, undefined, true);
+    }
     if (!delivered) {
       // The stream is not accepting input yet (handshake still in flight).
       // Releasing matters here too: leaving a button held would fire the action
@@ -198,6 +226,37 @@ export async function runAiPlayerRound(params: {
 
   log("info", decision.plan ? `計画: ${decision.plan}` : `操作: ${decision.actions.map((a) => a.action).join(", ")}`);
   return decision;
+}
+
+/** Interval for the controller heartbeat, matching the physical pad path. */
+const KEEPALIVE_MS = 100;
+
+/**
+ * Waits `totalMs`, ticking the sink's keepalive on the way.
+ *
+ * Splitting the wait keeps the loop responsive to abort without burning a timer
+ * per millisecond, and keeps the injected pad advertised between rounds.
+ */
+async function waitWithKeepAlive(
+  totalMs: number,
+  sink: AiPlayerInputSink,
+  sleep: (ms: number) => Promise<void>,
+): Promise<void> {
+  if (!sink.keepAlive) {
+    await sleep(totalMs);
+    return;
+  }
+  let remaining = totalMs;
+  while (remaining > 0) {
+    const slice = Math.min(KEEPALIVE_MS, remaining);
+    await sleep(slice);
+    remaining -= slice;
+    try {
+      sink.keepAlive();
+    } catch {
+      // A heartbeat must never break the loop.
+    }
+  }
 }
 
 function buildNeutral(): InjectedGamepadState {
@@ -219,7 +278,14 @@ export async function runAiPlayerLoop(params: {
   const options = params.options ?? {};
   const sleep = options.sleep ?? defaultSleep;
   const intervalMs = options.intervalMs ?? DEFAULT_INTERVAL_MS;
-  const state: AiPlayerLoopState = { running: true, rounds: 0, lastPlan: "", lastError: null, lastErrorCode: undefined };
+  const state: AiPlayerLoopState = {
+    running: true,
+    rounds: 0,
+    lastPlan: "",
+    lastError: null,
+    lastErrorCode: undefined,
+    sentPresses: 0,
+  };
   params.onState?.({ ...state });
 
   while (!options.signal?.aborted) {
@@ -227,6 +293,7 @@ export async function runAiPlayerLoop(params: {
     // Typed through a holder object: TypeScript narrows a `let` assigned only
     // inside a callback down to `null` and then rejects `.message`.
     const failure: { entry: AiPlayerLogEntry | null } = { entry: null };
+    const before = state.sentPresses;
     const decision = await runAiPlayerRound({
       observation,
       sink: params.sink,
@@ -236,6 +303,7 @@ export async function runAiPlayerLoop(params: {
       now: options.now,
       onLog: (entry) => {
         if (entry.level !== "info") failure.entry = entry;
+        if (entry.sentPress) state.sentPresses += 1;
         options.onRound?.(null, entry);
       },
     });
@@ -251,7 +319,11 @@ export async function runAiPlayerLoop(params: {
       state.lastErrorCode = failure.entry?.code;
     }
     params.onState?.({ ...state });
-    await sleep(decision ? intervalMs : ERROR_BACKOFF_MS);
+    await waitWithKeepAlive(
+      decision ? intervalMs : ERROR_BACKOFF_MS,
+      params.sink,
+      sleep,
+    );
   }
 
   state.running = false;

@@ -811,6 +811,7 @@
       "unknown_action": "Die KI forderte eine nicht unterstützte Aktion an; es wurde nichts gesendet.",
       "input_not_ready": "Der Eingabekanal ist noch nicht verbunden. Warten."
     },
-    "reload": "Seite neu laden"
+    "reload": "Seite neu laden",
+    "presses": "{{count}} Eingaben gesendet"
   }
 }

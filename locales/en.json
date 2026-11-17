@@ -1277,6 +1277,7 @@
       "unknown_action": "The AI asked for an unsupported action, so nothing was sent.",
       "input_not_ready": "The input channel is not connected yet. Waiting for it."
     },
-    "reload": "Reload page"
+    "reload": "Reload page",
+    "presses": "{{count}} inputs sent"
   }
 }
