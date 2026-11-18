@@ -250,7 +250,8 @@
       "startingStream": "Stream starten...",
       "connectingToServer": "Verbinding maken met server...",
       "settingUpStream": "Streamen instellen...",
-      "loading": "Laden..."
+      "loading": "Laden...",
+      "queueWaitingHint": "Je positie in de wachtrij wordt gecontroleerd..."
     },
     "ads": {
       "resumeToStayInQueue": "Hervat advertenties om in de wachtrij te blijven.",
@@ -716,7 +717,10 @@
     "duplicateSessionEndFailed": "De bestaande sessie kon niet worden beëindigd.",
     "duplicateSessionEnded": "De bestaande sessie is beëindigd. Start het spel opnieuw.",
     "duplicateSessionRunning": "Sessies die nu op dit account draaien: {{games}}",
-    "duplicateSessionEndedPartial": "{{stopped}} sessie(s) beëindigd; {{failed}} konden niet worden beëindigd. Start opnieuw."
+    "duplicateSessionEndedPartial": "{{stopped}} sessie(s) beëindigd; {{failed}} konden niet worden beëindigd. Start opnieuw.",
+    "queueStalledTitle": "De wachtrij komt niet vooruit",
+    "queueStalledDescription": "Je positie in de wachtrij is {{minutes}} minuut/minuten helemaal niet veranderd. Mogelijk reageert de sessie aan de kant van GeForce NOW niet meer. Opnieuw starten plaatst je op een nieuwe rig.",
+    "queueStalledAction": "Opnieuw starten"
   },
   "commandPalette": {
     "title": "Opdrachtenpalet",

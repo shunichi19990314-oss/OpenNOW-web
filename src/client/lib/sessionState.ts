@@ -30,6 +30,26 @@ export function isSessionInQueue(session: SessionInfo): boolean {
  * and `MaxSessionNumberLimitExceeded`. Those produced the generic "起動に失敗
  * しました" screen with no explanation at all.
  */
+/**
+ * Raised when the provider keeps a session in the queue but reports no change
+ * at all for several minutes.
+ *
+ * The launch loop used to wait forever: any status that kept saying "queued"
+ * was treated as progress, so a dropped or wedged session produced the same
+ * screen as a busy queue — a spinner and a rising timer, indefinitely. This
+ * carries the facts needed to explain the situation instead of leaving the
+ * visitor staring at a screen that has silently stopped working.
+ */
+export class QueueStallError extends Error {
+  readonly waitedMinutes: number;
+
+  constructor(waitedMinutes: number) {
+    super(`Queue made no progress for ${waitedMinutes} minute(s)`);
+    this.name = "QueueStallError";
+    this.waitedMinutes = waitedMinutes;
+  }
+}
+
 const SESSION_CONFLICT_CODES = new Set<number>([
   3237093643, // SessionLimitExceeded
   3237093682, // SessionLimitPerDeviceReached
@@ -220,6 +240,20 @@ export function toLaunchErrorState(
 
   if (isInsufficientPlayabilityError(error) || combined.includes("INSUFFICIENT_PLAYABILITY")) {
     return toInsufficientPlayabilityState(t, stage, code, game);
+  }
+
+  // A stalled queue is not an upstream error with a code; it is a timeout we
+  // detected ourselves. It gets its own explanation and a retry action, because
+  // the right response is to try again from a fresh session — usually a
+  // different rig on the next attempt.
+  if (error instanceof QueueStallError) {
+    return {
+      stage,
+      title: t("errors.queueStalledTitle"),
+      description: t("errors.queueStalledDescription", { minutes: error.waitedMinutes }),
+      action: "retry-launch",
+      actionLabel: t("errors.queueStalledAction"),
+    };
   }
 
   if (
