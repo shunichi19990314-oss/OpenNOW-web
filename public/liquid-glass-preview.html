@@ -1,0 +1,333 @@
+<!doctype html>
+<html lang="ja">
+  <head>
+    <meta charset="utf-8" />
+    <title>Liquid Glass — component reference</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,300..800&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      /* Stand-in tokens so the reference renders without the app bundle. The
+         real values live in src/client/styles.css and design/liquidGlass.css;
+         these are copied verbatim so what you see here is what ships. */
+      :root {
+        --lg-tint-rgb: 12, 15, 20;
+        --lg-tint-a: 0.34;
+        color-scheme: dark;
+      }
+    </style>
+    <link rel="stylesheet" href="/src/client/design/liquidGlass.css" />
+    <style>
+      html,
+      body {
+        margin: 0;
+        height: 100%;
+        background: #05070a;
+        color: #f4f6f9;
+        font-family: "Inter", -apple-system, BlinkMacSystemFont, sans-serif;
+      }
+      .page {
+        position: relative;
+        height: 100%;
+        overflow: auto;
+        padding: 84px 28px 40px;
+      }
+      .lg-shell {
+        max-width: 1180px;
+        margin: 0 auto;
+        display: grid;
+        gap: 18px;
+      }
+      .demo-head {
+        display: flex;
+        align-items: baseline;
+        gap: 12px;
+        margin: 6px 0;
+      }
+      .demo-head h2 {
+        font-size: 0.95rem;
+        letter-spacing: -0.02em;
+        margin: 0;
+      }
+      .demo-head span {
+        font-size: 0.72rem;
+        color: rgba(232, 238, 246, 0.52);
+      }
+      .row {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        flex-wrap: wrap;
+      }
+      .grid-cards {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
+        gap: 14px;
+      }
+      .art {
+        height: 112px;
+        border-radius: 17px 17px 0 0;
+        background:
+          radial-gradient(120% 120% at 20% 10%, #4a7bff 0%, transparent 60%),
+          radial-gradient(100% 120% at 90% 80%, #b45cff 0%, transparent 55%),
+          linear-gradient(160deg, #12203a, #080b12);
+        position: relative;
+      }
+      .art--2 {
+        background:
+          radial-gradient(120% 120% at 80% 10%, #ff7a4a 0%, transparent 58%),
+          radial-gradient(100% 120% at 10% 90%, #ffd166 0%, transparent 50%),
+          linear-gradient(160deg, #2a1410, #0a0806);
+      }
+      .art--3 {
+        background:
+          radial-gradient(120% 120% at 30% 20%, #3ee08a 0%, transparent 60%),
+          linear-gradient(160deg, #0c2418, #060a08);
+      }
+      .card-meta {
+        padding: 11px 13px 13px;
+      }
+      .card-meta strong {
+        display: block;
+        font-size: 0.83rem;
+        font-weight: 650;
+        letter-spacing: -0.01em;
+      }
+      .card-meta span {
+        font-size: 0.7rem;
+        color: rgba(232, 238, 246, 0.52);
+      }
+      .hero-demo {
+        height: 250px;
+        border-radius: var(--lg-r-xl);
+        position: relative;
+        overflow: hidden;
+        border: 1px solid rgba(255, 255, 255, 0.14);
+        box-shadow:
+          inset 0 1px 0 rgba(255, 255, 255, 0.25),
+          0 40px 100px -30px rgba(0, 0, 0, 0.9);
+      }
+      .hero-demo__art {
+        position: absolute;
+        inset: 0;
+        background:
+          radial-gradient(90% 120% at 78% 28%, #7a4dff 0%, transparent 55%),
+          radial-gradient(70% 90% at 20% 80%, #1fe0a0 0%, transparent 55%),
+          linear-gradient(150deg, #0b1020, #05070c);
+      }
+      .hero-demo__scrim {
+        position: absolute;
+        inset: 0;
+        background:
+          linear-gradient(90deg, rgba(4, 6, 9, 0.94) 0%, rgba(4, 6, 9, 0.8) 34%, rgba(4, 6, 9, 0.2) 64%, rgba(4, 6, 9, 0.44) 100%),
+          linear-gradient(0deg, rgba(4, 6, 9, 0.92) 0%, transparent 48%);
+      }
+      .hero-demo__body {
+        position: relative;
+        padding: 30px;
+        height: 100%;
+        display: flex;
+        flex-direction: column;
+        justify-content: flex-end;
+        gap: 10px;
+      }
+      .hero-demo__kicker {
+        font-size: 0.66rem;
+        font-weight: 700;
+        letter-spacing: 0.14em;
+        text-transform: uppercase;
+        color: var(--lg-accent);
+      }
+      .hero-demo__title {
+        font-size: 2rem;
+        font-weight: 750;
+        letter-spacing: -0.03em;
+        line-height: 1.05;
+        margin: 0;
+      }
+      .chip {
+        font-size: 0.7rem;
+        padding: 4px 10px;
+        border-radius: 999px;
+        border: 1px solid rgba(255, 255, 255, 0.16);
+        background: rgba(255, 255, 255, 0.08);
+        color: rgba(240, 246, 255, 0.8);
+      }
+      .checks {
+        display: grid;
+        gap: 6px;
+        font-size: 0.74rem;
+        color: rgba(232, 238, 246, 0.68);
+      }
+      .checks b {
+        color: #f4f6f9;
+      }
+      .search {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        height: 36px;
+        padding: 0 14px;
+        border-radius: 999px;
+        border: 1px solid rgba(255, 255, 255, 0.12);
+        background: linear-gradient(170deg, rgba(0, 0, 0, 0.28), rgba(0, 0, 0, 0.12));
+        box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.5);
+        color: rgba(232, 238, 246, 0.52);
+        font-size: 0.78rem;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="lg-canvas" aria-hidden="true">
+      <div class="lg-canvas__caustic lg-canvas__caustic--a"></div>
+      <div class="lg-canvas__caustic lg-canvas__caustic--b"></div>
+      <div class="lg-canvas__caustic lg-canvas__caustic--c"></div>
+      <div class="lg-canvas__grain"></div>
+    </div>
+
+    <div class="lg-scroll-edge" aria-hidden="true"></div>
+
+    <nav class="navbar lg-nav lg-glass lg-glass--refract lg-r-pill" aria-label="メインナビゲーション">
+      <div class="navbar-left lg-nav__brand">
+        <span class="navbar-logo-text lg-nav__wordmark">OpenNOW</span>
+      </div>
+      <div class="navbar-nav lg-nav__items" role="tablist">
+        <button class="navbar-link lg-nav__item" aria-current="page" role="tab" aria-selected="true">
+          <span>ストア</span>
+        </button>
+        <button class="navbar-link lg-nav__item" role="tab" aria-selected="false"><span>ライブラリ</span></button>
+        <button class="navbar-link lg-nav__item" role="tab" aria-selected="false"><span>設定</span></button>
+      </div>
+      <div class="navbar-right lg-nav__group">
+        <button class="navbar-subscription-chip lg-pill navbar-subscription-chip--good"><span>12h 30m</span></button>
+        <button class="navbar-subscription-chip lg-pill navbar-subscription-chip--warn"><span>18 GB</span></button>
+        <button class="navbar-user navbar-user--clickable lg-pill">
+          <span class="navbar-username" style="font-size: 0.78rem">shunichi</span>
+        </button>
+      </div>
+    </nav>
+
+    <main class="page">
+      <div class="lg-shell">
+        <div class="demo-head">
+          <h2>Liquid Glass</h2>
+          <span>material, dock, controls, cards, hero</span>
+        </div>
+
+        <!-- Hero -->
+        <section class="hero-demo">
+          <div class="hero-demo__art"></div>
+          <div class="hero-demo__scrim"></div>
+          <div class="hero-demo__body">
+            <span class="hero-demo__kicker">続きからプレイ</span>
+            <h1 class="hero-demo__title">崩壊：スターレイル</h1>
+            <div class="row">
+              <span class="chip">RPG</span>
+              <span class="chip">Steam</span>
+              <span class="chip">2 日前</span>
+            </div>
+            <div class="row" style="margin-top: 6px">
+              <button class="lg-pill lg-pill--primary">▶ 再開</button>
+              <button class="lg-pill">詳細</button>
+            </div>
+          </div>
+        </section>
+
+        <!-- Controls -->
+        <div class="demo-head"><h2>コントロール</h2><span>pill / primary / danger / quiet / segment</span></div>
+        <div class="row">
+          <button class="lg-pill lg-pill--primary">起動</button>
+          <button class="lg-pill">フィルター</button>
+          <button class="lg-pill lg-pill--danger">セッション終了</button>
+          <button class="lg-pill lg-pill--quiet">キャンセル</button>
+          <div class="lg-segment">
+            <button class="lg-segment__item is-active" aria-selected="true">ポスター</button>
+            <button class="lg-segment__item" aria-selected="false">リスト</button>
+          </div>
+          <div class="search" style="min-width: 220px">ゲームを検索…</div>
+        </div>
+
+        <!-- Cards -->
+        <div class="demo-head"><h2>カード</h2><span>lg-card — アートワークを封入したガラス</span></div>
+        <div class="grid-cards">
+          <article class="lg-card">
+            <div class="art"></div>
+            <div class="lg-card__rim"></div>
+            <div class="card-meta"><strong>崩壊：スターレイル</strong><span>HoYoverse</span></div>
+          </article>
+          <article class="lg-card">
+            <div class="art art--2"></div>
+            <div class="lg-card__rim"></div>
+            <div class="card-meta"><strong>サイバーパンク 2077</strong><span>CD PROJEKT RED</span></div>
+          </article>
+          <article class="lg-card">
+            <div class="art art--3"></div>
+            <div class="lg-card__rim"></div>
+            <div class="card-meta"><strong>ELDEN RING</strong><span>FromSoftware</span></div>
+          </article>
+        </div>
+
+        <!-- Panel / modal -->
+        <div class="demo-head"><h2>パネル</h2><span>lg-panel (thin/thick) と モーダル</span></div>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px">
+          <div class="lg-glass lg-thin lg-r-lg lg-panel">
+            <strong style="font-size: 0.86rem">薄いガラス</strong>
+            <p style="font-size: 0.76rem; color: rgba(232, 238, 246, 0.62); margin: 6px 0 0">
+              ナビゲーションやレールなど、コンテンツと競合してはいけない要素向け。
+            </p>
+          </div>
+          <div class="lg-glass lg-thick lg-r-lg lg-panel">
+            <strong style="font-size: 0.86rem">厚いガラス</strong>
+            <p style="font-size: 0.76rem; color: rgba(232, 238, 246, 0.62); margin: 6px 0 0">
+              本文を載せる面向け。ティントとブラーを強め、可読性を確保する。
+            </p>
+          </div>
+        </div>
+
+        <div class="demo-head"><h2>コントラスト検証</h2><span>可読性の下限を数値で確認</span></div>
+        <div class="lg-glass lg-r-lg lg-panel checks" id="contrast"></div>
+      </div>
+    </main>
+
+    <script>
+      // Contrast is the one thing a screenshot cannot tell you, so compute it.
+      // Text on glass sits on the minted tint (rgba(12,15,20,0.34) over the
+      // canvas); these are the composed colours measured in the real app.
+      function lum(hex) {
+        const v = hex.match(/\w\w/g).map((h) => {
+          const c = parseInt(h, 16) / 255;
+          return c <= 0.03928 ? c / 12.92 : Math.pow((c + 0.055) / 1.055, 2.4);
+        });
+        return 0.2126 * v[0] + 0.7152 * v[1] + 0.0722 * v[2];
+      }
+      function ratio(a, b) {
+        const [l1, l2] = [lum(a), lum(b)].sort((x, y) => y - x);
+        return (l1 + 0.05) / (l2 + 0.05);
+      }
+      const surfaces = {
+        "canvas (base)": "05070a",
+        "glass over canvas (composed)": "0d1014",
+        "dock over canvas": "0f1216"
+      };
+      const inks = {
+        "primary ink #f4f6f9": "f4f6f9",
+        "soft ink (72%)": "b4bac4",
+        "muted ink (52%)": "8a9099",
+        "accent #58d98a": "58d98a"
+      };
+      const rows = [];
+      for (const [sname, sv] of Object.entries(surfaces)) {
+        for (const [iname, iv] of Object.entries(inks)) {
+          const r = ratio(sv, iv);
+          const ok = r >= 4.5 ? "AA" : r >= 3 ? "AA large" : "FAIL";
+          rows.push(
+            `<div>${sname} × ${iname}: <b>${r.toFixed(2)}:1</b> — ${ok}</div>`
+          );
+        }
+      }
+      document.getElementById("contrast").innerHTML = rows.join("");
+    </script>
+  </body>
+</html>

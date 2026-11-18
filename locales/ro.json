@@ -138,7 +138,8 @@
   "navigation": {
     "home": "Magazin",
     "library": "Biblioteca",
-    "settings": "Setări"
+    "settings": "Setări",
+    "primary": "Navigare principală"
   },
   "home": {
     "searchPlaceholder": "Caută jocuri...",

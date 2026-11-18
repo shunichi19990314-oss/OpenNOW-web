@@ -138,7 +138,8 @@
   "navigation": {
     "home": "Магазин",
     "library": "Библиотека",
-    "settings": "Настройки"
+    "settings": "Настройки",
+    "primary": "Основная навигация"
   },
   "home": {
     "searchPlaceholder": "Поиск игр...",

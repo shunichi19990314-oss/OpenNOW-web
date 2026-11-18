@@ -142,7 +142,7 @@ import { QueueServerSelectModal } from "./components/QueueServerSelectModal";
 import { CommandPalette } from "./components/CommandPalette";
 import { ReleaseHighlightsModal } from "./components/ReleaseHighlightsModal";
 import { overlayMotion, pageTransition, standardEase } from "./components/MotionProvider";
-import { LazyShaderAtmosphere } from "./components/LazyShaderAtmosphere";
+import { LiquidGlassCanvas, LiquidGlassFilters } from "./components/liquid/LiquidGlass";
 
 const DEFAULT_STREAM_PREFERENCES = getDefaultStreamPreferences();
 
@@ -4233,6 +4233,11 @@ export function App(): JSX.Element {
         : toLoadingStatus(streamStatus);
     return (
       <>
+        {/* The launch/queue scene keeps the canvas — it is the backdrop for the
+            glass loading panel — but muted, since the game's own art is the
+            subject and the scenery must not compete with it. */}
+        <LiquidGlassCanvas muted />
+        <LiquidGlassFilters />
         {hasActiveStreamView && (
           <StreamView
             videoRef={videoRef}
@@ -4377,10 +4382,20 @@ export function App(): JSX.Element {
   }
 
   // Main app layout
+  // Drives the shell's catalog styling (atmosphere tone, poster scale context)
+  // and is unrelated to the retired WebGL layer.
   const showCatalogAtmosphere = currentPage === "home" || currentPage === "library";
   return (
     <div className={`app-container${effectiveControllerMode ? " app-container--controller" : ""}${showCatalogAtmosphere ? " app-container--atmosphere" : ""}`} style={getAppStyle(settings.posterSizeScale)}>
-      {showCatalogAtmosphere && <LazyShaderAtmosphere variant="controller" className="catalog-atmosphere" />}
+      <LiquidGlassFilters />
+      <LiquidGlassCanvas muted={streamStatus !== "idle"} />
+      {/* Content scrolls *under* the floating bar; this fades the page out as it
+          passes beneath the glass so nothing is sliced mid-line. */}
+      {streamStatus === "idle" && <div className="lg-scroll-edge" aria-hidden="true" />}
+      {/* The catalog's WebGL atmosphere is retired: the liquid-glass canvas is
+          now the single background system, and two animated layers would fight
+          (the older one is opaque, so it would hide the caustics the glass
+          refracts). The queue/connecting scenes still use the shader. */}
       <AnimatePresence>
         {startupRefreshNotice && (
           <m.div
