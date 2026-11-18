@@ -218,7 +218,13 @@ export function StreamLoading({
             />
           )}
           <div className="sload-status-text">
-            <p className="sload-message" role="status" aria-live="polite">{statusMessage}</p>
+            <p
+              className={`sload-message${status === "queue" && queuePosition && !hasError ? " sload-message--position" : ""}`}
+              role="status"
+              aria-live="polite"
+            >
+              {statusMessage}
+            </p>
             {!hasError && <p className="sload-detail">{getPhaseDetail(t, status)}</p>}
             {hasError && error && (
               <>
@@ -250,6 +256,18 @@ export function StreamLoading({
           </div>
         )}
 
+        {/*
+          While the card has no queue position to show, explain the empty cell
+          instead of leaving "計算中" with only a spinner and a timer next to it.
+          A screen that cannot express progress is indistinguishable from one
+          that has hung — which is how the long waits were reported. Kept below
+          the facts so it annotates that cell rather than competing with the
+          primary status line above it.
+        */}
+        {status === "queue" && !queuePosition && !hasError && (
+          <p className="sload-queue-note">{t("streamLoading.status.queueWaitingHint")}</p>
+        )}
+
         {!hasError && activeAd && cachedAdMediaUrl && (
           <div className={`sload-ad${isSessionQueuePaused(adState) ? " sload-ad--paused" : ""}`}>
             <div className="sload-ad-copy">
@@ -269,16 +287,6 @@ export function StreamLoading({
 
         {status === "queue" && estimatedWait && !hasError && (
           <p className="sload-queue"><span className="sload-wait">~{estimatedWait}</span></p>
-        )}
-
-        {/*
-          While the queue has no position to report, say what is actually
-          happening instead of leaving the card with only a spinner and a timer.
-          A screen that cannot show progress is indistinguishable from one that
-          has hung, which is exactly how the long queue waits were reported.
-        */}
-        {status === "queue" && !queuePosition && !hasError && (
-          <p className="sload-queue-note">{t("streamLoading.status.queueWaitingHint")}</p>
         )}
 
         <div className="sload-actions">

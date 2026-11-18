@@ -2892,20 +2892,50 @@ export function App(): JSX.Element {
       setStreamingGame(matchedGameContext.game);
       setStreamingStore(launchVariant?.store ?? null);
 
+      // --- Pre-flight: three independent lookups, one round trip ----------
+      // These used to run strictly one after another (subscription -> storage
+      // region -> active sessions), so a launch from Japan paid three serial
+      // US round trips before the session was even created. The screenshots
+      // that prompted this showed "計算中" for ~30 s before a queue position of
+      // #15 appeared, which is the queue screen admitting it had nothing to say.
+      //
+      // They do not depend on each other's results: the storage-region lookup
+      // uses the *selected* region list, and the active-session check uses the
+      // selection or the provider default. So they overlap.
       const launchSubscription = await resolveSubscriptionInfoForLaunch();
       const streamSettings = buildCurrentStreamSettings(launchSubscription);
-      const i2pStorageRegionBaseUrl = await resolveInstallToPlayStreamingBaseUrl(
-        matchedGameContext.game,
-        launchSubscription,
-        token || undefined,
-      );
+      const [i2pStorageRegionBaseUrl, prefetchedActiveSessions] = await Promise.all([
+        resolveInstallToPlayStreamingBaseUrl(
+          matchedGameContext.game,
+          launchSubscription,
+          token || undefined,
+        ),
+        token
+          ? window.openNow
+              .getActiveSessions(token, effectiveStreamingBaseUrl)
+              .catch((error) => {
+                // Best effort: a failure here must not block the launch, it
+                // only means we skip the "you already have a session" hint.
+                console.warn("[Launch] Active-session pre-check failed:", error);
+                return null;
+              })
+          : Promise.resolve(null),
+      ]);
       const launchStreamingBaseUrl = i2pStorageRegionBaseUrl ?? options?.streamingBaseUrl ?? effectiveStreamingBaseUrl;
       let existingSessionStrategy: ExistingSessionStrategy | undefined;
 
       // Check for active sessions first
-      if (token) {
+      if (token && prefetchedActiveSessions !== null) {
+        // `getActiveSessions` was queried against the effective base, but the
+        // launch may have been re-routed to a storage region. Sessions are
+        // per-account, so the prefetched list is still the right answer; only
+        // re-query when the routing actually changed the host, because a
+        // wrong-base answer could describe a different pool.
+        const routedElsewhere = launchStreamingBaseUrl !== effectiveStreamingBaseUrl;
         try {
-          const activeSessions = await window.openNow.getActiveSessions(token, launchStreamingBaseUrl);
+          const activeSessions = routedElsewhere
+            ? await window.openNow.getActiveSessions(token, launchStreamingBaseUrl)
+            : prefetchedActiveSessions;
           if (activeSessions.length > 0) {
             // Only claim sessions that are already paused/ready (status 2 or 3).
             // Status=1 sessions are still in queue/setup; sending a RESUME claim
@@ -3037,34 +3067,45 @@ export function App(): JSX.Element {
         attempt++;
         checkQueueStall(latestSession);
 
-        const pollIntervalMs = shouldUseQueueAdPolling(latestSession, subscriptionInfo, authSession)
-          ? SESSION_AD_POLL_INTERVAL_MS
-          : SESSION_READY_POLL_INTERVAL_MS;
+        // Poll first, wait afterwards.
+        //
+        // The loop used to sleep *before* polling, so the queue position always
+        // arrived one full interval late — 5 s on the ad-supported cadence. In
+        // the reported screenshots `createSession` returned no position at all,
+        // so the card sat on "計算中" for the whole first interval and only
+        // filled in "#15" after that delayed poll (30 s elapsed showing
+        // nothing). Polling first also means an already-ready session does not
+        // wait an interval before it starts connecting.
+        if (attempt > 1) {
+          const pollIntervalMs = shouldUseQueueAdPolling(latestSession, subscriptionInfo, authSession)
+            ? SESSION_AD_POLL_INTERVAL_MS
+            : SESSION_READY_POLL_INTERVAL_MS;
 
-        // Sleep in small ticks during ad-polling intervals so the loop can react
-        // quickly when reportSessionAd clears isAdsRequired (which only updates
-        // sessionRef, not the local latestSession variable).  Standard 2 s intervals
-        // are kept as a single sleep since they're already short.
-        if (pollIntervalMs > SESSION_READY_POLL_INTERVAL_MS) {
-          const tickMs = 500;
-          let elapsed = 0;
-          while (elapsed < pollIntervalMs) {
-            await sleep(tickMs);
-            elapsed += tickMs;
-            if (launchAbortRef.current) return;
-            // Sync ad-action responses from sessionRef into the local tracking variable
-            // so shouldUseQueueAdPolling sees the updated adState immediately.
-            const refSession = sessionRef.current;
-            if (refSession && refSession.sessionId === latestSession.sessionId) {
-              latestSession = mergePolledSessionState(latestSession, refSession);
+          // Sleep in small ticks during ad-polling intervals so the loop can react
+          // quickly when reportSessionAd clears isAdsRequired (which only updates
+          // sessionRef, not the local latestSession variable).  Standard 2 s intervals
+          // are kept as a single sleep since they're already short.
+          if (pollIntervalMs > SESSION_READY_POLL_INTERVAL_MS) {
+            const tickMs = 500;
+            let elapsed = 0;
+            while (elapsed < pollIntervalMs) {
+              await sleep(tickMs);
+              elapsed += tickMs;
+              if (launchAbortRef.current) return;
+              // Sync ad-action responses from sessionRef into the local tracking variable
+              // so shouldUseQueueAdPolling sees the updated adState immediately.
+              const refSession = sessionRef.current;
+              if (refSession && refSession.sessionId === latestSession.sessionId) {
+                latestSession = mergePolledSessionState(latestSession, refSession);
+              }
+              // Break out of the sleep early when ads are no longer required.
+              if (!shouldUseQueueAdPolling(latestSession, subscriptionInfo, authSession)) {
+                break;
+              }
             }
-            // Break out of the sleep early when ads are no longer required.
-            if (!shouldUseQueueAdPolling(latestSession, subscriptionInfo, authSession)) {
-              break;
-            }
+          } else {
+            await sleep(pollIntervalMs);
           }
-        } else {
-          await sleep(pollIntervalMs);
         }
 
         if (shouldUseQueueAdPolling(latestSession, subscriptionInfo, authSession) && queueAdPlaybackRef.current) {
