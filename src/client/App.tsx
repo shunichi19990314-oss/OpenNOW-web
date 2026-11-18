@@ -117,10 +117,12 @@ import {
   isSessionInQueue,
   isSessionReadyForConnect,
   isStreamVideoReady,
+  QueueStallError,
   streamStatusToLoadingStage,
   toLaunchErrorState,
   toLoadingStatus,
 } from "./lib/sessionState";
+import { createQueueStallState, observeQueueProgress } from "./lib/queueStall";
 import { defaultDiagnostics, mergeNativeStreamStats } from "./lib/streamDiagnostics";
 import { applyAccentColor, applyTheme, applyTranslucentUI } from "./lib/uiCustomization";
 import { useTranslation } from "./i18n";
@@ -3008,8 +3010,32 @@ export function App(): JSX.Element {
       let isInQueueMode = isSessionInQueue(newSession);
       let attempt = 0;
 
+      // --- Queue stall detection -------------------------------------------
+      // The queue screen has no natural upper bound: a session the provider
+      // silently dropped reports exactly what a busy queue reports. Rather than
+      // wait forever, we measure *change* — a real queue moves — and give up
+      // with an explanation once nothing has moved for QUEUE_STALL_FAIL_MS.
+      // The state machine lives in lib/queueStall.ts so it is testable.
+      let stallState = createQueueStallState(newSession, Date.now());
+      const queuePollStartedAt = Date.now();
+
+      const checkQueueStall = (session: SessionInfo): void => {
+        const result = observeQueueProgress(stallState, session, Date.now(), isSessionInQueue(session));
+        stallState = result.state;
+        if (result.status === "warning") {
+          console.warn(
+            `[Launch] Queue has reported no change for ${Math.round(result.stalledMs / 1000)}s ` +
+            `(attempt ${attempt}, position=${session.queuePosition ?? "n/a"}, ` +
+            `seatSetupStep=${session.seatSetupStep ?? "n/a"})`,
+          );
+        } else if (result.status === "stalled") {
+          throw new QueueStallError(Math.round((Date.now() - queuePollStartedAt) / 60000));
+        }
+      };
+
       while (true) {
         attempt++;
+        checkQueueStall(latestSession);
 
         const pollIntervalMs = shouldUseQueueAdPolling(latestSession, subscriptionInfo, authSession)
           ? SESSION_AD_POLL_INTERVAL_MS
@@ -3748,6 +3774,24 @@ export function App(): JSX.Element {
       void handleEndActiveSessionsForLaunch();
       return;
     }
+    if (launchError?.action === "retry-launch") {
+      // A stalled queue is cleared by starting over: the next createSession is
+      // placed on a new rig, so the wedged seat is not reused. Tear the failed
+      // attempt down first, then relaunch, so two launch loops never overlap.
+      const game = streamingGame;
+      const variantId = streamingStore && game
+        ? getSelectedVariant(game, variantByGameId[game.id] ?? defaultVariantId(game))?.id ?? undefined
+        : undefined;
+      void (async () => {
+        await handleDismissLaunchError();
+        if (game) {
+          // `bypassGuards` because the tear-down above has just reset the
+          // launch state; without it the guard would reject the retry.
+          await handlePlayGame(game, { bypassGuards: true, variantId });
+        }
+      })();
+      return;
+    }
     if (launchError?.action !== "persistent-storage-settings") return;
     void (async () => {
       try {
@@ -3760,7 +3804,7 @@ export function App(): JSX.Element {
         setCurrentPage("settings");
       }
     })();
-  }, [currentPage, handleDismissLaunchError, handleEndActiveSessionsForLaunch, launchError?.action]);
+  }, [currentPage, defaultVariantId, handleDismissLaunchError, handleEndActiveSessionsForLaunch, handlePlayGame, launchError?.action, streamingGame, streamingStore, variantByGameId]);
 
   const releasePointerLockIfNeeded = useCallback(async () => {
     if (document.pointerLockElement) {

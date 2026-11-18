@@ -250,7 +250,8 @@
       "startingStream": "Stream wird gestartet...",
       "connectingToServer": "Verbindung zum Server wird hergestellt...",
       "settingUpStream": "Stream wird eingerichtet...",
-      "loading": "Laden..."
+      "loading": "Laden...",
+      "queueWaitingHint": "Position in der Warteschlange wird ermittelt..."
     },
     "ads": {
       "resumeToStayInQueue": "Setzen Sie die Anzeigen fort, um in der Warteschlange zu bleiben.",
@@ -716,7 +717,10 @@
     "duplicateSessionEndFailed": "Die bestehende Sitzung konnte nicht beendet werden.",
     "duplicateSessionEnded": "Die bestehende Sitzung wurde beendet. Starte das Spiel erneut.",
     "duplicateSessionRunning": "Derzeit laufende Sitzungen dieses Kontos: {{games}}",
-    "duplicateSessionEndedPartial": "{{stopped}} Sitzung(en) beendet; {{failed}} konnten nicht beendet werden. Bitte erneut starten."
+    "duplicateSessionEndedPartial": "{{stopped}} Sitzung(en) beendet; {{failed}} konnten nicht beendet werden. Bitte erneut starten.",
+    "queueStalledTitle": "Die Warteschlange kommt nicht voran",
+    "queueStalledDescription": "Deine Position in der Warteschlange hat sich {{minutes}} Minute(n) lang überhaupt nicht verändert. Möglicherweise antwortet die Sitzung auf der Seite von GeForce NOW nicht mehr. Ein erneuter Start weist dich einem neuen Rig zu.",
+    "queueStalledAction": "Erneut starten"
   },
   "commandPalette": {
     "title": "Befehlspalette",
