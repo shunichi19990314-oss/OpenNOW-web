@@ -250,7 +250,8 @@
       "startingStream": "Uruchamianie streamu...",
       "connectingToServer": "Łączenie z serwerem...",
       "settingUpStream": "Konfigurowanie streamu...",
-      "loading": "Ładowanie..."
+      "loading": "Ładowanie...",
+      "queueWaitingHint": "Sprawdzanie pozycji w kolejce..."
     },
     "ads": {
       "resumeToStayInQueue": "Wznów reklamy, aby pozostać w kolejce.",
@@ -716,7 +717,10 @@
     "duplicateSessionEndFailed": "Nie udało się zakończyć istniejącej sesji.",
     "duplicateSessionEnded": "Zakończono istniejącą sesję. Uruchom grę ponownie.",
     "duplicateSessionRunning": "Sesje działające teraz na tym koncie: {{games}}",
-    "duplicateSessionEndedPartial": "Zakończono {{stopped}} sesji; {{failed}} nie udało się zakończyć. Uruchom ponownie."
+    "duplicateSessionEndedPartial": "Zakończono {{stopped}} sesji; {{failed}} nie udało się zakończyć. Uruchom ponownie.",
+    "queueStalledTitle": "Kolejka nie posuwa się naprzód",
+    "queueStalledDescription": "Twoja pozycja w kolejce nie zmieniła się w ogóle przez {{minutes}} min. Sesja mogła przestać odpowiadać po stronie GeForce NOW. Ponowne uruchomienie przydzieli nowy komputer.",
+    "queueStalledAction": "Uruchom ponownie"
   },
   "commandPalette": {
     "title": "Paleta poleceń",

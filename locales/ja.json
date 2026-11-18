@@ -318,7 +318,8 @@
       "startingStream": "ストリームを開始中...",
       "connectingToServer": "サーバーに接続中...",
       "settingUpStream": "ストリームをセットアップ中...",
-      "loading": "読み込み中..."
+      "loading": "読み込み中...",
+      "queueWaitingHint": "順番待ちの状況を確認しています..."
     },
     "ads": {
       "resumeToStayInQueue": "キューに留まるように広告を再開します。",
@@ -1100,7 +1101,10 @@
     "duplicateSessionEndFailed": "既存セッションを終了できませんでした。",
     "duplicateSessionEnded": "既存のセッションを終了しました。もう一度起動してください。",
     "duplicateSessionRunning": "現在このアカウントで動作中のセッション: {{games}}",
-    "duplicateSessionEndedPartial": "{{stopped}} 件のセッションを終了しました({{failed}} 件は終了できませんでした)。もう一度起動してください。"
+    "duplicateSessionEndedPartial": "{{stopped}} 件のセッションを終了しました({{failed}} 件は終了できませんでした)。もう一度起動してください。",
+    "queueStalledTitle": "キューが進みませんでした",
+    "queueStalledDescription": "{{minutes}}分間キューの順番がまったく変化しませんでした。GeForce NOW 側でセッションが応答しなくなっている可能性があります。もう一度開始すると、新しいリグに割り当て直されます。",
+    "queueStalledAction": "もう一度開始"
   },
   "common": {
     "loading": "読み込み中..."
