@@ -138,7 +138,8 @@
   "navigation": {
     "home": "商店",
     "library": "图书馆",
-    "settings": "设置"
+    "settings": "设置",
+    "primary": "主导航"
   },
   "home": {
     "searchPlaceholder": "搜索游戏...",

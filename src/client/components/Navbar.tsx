@@ -295,15 +295,19 @@ export function Navbar({
     : null;
 
   return (
-    <nav className={`navbar${controllerMode ? " navbar--controller" : ""}`}>
-      <div className="navbar-left">
+    <nav
+      className={`navbar lg-nav lg-glass lg-glass--refract lg-r-pill${controllerMode ? " navbar--controller" : ""}`}
+      aria-label={t("navigation.primary")}
+    >
+      <div className="navbar-left lg-nav__brand">
         <div className="navbar-brand">
           <OpenNowLogoMark className="opennow-logo-mark" />
         </div>
-        <span className="navbar-logo-text">OpenNOW</span>
+        <span className="navbar-logo-text lg-nav__wordmark">OpenNOW</span>
       </div>
 
-      <div className="navbar-nav">
+      {/* Navigation, centred, as a row of glass items inside the bar. */}
+      <div className="navbar-nav lg-nav__items" role="tablist">
         {navItems.map((item) => {
           const Icon = item.icon;
           const isActive = controllerMode
@@ -313,8 +317,12 @@ export function Navbar({
           return (
             <button
               key={item.id}
+              type="button"
+              role="tab"
+              aria-selected={isActive}
+              aria-current={isActive ? "page" : undefined}
               onClick={() => onNavigate(item.page)}
-              className={`navbar-link ${isActive ? "active" : ""}`}
+              className={`navbar-link lg-nav__item ${isActive ? "active" : ""}`}
             >
               <Icon size={16} />
               <span>{item.label}</span>
@@ -323,12 +331,12 @@ export function Navbar({
         })}
       </div>
 
-      <div className="navbar-right">
+      <div className="navbar-right lg-nav__group">
         {activeSession && !controllerMode && (
           <div className="navbar-session-actions">
             <button
               type="button"
-              className={`navbar-session-resume${isResumingSession ? " is-loading" : ""}`}
+              className={`navbar-session-resume lg-pill lg-pill--primary${isResumingSession ? " is-loading" : ""}`}
               title={
                 !activeSessionResumable
                   ? t("session.sessionStartingCannotResume")
@@ -352,7 +360,7 @@ export function Navbar({
             </button>
             <button
               type="button"
-              className={`navbar-session-terminate${isTerminatingSession ? " is-loading" : ""}`}
+              className={`navbar-session-terminate lg-pill lg-pill--danger${isTerminatingSession ? " is-loading" : ""}`}
               title={
                 activeSessionResumable && activeSessionTitle
                   ? t("session.terminateActiveCloudSessionTitle", { title: activeSessionTitle })
@@ -373,7 +381,7 @@ export function Navbar({
             {timeLabel && (
               <button
                 type="button"
-                className={`navbar-subscription-chip navbar-subscription-chip--${timeTone}`}
+                className={`navbar-subscription-chip lg-pill navbar-subscription-chip--${timeTone}`}
                 title={t("navbar.showPlaytimeDetails")}
                 onClick={() => setModalType("time")}
               >
@@ -384,7 +392,7 @@ export function Navbar({
             {storageLabel && (
               <button
                 type="button"
-                className={`navbar-subscription-chip navbar-subscription-chip--${storageTone}`}
+                className={`navbar-subscription-chip lg-pill navbar-subscription-chip--${storageTone}`}
                 title={t("navbar.showStorageDetails")}
                 onClick={() => setModalType("storage")}
               >
@@ -399,7 +407,7 @@ export function Navbar({
             <div className="navbar-account-container" ref={accountContainerRef}>
               <button
                 type="button"
-                className="navbar-user navbar-user--clickable"
+                className="navbar-user navbar-user--clickable lg-pill"
                 onClick={() => setAccountDropdownOpen((previous) => !previous)}
                 aria-haspopup="menu"
                 aria-expanded={accountDropdownOpen}
@@ -529,7 +537,7 @@ export function Navbar({
             </div>
           </>
         ) : (
-          <div className="navbar-guest">
+          <div className="navbar-guest lg-pill lg-pill--quiet">
             <User size={14} />
             <span>{t("auth.accounts.guest")}</span>
           </div>

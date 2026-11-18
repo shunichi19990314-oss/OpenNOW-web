@@ -138,7 +138,8 @@
   "navigation": {
     "home": "Magasin",
     "library": "Bibliothèque",
-    "settings": "Paramètres"
+    "settings": "Paramètres",
+    "primary": "Navigation principale"
   },
   "home": {
     "searchPlaceholder": "Rechercher des jeux...",
