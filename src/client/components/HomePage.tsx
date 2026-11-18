@@ -841,7 +841,9 @@ export const HomePage = memo(function HomePage({
           </button>
         </div>
       )}
-      <header className="home-toolbar">
+      {/* The catalog toolbar is the second piece of chrome in the product, so it
+          adopts the same material as the dock: a floating bar of thin glass. */}
+      <header className="home-toolbar lg-glass lg-thin lg-r-pill">
         <div className="home-search">
           <Search className="home-search-icon" size={16} />
           <input

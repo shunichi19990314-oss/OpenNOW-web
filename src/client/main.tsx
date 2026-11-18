@@ -6,6 +6,11 @@ import { App } from "./App";
 import { MotionProvider } from "./components/MotionProvider";
 import { initializeLocale } from "./i18n";
 import "./styles.css";
+// The liquid-glass design system lives in its own stylesheet and is loaded after
+// styles.css on purpose: it overrides the legacy surfaces rather than replacing
+// them, so the parts of the old stylesheet that still do real work (layout,
+// stream view, 3D scene) keep applying.
+import "./design/liquidGlass.css";
 
 installBrowserBridge();
 
