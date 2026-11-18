@@ -8,6 +8,7 @@ import { formatCodeCountdown, prefersLinkOverQr } from "../lib/deviceLoginFlow";
 import { useTranslation } from "../i18n";
 import { OpenNowLogoMark } from "./OpenNowLogoMark";
 import { MotionSpinner } from "./MotionSpinner";
+import { LiquidGlassCanvas, LiquidGlassFilters } from "./liquid/LiquidGlass";
 import { dialogMotion, smoothEase } from "./MotionProvider";
 
 export interface LoginScreenProps {
@@ -177,7 +178,9 @@ export function LoginScreen({
   };
 
   return (
-    <div className="login-screen">
+    <div className="login-screen lg-login">
+      <LiquidGlassCanvas />
+      <LiquidGlassFilters />
       <div className="login-bg">
         <m.div
           className="login-bg-orb login-bg-orb--1"
@@ -207,7 +210,7 @@ export function LoginScreen({
         </div>
 
         {/* Card */}
-        <div className="login-card">
+        <div className="login-card lg-glass lg-glass--refract-strong lg-r-xl">
           <div className="login-card-header">
             <h1>{title}</h1>
             <p>{subtitle}</p>
