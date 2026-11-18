@@ -130,6 +130,15 @@
    the dark canvas. Same physics, inverted tint. */
 [data-theme="light"],
 .lg-light-context {
+  /* A light material inverts the tint but not the physics: the sheet is pale,
+     so the canvas beneath it has to be pale too, and the ink has to be dark.
+     The three values below are the ones that matter, and they must travel
+     together. Under the dark canvas this block used to inherit, a light sheet
+     painted onto near-black came out as a grey smear with dark-on-dark text —
+     which is exactly what the settings dialog looked like. */
+  --lg-canvas-1: #f7f9fc;
+  --lg-canvas-2: #eef2f8;
+  --lg-canvas-3: #e7ecf4;
   --lg-tint-rgb: 250, 252, 255;
   /* Same tint floor as the dark material. These values used to be much lower
      (0.42), which — once the sheet above raised the dark values — would have
@@ -138,13 +147,31 @@
   --lg-tint-a: 0.86;
   --lg-tint-strong-a: 0.92;
   --lg-tint-rail-a: 0.80;
-  --lg-edge-bright: rgba(255, 255, 255, 0.90);
+  /* The highlight that makes glass read as a wet sheet is a *white* gradient on
+     the dark material. On a pale sheet white-on-white is invisible, so the wash
+     becomes a faint shadow instead: the specular role is taken by the rim. */
+  --lg-wash: linear-gradient(
+    155deg,
+    rgba(12, 20, 34, 0.045) 0%,
+    rgba(12, 20, 34, 0.012) 26%,
+    rgba(12, 20, 34, 0) 52%,
+    rgba(12, 20, 34, 0.02) 100%
+  );
+  --lg-edge-bright: rgba(255, 255, 255, 0.95);
+  --lg-caustic-opacity: 0.34;
+  --lg-grain-opacity: 0.015;
   --lg-edge-mid: rgba(255, 255, 255, 0.42);
   --lg-edge-dark: rgba(10, 16, 26, 0.22);
   --lg-shadow-ambient: 0 18px 44px -14px rgba(12, 20, 32, 0.28);
   --lg-shadow-float: 0 30px 80px -22px rgba(12, 20, 32, 0.36);
   --lg-inset-top: inset 0 1px 0 rgba(255, 255, 255, 0.75);
   --lg-inset-bottom: inset 0 -1px 0 rgba(10, 16, 26, 0.10);
+
+  /* `--lg-ink` is the colour of text on `.lg-glass`. Under the light material
+     that text sits on a pale sheet, so it must be dark — inheriting the near
+     white value produced white-on-white for any component that reads `--lg-ink`
+     instead of one of the `--lg-surface-*` tokens. Capturing the token itself
+     (rather than only its consumers) is what makes the material coherent. */
   --lg-ink: #0b1220;
   --lg-ink-soft: rgba(12, 20, 34, 0.72);
   --lg-ink-muted: rgba(12, 20, 34, 0.55);
@@ -1280,6 +1307,13 @@
   backdrop-filter: blur(10px) saturate(120%);
 }
 
+/*
+ * NOTE: the fill here is the *dark* sheet, and it is `!important`, so it beats
+ * every later light-theme rule. That is why the light material gets its own
+ * block immediately below instead of trying to win on specificity: an
+ * `!important` declaration in a universal sheet otherwise pins every dialog in
+ * the product to a near-black panel no matter what theme is selected.
+ */
 .game-details-modal,
 .animated-modal-panel,
 .command-palette-panel,
@@ -3014,4 +3048,302 @@ kbd,
 /* Text over the queue/loading artwork keeps a scrim of its own. */
 .sload-status-text {
   text-shadow: 0 1px 14px rgba(0, 0, 0, 0.8);
+}
+
+/* ==========================================================================
+   32. LIGHT MATERIAL: make the sheet, its canvas and its ink agree
+   ==========================================================================
+
+   Reported twice as "text still blends into the background", with screenshots
+   of the settings dialog. The ink in those screenshots was measured at
+   #101a2c (headings) and #33405a (body) over a backdrop of #0a0f13. Those two
+   colours are this file's *light-theme* ink tokens, to the byte, and the
+   backdrop is the dark canvas — so the tokens were right and the surface was
+   the wrong colour. Three causes, all in this file:
+
+     1. `--lg-canvas-*` was declared only in `:root`, so the light theme drew a
+        pale sheet over a near-black canvas and the result read as grey smoke.
+     2. `.animated-modal-panel` (and the settings dialog on top of it) forced
+        `background-color: rgba(11, 14, 19, .86) !important`. An `!important`
+        declaration in a universal sheet wins over every later light-theme
+        rule, so the settings dialog stayed near-black under a light theme.
+     3. `--lg-surface-*` was correct but every `.settings-modal` descendant
+        inherited the light ink regardless of what was actually painted behind
+        it — the ink and the surface disagreed.
+
+   The rule these blocks enforce: *the light theme must change the surface, the
+   canvas and the ink together, or not at all.* A light theme that inherits a
+   dark surface is unreadable by construction, no matter how good the ink is.
+   ------------------------------------------------------------------------- */
+
+[data-theme="light"] .animated-modal-panel,
+[data-theme="light"] .game-details-modal,
+[data-theme="light"] .command-palette-panel,
+[data-theme="light"] .controller-details-panel,
+[data-theme="light"] .controller-search-panel,
+[data-theme="light"] .navbar-modal,
+[data-theme="light"] .logout-confirm-card,
+[data-theme="light"] .native-streamer-warning-card {
+  border-color: rgba(12, 20, 34, 0.14) !important;
+  background-color: rgba(250, 252, 255, 0.94) !important;
+  background-image: var(--lg-wash);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.85),
+    inset 0 -1px 0 rgba(12, 20, 34, 0.06),
+    0 48px 120px -30px rgba(12, 20, 34, 0.32),
+    0 0 0 1px rgba(12, 20, 34, 0.04) !important;
+  -webkit-backdrop-filter: blur(44px) saturate(150%);
+  backdrop-filter: blur(44px) saturate(150%);
+}
+
+/* The settings dialog is a reading surface first. Under the light material it
+   is essentially opaque white, and its sections are *inset* (cool grey) so the
+   interior still reads as layered. Depth on a light sheet comes from a darker
+   well, not from a brighter card. */
+[data-theme="light"] .settings-modal.animated-modal-panel {
+  border-color: rgba(12, 20, 34, 0.12);
+  background-color: rgba(252, 253, 255, 0.97);
+  background-image: linear-gradient(180deg, rgba(255, 255, 255, 0.9), rgba(246, 249, 253, 0) 24%);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.95),
+    0 48px 130px -34px rgba(12, 20, 34, 0.34);
+}
+
+[data-theme="light"] .settings-modal-header {
+  border-bottom-color: rgba(12, 20, 34, 0.10);
+  background: rgba(12, 20, 34, 0.02);
+}
+
+[data-theme="light"] .settings-section {
+  background: rgba(12, 20, 34, 0.035);
+  border-color: rgba(12, 20, 34, 0.10);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.9);
+}
+
+/* The legacy dark rules in sections 28–31 pin these to near-white "because the
+   panel is dark". Under the light material that is white-on-white, so the ink
+   is restated from the theme tokens rather than from those literals. */
+[data-theme="light"] .settings-section-header h2,
+[data-theme="light"] .settings-modal h2,
+[data-theme="light"] .settings-modal h3,
+[data-theme="light"] .settings-modal strong,
+[data-theme="light"] .settings-modal .settings-label,
+[data-theme="light"] .settings-modal .settings-value,
+[data-theme="light"] .settings-modal .settings-label-title,
+[data-theme="light"] .settings-modal label {
+  color: var(--lg-surface-label-ink);
+}
+
+[data-theme="light"] .settings-modal p,
+[data-theme="light"] .settings-modal li,
+[data-theme="light"] .settings-modal dd,
+[data-theme="light"] .settings-modal dt,
+[data-theme="light"] .settings-modal .settings-hint,
+[data-theme="light"] .settings-modal .settings-section-subtitle,
+[data-theme="light"] .settings-modal .settings-section-context,
+[data-theme="light"] .settings-hint,
+[data-theme="light"] .settings-section-subtitle,
+[data-theme="light"] .settings-section-context {
+  color: var(--lg-surface-body-ink);
+}
+
+[data-theme="light"] .settings-modal .settings-nav-item {
+  color: var(--lg-surface-body-ink);
+}
+
+[data-theme="light"] .settings-modal .settings-nav-item.active {
+  color: var(--lg-surface-label-ink);
+  background: rgba(var(--lg-accent-rgb), 0.16);
+  box-shadow: inset 0 0 0 1px rgba(var(--lg-accent-rgb), 0.34);
+}
+
+[data-theme="light"] .settings-nav-group-label {
+  color: rgba(12, 20, 34, 0.62);
+}
+
+[data-theme="light"] .settings-sidebar {
+  background: rgba(12, 20, 34, 0.045);
+}
+
+/* Row dividers were tuned for a black panel; at 0.055 white they vanish on
+   white. They become a real hairline of the ink colour instead. */
+[data-theme="light"] .settings-row,
+[data-theme="light"] .settings-section-header {
+  border-bottom-color: rgba(12, 20, 34, 0.09);
+}
+
+[data-theme="light"] .settings-modal ::placeholder {
+  color: rgba(12, 20, 34, 0.55);
+}
+
+/* Inputs, dropdowns and the region selector were dark wells with light text.
+   Inverted, they are pale wells with dark text — the control shape is what
+   carries "this is an input", not the darkness. */
+[data-theme="light"] .settings-modal .settings-text-input,
+[data-theme="light"] .settings-modal .settings-dropdown,
+[data-theme="light"] .settings-modal .settings-search-wrap {
+  background: rgba(12, 20, 34, 0.045) !important;
+  border-color: rgba(12, 20, 34, 0.16) !important;
+  color: var(--lg-surface-label-ink);
+}
+
+/* The region pill is the control the screenshot was pointed at: "Oregon (USA)"
+   in white on a pale grey slab. Section 29 pins it to white ink because the
+   dark material needs that; on a light sheet the ink has to invert with the
+   surface, or the label becomes a ghost. */
+[data-theme="light"] .region-selected,
+[data-theme="light"] .region-selector {
+  background: rgba(12, 20, 34, 0.05);
+  border-color: rgba(12, 20, 34, 0.18);
+  color: var(--lg-surface-label-ink);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.9);
+}
+
+[data-theme="light"] .region-selected:hover,
+[data-theme="light"] .region-selector:hover {
+  background: rgba(12, 20, 34, 0.08);
+  border-color: rgba(12, 20, 34, 0.28);
+}
+
+[data-theme="light"] .region-selected-name {
+  color: #101a2c;
+}
+
+[data-theme="light"] .region-selected-icon,
+[data-theme="light"] .region-chevron {
+  color: rgba(12, 20, 34, 0.66);
+}
+
+[data-theme="light"] .region-selected-ping-unavailable,
+[data-theme="light"] .region-selected-best-info {
+  color: rgba(12, 20, 34, 0.70);
+}
+
+/* Latency grades keep their hue and their white label: the pill is the fill, so
+   it stays a dark chip on a pale dialog. Only the neutral pill inverts. */
+[data-theme="light"] .region-selected-ping:not(.good):not(.medium):not(.poor),
+[data-theme="light"] .region-selected-ping-inline:not(.good):not(.medium):not(.poor) {
+  background: rgba(12, 20, 34, 0.08);
+  border-color: rgba(12, 20, 34, 0.18);
+  color: #101a2c;
+}
+
+[data-theme="light"] .connection-test-result {
+  background: rgba(12, 20, 34, 0.04);
+  border-color: rgba(12, 20, 34, 0.10);
+}
+
+/* Codec diagnostics: the result cards and their rows live *inside* this
+   dialog, so a dark card on a light sheet is the same defect as dark ink on a
+   dark panel — the card reads as a black box. These invert with the surface. */
+[data-theme="light"] .codec-result-card {
+  background: rgba(12, 20, 34, 0.035) !important;
+  border-color: rgba(12, 20, 34, 0.10) !important;
+}
+
+/* The region dropdown (`.region-dropdown`) and the generic select popup
+   (`.settings-dropdown-menu`) both opened as dark panels *over* the light
+   dialog — a black slab with dark-on-dark labels, since the item ink inherits
+   the light theme. A popup is part of the surface it opens on. */
+[data-theme="light"] .region-dropdown,
+[data-theme="light"] .settings-dropdown-menu {
+  border-color: rgba(12, 20, 34, 0.14) !important;
+  background-color: rgba(250, 252, 255, 0.97) !important;
+  background-image: none;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.9),
+    0 28px 70px -22px rgba(12, 20, 34, 0.30) !important;
+}
+
+[data-theme="light"] .region-dropdown-item,
+[data-theme="light"] .settings-dropdown-menu button,
+[data-theme="light"] .settings-dropdown-menu li {
+  color: var(--lg-surface-body-ink);
+}
+
+[data-theme="light"] .region-dropdown-item:hover {
+  background: rgba(12, 20, 34, 0.06);
+}
+
+[data-theme="light"] .region-dropdown-item.active {
+  color: var(--lg-surface-label-ink);
+  background: rgba(var(--lg-accent-rgb), 0.16);
+}
+
+[data-theme="light"] .codec-result-name {
+  color: var(--lg-surface-label-ink);
+}
+
+[data-theme="light"] .codec-result-hint,
+[data-theme="light"] .codec-result-direction,
+[data-theme="light"] .codec-result-via {
+  color: var(--lg-surface-body-ink);
+}
+
+[data-theme="light"] .settings-modal .settings-value,
+[data-theme="light"] .settings-row strong,
+[data-theme="light"] .settings-label-title {
+  color: var(--lg-surface-label-ink);
+}
+
+/* The switch track was a 14%-white well. On a white sheet that disappears, so
+   the off-state gets an ink-based track — a switch you cannot see the edges of
+   is the same defect as text you cannot read. The knob stays white in both
+   themes, which is what makes the ON state legible either way. */
+[data-theme="light"] .settings-toggle-track {
+  background: rgba(12, 20, 34, 0.16);
+  box-shadow:
+    inset 0 0 0 1px rgba(12, 20, 34, 0.14),
+    inset 0 1px 3px rgba(12, 20, 34, 0.16);
+}
+
+[data-theme="light"] .settings-toggle input:checked + .settings-toggle-track {
+  background: #34c97a;
+  box-shadow:
+    inset 0 0 0 1px rgba(255, 255, 255, 0.30),
+    0 2px 10px -2px rgba(var(--lg-accent-rgb), 0.45);
+}
+
+[data-theme="light"] .connection-test-name,
+[data-theme="light"] .codec-result-hint {
+  color: var(--lg-surface-body-ink);
+}
+
+[data-theme="light"] .connection-test-value {
+  color: var(--lg-surface-label-ink);
+}
+
+/* Status colours were chosen to glow on black. On white the same hues need to
+   be darker or they lose their 4.5:1 — the hue is kept, the lightness is not. */
+[data-theme="light"] .connection-test-result--pass .connection-test-status { color: #15803d; }
+[data-theme="light"] .connection-test-result--warn .connection-test-status { color: #a16207; }
+[data-theme="light"] .connection-test-result--fail .connection-test-status { color: #b91c1c; }
+[data-theme="light"] .connection-test-result--pending .connection-test-status,
+[data-theme="light"] .connection-test-result--unavailable .connection-test-status { color: #475569; }
+
+/* --- Queue: a stall must not look like progress ------------------------ */
+
+/*
+ * "キューで待機中..." sat on screen for a very long time with nothing else moving.
+ * That was not a wording problem: the queue screen showed a spinner and an
+ * elapsed timer, and *no* queue position, because `queuePosition` is undefined
+ * whenever GFN has not reported one yet. A waiting screen that cannot say how
+ * it is doing reads as a hang even when the poll loop is healthy.
+ *
+ * The poll loop is now allowed to give up and say so (see App.tsx), and the
+ * position line explains the gap instead of leaving it blank. These rules make
+ * the resulting status line the most prominent thing on the card, so the state
+ * of the launch can be read at a glance.
+ */
+.sload-queue-note {
+  margin-top: 2px;
+  color: var(--ink-soft);
+  font-size: 0.82rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.sload-status-text {
+  /* The queue screen sits over key art; the scrim is what keeps the status
+     line readable when the artwork behind it is bright. */
+  text-shadow: 0 1px 14px rgba(0, 0, 0, 0.85), 0 0 34px rgba(0, 0, 0, 0.55);
 }

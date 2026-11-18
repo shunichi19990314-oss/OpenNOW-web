@@ -271,6 +271,16 @@ export function StreamLoading({
           <p className="sload-queue"><span className="sload-wait">~{estimatedWait}</span></p>
         )}
 
+        {/*
+          While the queue has no position to report, say what is actually
+          happening instead of leaving the card with only a spinner and a timer.
+          A screen that cannot show progress is indistinguishable from one that
+          has hung, which is exactly how the long queue waits were reported.
+        */}
+        {status === "queue" && !queuePosition && !hasError && (
+          <p className="sload-queue-note">{t("streamLoading.status.queueWaitingHint")}</p>
+        )}
+
         <div className="sload-actions">
           {hasError && error?.actionLabel && onErrorAction && (
             <button className="sload-cancel sload-cancel--primary" onClick={onErrorAction}>

@@ -250,7 +250,8 @@
       "startingStream": "Démarrage du flux...",
       "connectingToServer": "Connexion au serveur...",
       "settingUpStream": "Configuration du flux...",
-      "loading": "Chargement..."
+      "loading": "Chargement...",
+      "queueWaitingHint": "Vérification de votre position dans la file..."
     },
     "ads": {
       "resumeToStayInQueue": "Reprenez les annonces pour rester dans la file d'attente.",
@@ -716,7 +717,10 @@
     "duplicateSessionEndFailed": "La session existante n'a pas pu être terminée.",
     "duplicateSessionEnded": "La session existante a été terminée. Relancez le jeu.",
     "duplicateSessionRunning": "Sessions en cours sur ce compte : {{games}}",
-    "duplicateSessionEndedPartial": "{{stopped}} session(s) fermée(s) ; {{failed}} n’ont pas pu être fermées. Relancez le jeu."
+    "duplicateSessionEndedPartial": "{{stopped}} session(s) fermée(s) ; {{failed}} n’ont pas pu être fermées. Relancez le jeu.",
+    "queueStalledTitle": "La file d'attente est bloquée",
+    "queueStalledDescription": "Votre position dans la file n'a pas changé du tout pendant {{minutes}} minute(s). La session ne répond peut-être plus du côté de GeForce NOW. Relancer vous placera sur une nouvelle machine.",
+    "queueStalledAction": "Relancer"
   },
   "commandPalette": {
     "title": "Palette de commandes",
