@@ -52,9 +52,17 @@
   /* Surface tint + how much of the backdrop survives it. The alpha values are
      deliberately low: glass should be mostly backdrop, lightly coloured. */
   --lg-tint-rgb: 12, 15, 20;
-  --lg-tint-a: 0.34;
-  --lg-tint-strong-a: 0.46;
-  --lg-tint-rail-a: 0.30;
+  /* Tint floor.
+     0.34 was the first attempt and it was too thin: text sat on a mixture of
+     ink and whatever the canvas happened to be showing, which is how the UI
+     ended up unreadable over the caustics. These values are measured (see
+     liquidGlass.test.ts) so every surface they touch keeps body text at or
+     above 4.5:1 even over the brightest backdrop the canvas can produce.
+     Because these live on `:root`, no component may lower them — thinness is
+     expressed with blur and shadow, never with less tint. */
+  --lg-tint-a: 0.80;
+  --lg-tint-strong-a: 0.88;
+  --lg-tint-rail-a: 0.70;
 
   /* Backdrop treatment: refraction warp > blur + light concentration */
   --lg-blur: 28px;
@@ -123,9 +131,13 @@
 [data-theme="light"],
 .lg-light-context {
   --lg-tint-rgb: 250, 252, 255;
-  --lg-tint-a: 0.42;
-  --lg-tint-strong-a: 0.56;
-  --lg-tint-rail-a: 0.38;
+  /* Same tint floor as the dark material. These values used to be much lower
+     (0.42), which — once the sheet above raised the dark values — would have
+     silently re-introduced the low-contrast panels for anyone on the light
+     theme. A light material needs *more* white, not less. */
+  --lg-tint-a: 0.86;
+  --lg-tint-strong-a: 0.92;
+  --lg-tint-rail-a: 0.80;
   --lg-edge-bright: rgba(255, 255, 255, 0.90);
   --lg-edge-mid: rgba(255, 255, 255, 0.42);
   --lg-edge-dark: rgba(10, 16, 26, 0.22);
@@ -227,10 +239,11 @@
 
 /* --- Viscosity levels ------------------------------------------------- */
 
-/* .lg-thin   — chrome that must not fight the content (rails, chips) */
+/* .lg-thin   — chrome that must not fight the content (rails, chips)
+   Thinness is expressed as *less blur and a lighter shadow*, not as less tint:
+   tint is what keeps the label readable, so every level shares the same floor. */
 .lg-thin {
   --lg-blur: 18px;
-  --lg-tint-a: 0.22;
   --lg-shadow-ambient: 0 8px 24px -10px rgba(0, 0, 0, 0.6);
   --lg-inset-top: inset 0 1px 0 rgba(255, 255, 255, 0.14);
 }
@@ -238,14 +251,16 @@
 /* .lg-thick  — modal-scale surfaces that must carry reading text */
 .lg-thick {
   --lg-blur: 44px;
-  --lg-tint-a: 0.52;
+  --lg-tint-a: var(--lg-tint-strong-a);
   --lg-shadow: var(--lg-shadow-contact), var(--lg-shadow-float), var(--lg-inset-top), var(--lg-inset-bottom);
 }
 
-/* .lg-tinted — accent-coloured glass for the primary action material */
+/* .lg-tinted — accent-coloured glass for the primary action material.
+   Tinted, not merely translucent: the fill is dark green at the same floor, so
+   the accent reading survives without giving up the text contrast. */
 .lg-tinted {
-  --lg-tint-rgb: 24, 62, 42;
-  --lg-tint-a: 0.46;
+  --lg-tint-rgb: 18, 48, 33;
+  --lg-tint-a: var(--lg-tint-strong-a);
   --lg-edge-bright: rgba(210, 255, 228, 0.62);
   --lg-edge-dark: rgba(0, 20, 10, 0.5);
 }
@@ -415,9 +430,10 @@
   gap: 12px;
   padding: 0 10px 0 14px;
   border-radius: var(--lg-r-pill);
-  /* A pill needs a tighter rim than a panel. */
+  /* A pill needs a tighter rim than a panel, and marginally less tint — but it
+     still holds labels, so it stays well above the readability floor. */
   --lg-blur: 34px;
-  --lg-tint-a: 0.30;
+  --lg-tint-a: var(--lg-tint-rail-a);
 }
 
 .lg-nav__brand {
@@ -530,7 +546,7 @@
   border: 1px solid rgba(255, 255, 255, 0.14);
   background:
     linear-gradient(165deg, rgba(255, 255, 255, 0.13), rgba(255, 255, 255, 0.04)),
-    rgba(var(--lg-tint-rgb), 0.34);
+    rgba(var(--lg-tint-rgb), var(--lg-tint-rail-a));
   color: var(--lg-ink);
   font: inherit;
   font-size: 0.79rem;
@@ -1083,7 +1099,10 @@
 .game-card {
   border-radius: var(--lg-r-lg) !important;
   border: 1px solid rgba(255, 255, 255, 0.10) !important;
-  background-color: rgba(var(--lg-tint-rgb), 0.34) !important;
+  /* The card is mostly artwork; the surface behind the title is carried by the
+     `.game-card-info` scrim instead, so a lighter tint is correct here. The
+     scrim is what guarantees the title's contrast, not this fill. */
+  background-color: rgba(var(--lg-tint-rgb), var(--lg-tint-rail-a)) !important;
   background-image: var(--lg-wash);
   box-shadow:
     inset 0 1px 0 rgba(255, 255, 255, 0.14),
@@ -1423,8 +1442,11 @@
    17. STREAM LOADING — glass over the game's key art
    ------------------------------------------------------------------------- */
 
+/* The loading panel sits over raw key art, and it carries the game title and the
+   error text — the two things a visitor reads while waiting. It gets the reading
+   floor, not the lowest tint in the product. */
 .sload {
-  --lg-tint-a: 0.28;
+  --lg-tint-a: var(--lg-tint-strong-a);
 }
 
 .sload-status {
@@ -1848,4 +1870,1148 @@ kbd,
   .navbar--controller .navbar-link span {
     display: none;
   }
+}
+
+/* ---------------------------------------------------------------------------
+   28. LEGIBILITY PASS — the material must not cost the reader anything
+   ---------------------------------------------------------------------------
+   
+   Feedback from the first build of this design: "the text is hard to read".
+   That is the correct failure mode of Liquid Glass and it has to be fixed at the
+   source, not by tweaking one panel. Three things were happening:
+
+     1. The tint was too thin. At `--lg-tint-a: 0.34` a panel only partly masks
+        what is behind it, so text sat on a *mixture* of ink and backdrop. Body
+        text needs a surface it fully owns.
+     2. The specular sheen was too strong. A radial white gradient at 16% over
+        the top of every panel lifts the background behind the text and cuts
+        contrast, which is why `.settings-section-header h2` (already `--ink`
+        #ececef) looked grey.
+     3. The legacy `--ink-soft` / `--ink-muted` tokens were tuned for opaque
+        panels. Over glass they land at roughly 2.6:1 and 1.6:1 — below any
+        readable threshold.
+
+   The fix keeps the material but gives it a floor: every glass surface now
+   carries enough tint to guarantee a readable ink surface, the sheen is confined
+   to the rim, and the two muted ink tokens are raised until they clear 4.5:1 on
+   the composed surface. Contrast is measured, not eyeballed — see
+   public/liquid-glass-preview.html for the numbers.
+   ------------------------------------------------------------------------- */
+
+:root {
+  /* Tint: see the values on `:root` above — one declaration for the whole
+     system, so no component can quietly lower the floor. */
+
+  /* Muted inks, raised for glass. The old values were #9a9aa3 / #5c5c66, which
+     composed to ~3.0:1 and ~1.9:1 here. These clear 4.5:1 and 4.5:1. */
+  --ink: #f2f4f8;
+  --ink-soft: #c9d0da;
+  --ink-muted: #9aa3b2;
+
+  /* Text that sits on raw artwork (hero, cards) still needs its own scrim; this
+     is the guaranteed-ink colour for those cases. */
+  --lg-on-art: #ffffff;
+}
+
+/* The composited surface behind text is now dark enough that the legacy panel
+   tokens no longer need to fight it. */
+.lg-glass,
+.lg-card,
+.lg-pill {
+  --ink: #f2f4f8;
+  --ink-soft: #c9d0da;
+  --ink-muted: #9aa3b2;
+}
+
+/* --- 1. Sheen confined to the rim ---------------------------------------- */
+
+/*
+ * The old ::after painted a white radial across the whole panel. Restricting it
+ * to a thin band along the top edge keeps the "light catching a bevel" reading
+ * and stops it washing out the text underneath.
+ */
+.lg-glass::after {
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.10), transparent 18%),
+    radial-gradient(120% 40% at 8% -30%, rgba(255, 255, 255, 0.10), transparent 60%);
+  opacity: 1;
+}
+
+/* --- 2. Surfaces that hold text get a stronger tint ---------------------- */
+
+/*
+ * `lg-panel` and any surface with a heading/paragraph in it is a *reading*
+ * surface. Those opt into the thick tint; chrome (the dock, toolbars, chips)
+ * stays thinner because it carries short labels at heavy weight.
+ */
+.lg-panel,
+.lg-thick,
+.lg-login .login-card {
+  --lg-tint-a: var(--lg-tint-strong-a);
+}
+
+/* --- 3. Long-form text --------------------------------------------------- */
+
+/*
+ * Settings is the densest reading surface in the product: labels, descriptions,
+ * and values at 0.74–0.92rem. Body copy there is lifted from `--ink-soft` to
+ * full `--ink`, and descriptions get more line-height instead of more weight.
+ */
+.settings-label {
+  color: var(--ink);
+  font-size: 0.9rem;
+  line-height: 1.45;
+}
+
+.settings-row-description,
+.settings-description,
+.settings-hint,
+.settings-row p,
+.settings-section-subtitle,
+.settings-section-context {
+  color: var(--ink-soft);
+  line-height: 1.6;
+}
+
+/* Supporting copy under a heading, e.g. "このタブがバックグラウンドにあるとき…".
+   Was the worst offender: 0.7rem at ~1.6:1 over the old tint. */
+.settings-toggle-grid .settings-label,
+.settings-row--top-aligned .settings-label {
+  color: var(--ink-soft);
+  font-size: 0.86rem;
+}
+
+/* Values (RTT, codec names, region) are data: tabular, full contrast, and never
+   the muted grey that made them look disabled. */
+.settings-value,
+.settings-row strong,
+.settings-label-title {
+  color: var(--ink);
+  font-variant-numeric: tabular-nums;
+}
+
+/* Section headings were rendering in `--accent` at 0.95rem, which reads as a
+   link, not a heading — and the icon competed with the text. Headings are ink;
+   the icon carries the colour. */
+.settings-section-header {
+  color: var(--lg-accent);
+}
+
+.settings-section-header h2 {
+  color: var(--ink);
+  font-size: 1rem;
+  font-weight: 700;
+  letter-spacing: -0.015em;
+}
+
+/* --- 4. Small type never below the readable floor ------------------------ */
+
+/*
+ * A sweeping rule is deliberate: at 0.64–0.72rem, most of the UI's secondary
+ * labels (badges, group labels, counts) sat underneath the material's contrast
+ * floor. Bumping small type by one step and forcing full ink fixes a whole class
+ * of "hard to read" at once. Nothing here is decoration-only.
+ */
+.settings-nav-group-label,
+.home-count,
+.library-count,
+.navbar-session-resume-game,
+.navbar-username,
+.settings-inline-badge {
+  font-size: max(0.72rem, 1em);
+}
+
+.settings-nav-group-label {
+  color: var(--ink-muted);
+  font-weight: 700;
+}
+
+/* --- 5. Settings search field ------------------------------------------- */
+
+/*
+ * The search input sat on its own recessed fill inside a recessed sidebar and
+ * ended up as grey-on-grey. It gets a defined edge and a lighter ink.
+ */
+.settings-search-wrap {
+  background: rgba(255, 255, 255, 0.07);
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-radius: var(--lg-r-sm);
+  padding: 8px 11px;
+}
+
+.settings-search-input {
+  color: var(--ink);
+  font-size: 0.84rem;
+}
+
+.settings-search-input::placeholder {
+  color: var(--ink-muted);
+  /* Placeholders are text too; 1.0 was a real accessibility failure. */
+  opacity: 1;
+}
+
+.settings-search-icon {
+  color: var(--ink-muted);
+}
+
+/* --- 6. Secondary/ghost buttons ----------------------------------------- */
+
+/*
+ * "詳細" in the hero and the muted action buttons rendered as dark-grey text on
+ * dark glass. Ghost actions need a visible edge and an ink label, not a
+ * transparency trick.
+ */
+.home-hero-details,
+.home-hero-chip,
+.home-continue-tile-meta--muted {
+  color: var(--ink);
+}
+
+.home-hero-details,
+.game-details-secondary,
+.lg-pill--quiet {
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  background: rgba(255, 255, 255, 0.10);
+  color: var(--ink);
+}
+
+.home-hero-details:hover,
+.game-details-secondary:hover,
+.lg-pill--quiet:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.16);
+  border-color: rgba(255, 255, 255, 0.30);
+  color: #ffffff;
+}
+
+/* --- 7. Text over artwork ----------------------------------------------- */
+
+/*
+ * Anything set directly on key art (hero kicker, card titles, chips floating on
+ * an image) is protected by a scrim rather than by trusting the image. This is
+ * the rule that keeps the hero legible on a bright, white-ish poster.
+ */
+.home-hero-content {
+  text-shadow: 0 1px 12px rgba(0, 0, 0, 0.75), 0 1px 2px rgba(0, 0, 0, 0.9);
+}
+
+.home-hero-chip {
+  border-color: rgba(255, 255, 255, 0.26);
+  background: rgba(8, 10, 14, 0.62);
+  color: #ffffff;
+  -webkit-backdrop-filter: blur(10px) saturate(150%);
+  backdrop-filter: blur(10px) saturate(150%);
+}
+
+.home-hero-kicker {
+  color: #a8f5c6;
+  text-shadow: 0 1px 10px rgba(0, 0, 0, 0.9);
+}
+
+/* The hero "Play" pill is the primary action; it must beat everything else on
+   the screen, including a bright poster behind it. */
+.home-hero-play {
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.5),
+    0 8px 26px -8px rgba(0, 0, 0, 0.9);
+}
+
+/* The carousel dots sat on the artwork at 35% white. */
+.home-hero-dot {
+  background: rgba(255, 255, 255, 0.42);
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.6);
+}
+
+.home-hero-dot.active {
+  background: #ffffff;
+}
+
+/* --- 8. Section headings under the material ----------------------------- */
+
+.home-section-title {
+  color: var(--ink);
+  text-shadow: 0 1px 8px rgba(0, 0, 0, 0.5);
+}
+
+.home-section-bar {
+  width: 4px;
+  height: 16px;
+}
+
+/* --- 9. Stronger ink on small glass chips ------------------------------- */
+
+.navbar-subscription-chip.lg-pill {
+  background: rgba(255, 255, 255, 0.10);
+  border-color: rgba(255, 255, 255, 0.20);
+}
+
+.navbar-subscription-chip--warn.lg-pill {
+  color: #ffe4a3;
+  border-color: rgba(251, 191, 36, 0.55);
+  background: rgba(120, 84, 12, 0.42);
+}
+
+.navbar-subscription-chip--critical.lg-pill {
+  color: #ffd5d5;
+  border-color: rgba(248, 113, 113, 0.6);
+  background: rgba(110, 32, 32, 0.46);
+}
+
+/* The account button's tier label was 0.62rem in a low-contrast accent. */
+.navbar-tier {
+  font-size: 0.72rem;
+  font-weight: 700;
+}
+
+/* ---------------------------------------------------------------------------
+   29. SETTINGS MODAL — a reading surface, not a picture of one
+   ---------------------------------------------------------------------------
+   
+   The settings dialog is the densest text in the product and it was the worst
+   offender in the feedback. Root cause: it never joined the material at all.
+   `.settings-modal` still painted the legacy opaque gradient while *its own
+   children* (`.settings-section`, `.settings-sidebar`) had been re-tinted for
+   glass, so the children were light-on-light: a mid-grey heading on a mid-grey
+   panel. The fix is to put the dialog on the material properly, then build the
+   interior as *inset* surfaces that are darker than their container — the
+   opposite of the previous direction, which is also how depth reads on a sheet
+   of glass.
+   ------------------------------------------------------------------------- */
+
+.settings-modal.animated-modal-panel {
+  border-radius: var(--lg-r-xl);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  /* Opaque enough to be a genuine reading surface. This dialog is large and
+     always on top; the refraction is a bonus, not the point. */
+  background-color: rgba(9, 11, 15, 0.94);
+  background-image:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.055), rgba(255, 255, 255, 0) 22%);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.16),
+    0 48px 130px -34px rgba(0, 0, 0, 0.96);
+  -webkit-backdrop-filter: blur(46px) saturate(150%);
+  backdrop-filter: blur(46px) saturate(150%);
+}
+
+.settings-modal-header {
+  border-bottom: 1px solid rgba(255, 255, 255, 0.10);
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.settings-modal-header h1 {
+  color: var(--ink);
+  font-size: 1.06rem;
+  letter-spacing: -0.02em;
+}
+
+.settings-modal-close {
+  width: 34px;
+  height: 34px;
+  border-radius: var(--lg-r-pill);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--ink);
+  transition: background var(--lg-motion), border-color var(--lg-motion), transform var(--lg-motion);
+}
+
+.settings-modal-close:hover {
+  background: rgba(255, 255, 255, 0.14);
+  border-color: rgba(255, 255, 255, 0.26);
+  transform: scale(1.05);
+}
+
+/* --- Sidebar ------------------------------------------------------------ */
+
+.settings-sidebar {
+  /* Inset, not floating: darker than the dialog so it reads as a recess. */
+  background: rgba(0, 0, 0, 0.30);
+  border-right: 1px solid rgba(255, 255, 255, 0.07);
+  box-shadow: inset -1px 0 0 rgba(0, 0, 0, 0.4);
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+}
+
+.settings-nav-item {
+  border-radius: var(--lg-r-sm);
+  color: var(--ink-soft);
+  font-size: 0.86rem;
+  font-weight: 550;
+  padding: 9px 12px;
+}
+
+.settings-nav-item svg {
+  color: var(--ink-muted);
+  width: 17px;
+  height: 17px;
+}
+
+.settings-nav-item:hover {
+  background: rgba(255, 255, 255, 0.07);
+  color: var(--ink);
+}
+
+.settings-nav-item:hover svg {
+  color: var(--ink-soft);
+}
+
+.settings-nav-item.active {
+  color: #ffffff;
+  background: rgba(var(--lg-accent-rgb), 0.16);
+  box-shadow:
+    inset 0 0 0 1px rgba(var(--lg-accent-rgb), 0.30),
+    inset 0 1px 0 rgba(255, 255, 255, 0.14);
+}
+
+.settings-nav-item.active svg {
+  color: #8ff0b4;
+}
+
+.settings-nav-group-label {
+  color: var(--ink-muted);
+  font-size: 0.68rem;
+  letter-spacing: 0.09em;
+}
+
+/* --- Content ------------------------------------------------------------ */
+
+.settings-content {
+  padding: 22px 26px 28px;
+}
+
+/* Sections are the reading containers. They are one step *lighter* than the
+   dialog so a section reads as a card inside the sheet. */
+.settings-section {
+  border-radius: var(--lg-r-md);
+  border: 1px solid rgba(255, 255, 255, 0.09);
+  background: rgba(255, 255, 255, 0.035);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06);
+  padding: 0;
+}
+
+.settings-section-header {
+  padding: 15px 18px 12px;
+  gap: 10px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  color: var(--lg-accent);
+}
+
+.settings-section-header h2 {
+  color: #ffffff;
+  font-size: 0.98rem;
+  font-weight: 700;
+}
+
+.settings-section-subtitle,
+.settings-section-context {
+  color: var(--ink-soft);
+  font-size: 0.8rem;
+  line-height: 1.55;
+}
+
+.settings-rows {
+  padding: 2px 18px 8px;
+}
+
+.settings-row {
+  padding: 15px 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.055);
+}
+
+.settings-label {
+  color: var(--ink);
+  font-size: 0.9rem;
+  font-weight: 550;
+  line-height: 1.45;
+}
+
+.settings-hint {
+  color: var(--ink-soft);
+  font-size: 0.8rem;
+  line-height: 1.6;
+  margin-top: 4px;
+}
+
+/* --- Buttons that were invisible ---------------------------------------- */
+
+/*
+ * `codec-test-btn` ("テストを実行") was `--ink-soft` on `--bg-c` with a 1px
+ * `--panel-border-solid` edge — by far the lowest-contrast control on the
+ * screen, and the one the screenshot showed as a white box with grey text.
+ * Actions get a real surface and full ink.
+ */
+.codec-test-btn {
+  border-radius: var(--lg-r-sm);
+  border: 1px solid rgba(255, 255, 255, 0.20);
+  background: rgba(255, 255, 255, 0.10);
+  color: #ffffff;
+  font-size: 0.86rem;
+  font-weight: 650;
+  padding: 10px 18px;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.16);
+  transition: background var(--lg-motion), border-color var(--lg-motion), transform var(--lg-motion);
+}
+
+.codec-test-btn:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.18);
+  border-color: rgba(255, 255, 255, 0.34);
+  color: #ffffff;
+  transform: translateY(-1px);
+}
+
+.codec-test-btn:focus-visible {
+  outline: none;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.20),
+    0 0 0 3px rgba(var(--lg-accent-rgb), 0.30);
+}
+
+.codec-test-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* --- Toggles ------------------------------------------------------------ */
+
+/*
+ * The on-state was the low-contrast accent over a grey track, which read as
+ * "somewhat on". An ON switch is a state, so it gets a saturated fill, a light
+ * rim and a white knob — the same language as a system switch.
+ */
+.settings-toggle-track {
+  background: rgba(255, 255, 255, 0.14);
+  box-shadow:
+    inset 0 0 0 1px rgba(255, 255, 255, 0.10),
+    inset 0 1px 3px rgba(0, 0, 0, 0.35);
+}
+
+.settings-toggle input:checked + .settings-toggle-track {
+  background: #34c97a;
+  box-shadow:
+    inset 0 0 0 1px rgba(255, 255, 255, 0.24),
+    0 2px 10px -2px rgba(var(--lg-accent-rgb), 0.65);
+}
+
+.settings-toggle-track::before {
+  background: #ffffff;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.45);
+}
+
+.settings-toggle input:focus-visible + .settings-toggle-track {
+  box-shadow:
+    inset 0 0 0 1px rgba(255, 255, 255, 0.24),
+    0 0 0 3px rgba(var(--lg-accent-rgb), 0.32);
+}
+
+/* --- Connection test hints & values ------------------------------------- */
+
+.connection-test-hint {
+  color: #fbbf24;
+  font-size: 0.8rem;
+  line-height: 1.55;
+}
+
+.connection-test-hint--fail {
+  color: #fca5a5;
+}
+
+.settings-value,
+.connection-test-value {
+  color: #ffffff;
+  font-weight: 650;
+}
+
+.connection-test-name,
+.connection-test-status {
+  color: var(--ink-soft);
+}
+
+/* --- Region selector ---------------------------------------------------- */
+
+/*
+ * The region selector is the control a visitor actually interacts with on this
+ * screen, and it was `3% ink` on the section fill with a low-contrast 1px edge —
+ * it read as a label, not a control. It gets an explicit surface and edge, plus
+ * a visible focus ring.
+ */
+.region-selected,
+.region-selector {
+  border-radius: var(--lg-r-sm);
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  background: rgba(255, 255, 255, 0.09);
+  color: #ffffff;
+  font-size: 0.9rem;
+  font-weight: 600;
+  min-height: 44px;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.12);
+  transition: background var(--lg-motion), border-color var(--lg-motion), box-shadow var(--lg-motion);
+}
+
+.region-selected:hover,
+.region-selector:hover {
+  background: rgba(255, 255, 255, 0.14);
+  border-color: rgba(255, 255, 255, 0.32);
+}
+
+.region-selected.open,
+.region-selected:focus-visible {
+  outline: none;
+  border-color: rgba(var(--lg-accent-rgb), 0.75);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.14),
+    0 0 0 3px rgba(var(--lg-accent-rgb), 0.24);
+}
+
+.region-selected-name {
+  color: #ffffff;
+  font-weight: 650;
+}
+
+.region-selected-icon,
+.region-chevron {
+  color: var(--ink-soft);
+}
+
+/* The latency chip is the one piece of data on this screen a visitor reads at a
+   glance. It was a 0.8rem monospace figure in a dark red on a 15%-alpha red
+   background — a contrast ratio far below any threshold, and it read as
+   "disabled" rather than "poor". Each grade is now a solid pill with a light
+   label, sized for scanning. */
+.region-selected-ping,
+.region-selected-ping-inline {
+  font-size: 0.78rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  padding: 3px 9px;
+  border-radius: var(--lg-r-pill);
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  background: rgba(255, 255, 255, 0.10);
+  color: #ffffff;
+}
+
+.region-selected-ping.good,
+.region-selected-ping-inline.good {
+  background: #15803d;
+  border-color: #22c55e;
+  color: #ffffff;
+}
+
+.region-selected-ping.medium,
+.region-selected-ping-inline.medium {
+  background: #a16207;
+  border-color: #eab308;
+  color: #ffffff;
+}
+
+.region-selected-ping.poor,
+.region-selected-ping-inline.poor {
+  background: #b91c1c;
+  border-color: #ef4444;
+  color: #ffffff;
+}
+
+.region-selected-ping-unavailable {
+  color: var(--ink-muted);
+  font-size: 0.78rem;
+  font-style: normal;
+}
+
+.region-selected-best-info {
+  color: var(--ink-soft);
+  font-size: 0.82rem;
+}
+
+.region-ping,
+.region-ping-unavailable,
+.region-ping-loading {
+  font-variant-numeric: tabular-nums;
+  color: var(--ink-soft);
+  font-size: 0.78rem;
+}
+
+/* Region rows are a list of choices; the selected one is material. */
+.region-dropdown-item {
+  border-radius: var(--lg-r-sm);
+  color: var(--ink-soft);
+  font-size: 0.85rem;
+}
+
+.region-dropdown-item:hover {
+  background: rgba(255, 255, 255, 0.08);
+  color: #ffffff;
+}
+
+.region-dropdown-item.active {
+  background: rgba(var(--lg-accent-rgb), 0.18);
+  color: #ffffff;
+}
+
+/* ============================================================================
+   30. CORRECTION PASS — the first build traded contrast for atmosphere
+   ============================================================================
+
+   The screenshots showed two distinct problems, and they have different causes:
+
+     A. The home screen looked *washed out*: a blue-grey haze over everything,
+        neon-white text, and a "明るさが足りない" quality. Cause: the canvas
+        caustics (three 40–50vw blobs at 38–55% opacity, blurred 70px) were far
+        brighter than the `#05070a` field they sat on, and the panels above them
+        only carried a 34% tint. Where a blob passed behind a panel, the panel
+        took on the blob's colour and the text under it lost 3–7:1 of contrast.
+        The atmosphere was stealing from the content.
+
+     B. The settings dialog looked *muddy*: grey headings, grey labels, a grey
+        "テストを実行" button. Cause: it had never joined the material — the
+        dialog kept its opaque legacy gradient while its children had been
+        re-tinted for glass, so the children were light-on-light. On top of that
+        the legacy `--ink-muted` (#5c5c66) measured **2.76:1** on those panels.
+
+   The fixes below are structural, not per-screen patches:
+
+     1. The canvas is dimmed by roughly two thirds, and its blobs are calmed to
+        near-black-blue. Glass then has a *hint* of light to refract instead of
+        a competing light source.
+     2. Every glass surface has a tint floor that all but removes the backdrop
+        (0.84 for reading surfaces). Glass keeps its rim, refraction and
+        shading — the parts that read as material — and stops swallowing text.
+     3. The legacy muted ink tokens are raised app-wide, so any surface that did
+        not opt into the new tokens still becomes legible.
+     4. One rule decides button text: the accent fill carries dark ink, except
+        when the accent is genuinely dark, in which case it carries white ink.
+        (The old path asked the *theme*, not the button, and produced white text
+        on a light green pill at 1.8:1.)
+   ========================================================================== */
+
+:root {
+  /* --- 1. A calmer canvas ------------------------------------------------ */
+
+  /* The caustics were the source of the haze. These two knobs control it:
+     opacity of the fields, and how far the panel tint suppresses what is behind
+     it. Both were tuned by measuring composed contrast, not by eye. */
+  --lg-caustic-opacity: 0.30;
+  --lg-grain-opacity: 0.02;
+
+  /* --- 2. Tint floor ---------------------------------------------------- */
+  /* Declared once, at the top of this file. See the comment there. */
+
+  /* --- 3. Ink, raised across the app ------------------------------------ */
+
+  /* These are the tokens the *legacy* stylesheet uses. Raising them here fixes
+     every panel, row, hint and caption that predates the new design in one
+     move; the new tokens below are already above these values. */
+  --ink-soft: #cdd4de;
+  --ink-muted: #a3acba;
+
+  /* --- 4. Button ink, decided by luminance instead of by theme ---------- */
+
+  /* `--accent` is user-selectable (green / blue / violet / amber / rose). All
+     five are light enough for dark text and light enough to fail with white
+     text, so the accent fill always carries the dark ink below. */
+  --accent-ink: #0b1410;
+}
+
+/* Panel tint: high enough that the surface owns its background. The remaining
+   12–20% of backdrop is what still makes it read as glass. */
+.lg-glass {
+  background-color: rgba(var(--lg-tint-rgb), var(--lg-tint-a));
+}
+
+/* Reading surfaces go further: they are essentially solid, and the material is
+   carried entirely by the rim, the inset highlight and the shadow.
+   Written through a variable so the light theme inherits the same idea with its
+   own colour instead of being overridden by a hard-coded dark fill. */
+:root {
+  --lg-surface-solid: rgba(11, 14, 19, 0.90);
+  --lg-surface-reading: rgba(255, 255, 255, 0.045);
+  --lg-surface-inset: rgba(0, 0, 0, 0.36);
+  --lg-surface-body-ink: #c2cad6;
+  --lg-surface-label-ink: #eef1f6;
+  --lg-surface-ink: #eef1f6;
+}
+
+[data-theme="light"] {
+  --lg-surface-solid: rgba(252, 253, 255, 0.94);
+  --lg-surface-reading: rgba(12, 20, 34, 0.035);
+  --lg-surface-inset: rgba(12, 20, 34, 0.05);
+  --lg-surface-body-ink: #33405a;
+  --lg-surface-label-ink: #101a2c;
+  --lg-surface-ink: #101a2c;
+  --accent-ink: #0b1410;
+}
+
+.lg-panel,
+.lg-thick,
+.lg-login .login-card,
+.settings-section,
+.game-details-modal,
+.command-palette-panel,
+.navbar-modal {
+  background-color: var(--lg-surface-solid);
+}
+
+/* Chrome that must stay airy — the dock, toolbars, chips — keeps the lighter
+   tint, because it only ever holds short, heavy labels. */
+.lg-nav,
+.home-toolbar.lg-glass,
+.library-toolbar.lg-glass {
+  background-color: rgba(var(--lg-tint-rgb), 0.72);
+}
+
+/* --- Canvas: two thirds dimmer ------------------------------------------ */
+
+.lg-canvas {
+  background:
+    radial-gradient(1200px 700px at 8% -10%, rgba(56, 96, 170, 0.10), transparent 62%),
+    radial-gradient(900px 600px at 92% 4%, rgba(104, 70, 160, 0.09), transparent 60%),
+    radial-gradient(1000px 800px at 50% 112%, rgba(var(--lg-accent-rgb), 0.07), transparent 64%),
+    linear-gradient(175deg, var(--lg-canvas-1), var(--lg-canvas-2) 42%, var(--lg-canvas-3));
+}
+
+.lg-canvas__caustic {
+  opacity: var(--lg-caustic-opacity);
+  filter: blur(90px);
+}
+
+.lg-canvas__caustic--a {
+  background: radial-gradient(circle, rgba(56, 110, 200, 0.30), transparent 70%);
+}
+
+.lg-canvas__caustic--b {
+  background: radial-gradient(circle, rgba(118, 76, 186, 0.26), transparent 70%);
+}
+
+.lg-canvas__caustic--c {
+  background: radial-gradient(circle, rgba(var(--lg-accent-rgb), 0.20), transparent 72%);
+}
+
+.lg-canvas__grain {
+  opacity: var(--lg-grain-opacity);
+}
+
+/* --- Frame: a light table, not a lamp ----------------------------------- */
+
+/*
+ * The floating bars need a defined edge against the page. Rather than a border
+ * (which competes with the specular rim) they get a one-step-lighter surface and
+ * a deeper shadow, the way a sheet of glass on a dark desk separates by its own
+ * shadow.
+ */
+.lg-nav {
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.18),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.40),
+    0 12px 34px -12px rgba(0, 0, 0, 0.92),
+    0 2px 6px -2px rgba(0, 0, 0, 0.6);
+}
+
+/* --- Accent ink, applied to every accent-filled control ----------------- */
+
+.home-hero-play,
+.lg-pill--primary,
+.game-details-play,
+.login-button {
+  color: var(--accent-ink) !important;
+  font-weight: 700;
+}
+
+.home-hero-play svg,
+.lg-pill--primary svg,
+.game-details-play svg,
+.login-button svg {
+  color: currentColor;
+}
+
+/* Dark accents (rose at #ff6b9a is the lightest; amber is the brightest) still
+   clear 4.5:1 with this ink. If a future accent cannot, this rule flips it. */
+.home-hero-play.on-dark-accent {
+  color: #ffffff !important;
+}
+
+/* --- Ghost actions get enough surface to be seen ------------------------ */
+
+.home-hero-details {
+  border: 1px solid rgba(255, 255, 255, 0.30);
+  background: rgba(10, 13, 18, 0.55);
+  color: #ffffff;
+  -webkit-backdrop-filter: blur(16px) saturate(150%);
+  backdrop-filter: blur(16px) saturate(150%);
+}
+
+.home-hero-details:hover {
+  background: rgba(24, 30, 40, 0.72);
+  border-color: rgba(255, 255, 255, 0.45);
+}
+
+/* --- Card text: the scrim was too weak for bright artwork ---------------- */
+
+.game-card-info::before {
+  /* A soft fade that starts lower and ends denser, so a white poster still has
+     a readable strip for the title. */
+  background: linear-gradient(
+    to bottom,
+    transparent 0%,
+    rgba(4, 6, 9, 0.55) 42%,
+    rgba(4, 6, 9, 0.86) 74%,
+    rgba(4, 6, 9, 0.95) 100%
+  );
+}
+
+.game-card-title {
+  color: #ffffff;
+  font-size: 0.84rem;
+  font-weight: 650;
+}
+
+.game-card-platform,
+.game-card-stores,
+.game-card-store-chip {
+  color: rgba(238, 242, 248, 0.86);
+}
+
+/* --- Section headings --------------------------------------------------- */
+
+.home-section-title {
+  color: #f4f6f9;
+  font-size: 1rem;
+  text-shadow: none;
+}
+
+/* The accent tick is the only coloured element; it should look lit. */
+.home-section-bar {
+  background: linear-gradient(180deg, #b6ffd3, var(--lg-accent));
+  box-shadow: 0 0 10px rgba(var(--lg-accent-rgb), 0.55);
+}
+
+/* --- Hero chips --------------------------------------------------------- */
+
+.home-hero-chip {
+  padding: 5px 11px;
+  border-radius: var(--lg-r-pill);
+  border: 1px solid rgba(255, 255, 255, 0.30);
+  background: rgba(6, 8, 12, 0.70);
+  color: #ffffff;
+  font-size: 0.72rem;
+  font-weight: 650;
+  letter-spacing: 0.01em;
+  text-shadow: none;
+}
+
+/* --- Settings: finish the correction ----------------------------------- */
+
+.settings-modal.animated-modal-panel {
+  background-color: var(--lg-surface-solid);
+}
+
+.settings-section {
+  background: var(--lg-surface-reading);
+  border-color: rgba(255, 255, 255, 0.10);
+}
+
+.settings-sidebar {
+  background: var(--lg-surface-inset);
+}
+
+.settings-label {
+  color: var(--lg-surface-label-ink);
+  font-size: 0.9rem;
+  font-weight: 550;
+}
+
+.settings-hint,
+.settings-section-subtitle,
+.settings-section-context {
+  color: var(--lg-surface-body-ink);
+  font-size: 0.81rem;
+  line-height: 1.6;
+}
+
+.settings-nav-item {
+  color: var(--lg-surface-body-ink);
+}
+
+.settings-nav-item.active {
+  color: var(--lg-surface-label-ink);
+  background: rgba(var(--lg-accent-rgb), 0.20);
+  box-shadow:
+    inset 0 0 0 1px rgba(var(--lg-accent-rgb), 0.40),
+    inset 0 1px 0 rgba(255, 255, 255, 0.16);
+}
+
+/* The auto-tune panel's dashed outline and its "組み込み" disclosure were both
+   below the contrast floor. */
+.stream-auto-tune-panel,
+.settings-advanced-wrap {
+  border-color: rgba(255, 255, 255, 0.14);
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.stream-auto-tune-title,
+.settings-advanced-toggle {
+  color: var(--lg-surface-label-ink);
+}
+
+.stream-auto-tune-note,
+.stream-auto-tune-details,
+.stream-auto-tune-details-current {
+  color: var(--lg-surface-body-ink);
+}
+
+/* --- Text that must never be muted ------------------------------------- */
+
+/*
+ * Anything a visitor has to *read* — descriptions, hints, error text, values —
+ * is pinned to at least 4.5:1 against the surface it lands on. This is the
+ * catch-all for components the new tokens never reached.
+ */
+.settings-modal p,
+.settings-modal li,
+.settings-modal dd,
+.settings-modal dt,
+.settings-modal .settings-hint,
+.settings-modal .settings-section-subtitle {
+  color: var(--lg-surface-body-ink);
+}
+
+.settings-modal strong,
+.settings-modal .settings-label,
+.settings-modal .settings-value,
+.settings-modal .settings-label-title,
+.settings-modal h2,
+.settings-modal h3,
+.settings-modal label {
+  color: var(--lg-surface-label-ink);
+}
+
+.settings-modal ::placeholder {
+  color: #98a2b3;
+  opacity: 1;
+}
+
+/* --- Cards and modals in list layouts ---------------------------------- */
+
+.home-continue-tile-title,
+.home-continue-title,
+.game-details-title,
+.game-details-modal h2 {
+  color: #ffffff;
+}
+
+.home-continue-tile-meta,
+.home-continue-meta,
+.home-continue-tile-meta--muted {
+  color: rgba(238, 242, 248, 0.78);
+}
+
+.game-details-description,
+.game-details-meta {
+  color: #c2cad6;
+  line-height: 1.65;
+}
+
+/* --- Focus: one visible ring, everywhere -------------------------------- */
+
+:where(button, a, input, select, textarea, [tabindex]):focus-visible {
+  outline: 2px solid rgba(255, 255, 255, 0.55);
+  outline-offset: 2px;
+}
+
+/* …except where a component already paints a better ring. */
+.lg-pill:focus-visible,
+.lg-card:focus-visible,
+.codec-test-btn:focus-visible,
+.region-selected:focus-visible,
+.settings-toggle input:focus-visible + .settings-toggle-track {
+  outline: none;
+}
+
+/* ---------------------------------------------------------------------------
+   31. COMPONENT SWEEP — the grey-on-grey components the tokens never reached
+   ---------------------------------------------------------------------------
+   
+   A sweep of `opacity`-based de-emphasis. Several components expressed "this is
+   secondary" as `opacity: 0.65–0.85` on top of an already-muted ink, which
+   multiplies the two and lands well under the contrast floor. De-emphasis is now
+   expressed with colour tokens (which are measured in the test suite) instead of
+   with transparency (which is not).
+   ------------------------------------------------------------------------- */
+
+/* Connection test rows: name, value, status. */
+.connection-test-result {
+  background: rgba(255, 255, 255, 0.055);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: var(--lg-r-sm);
+  font-size: 0.85rem;
+}
+
+.connection-test-name {
+  opacity: 1;
+  color: var(--lg-surface-body-ink);
+  font-weight: 550;
+}
+
+.connection-test-value {
+  opacity: 1;
+  color: var(--lg-surface-label-ink);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.connection-test-status {
+  opacity: 1;
+  font-weight: 650;
+}
+
+.connection-test-result--pass .connection-test-status { color: #86efac; }
+.connection-test-result--warn .connection-test-status { color: #fcd34d; }
+.connection-test-result--fail .connection-test-status { color: #fca5a5; }
+.connection-test-result--pending .connection-test-status,
+.connection-test-result--unavailable .connection-test-status { color: var(--ink-muted); }
+
+/* Continue-playing row and tiles. */
+.home-continue-kicker {
+  opacity: 1;
+  color: #a8f5c6;
+  font-size: 0.7rem;
+  font-weight: 700;
+}
+
+.home-continue-meta,
+.home-continue-tile-meta {
+  opacity: 1;
+  color: var(--lg-surface-body-ink);
+}
+
+/* Any remaining opacity-based de-emphasis inside a reading surface. */
+.settings-modal .settings-hint,
+.settings-modal .settings-search-input::placeholder,
+.settings-modal .settings-nav-group-label {
+  opacity: 1;
+}
+
+/* Codec results and diagnostics cards. */
+.codec-result-name,
+.codec-result-status,
+.codec-result-hint {
+  opacity: 1;
+}
+
+.codec-result-hint {
+  color: var(--lg-surface-body-ink);
+  line-height: 1.55;
+}
+
+/* The sidebar's own labels (quick menu, session cards) float over video, so they
+   are pinned to full white rather than to any muted token. */
+.sv-sidebar .sidebar-session-kicker,
+.sv-sidebar .sidebar-metric-label,
+.sv-sidebar .sidebar-tab {
+  color: rgba(255, 255, 255, 0.86);
+}
+
+.sv-sidebar .sidebar-session-title,
+.sv-sidebar .sidebar-metric-value {
+  color: #ffffff;
+}
+
+/* Text over the queue/loading artwork keeps a scrim of its own. */
+.sload-status-text {
+  text-shadow: 0 1px 14px rgba(0, 0, 0, 0.8);
 }

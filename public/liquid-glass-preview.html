@@ -292,11 +292,13 @@
     </main>
 
     <script>
-      // Contrast is the one thing a screenshot cannot tell you, so compute it.
-      // Text on glass sits on the minted tint (rgba(12,15,20,0.34) over the
-      // canvas); these are the composed colours measured in the real app.
+      // Contrast is the one thing a screenshot cannot tell you, so compute it
+      // from the *shipped* tokens. The surfaces below are the composed results
+      // of the tint floors in design/liquidGlass.css over the worst backdrop the
+      // canvas can present (a dimmed caustic peak), which is the real worst case
+      // for any panel in the app.
       function lum(hex) {
-        const v = hex.match(/\w\w/g).map((h) => {
+        const v = hex.replace("#", "").match(/\w\w/g).map((h) => {
           const c = parseInt(h, 16) / 255;
           return c <= 0.03928 ? c / 12.92 : Math.pow((c + 0.055) / 1.055, 2.4);
         });
@@ -307,25 +309,42 @@
         return (l1 + 0.05) / (l2 + 0.05);
       }
       const surfaces = {
-        "canvas (base)": "05070a",
-        "glass over canvas (composed)": "0d1014",
-        "dock over canvas": "0f1216"
+        "reading surface (settings)": "e1018",
+        "glass panel (0.84 tint)": "11121c",
+        "dock (0.72 tint)": "151522",
+        "card over artwork": "2c2d2e"
       };
       const inks = {
-        "primary ink #f4f6f9": "f4f6f9",
-        "soft ink (72%)": "b4bac4",
-        "muted ink (52%)": "8a9099",
-        "accent #58d98a": "58d98a"
+        "primary ink #f2f4f8": "f2f4f8",
+        "soft ink #cdd4de": "cdd4de",
+        "muted ink #a3acba": "a3acba",
+        "body ink #c2cad6": "c2cad6"
       };
       const rows = [];
       for (const [sname, sv] of Object.entries(surfaces)) {
         for (const [iname, iv] of Object.entries(inks)) {
           const r = ratio(sv, iv);
-          const ok = r >= 4.5 ? "AA" : r >= 3 ? "AA large" : "FAIL";
+          const ok = r >= 4.5 ? "AA" : r >= 3 ? "AA large only" : "FAIL";
+          const tone = r >= 4.5 ? "#7ef0a8" : r >= 3 ? "#fbbf24" : "#f87171";
           rows.push(
-            `<div>${sname} × ${iname}: <b>${r.toFixed(2)}:1</b> — ${ok}</div>`
+            `<div>${sname} × ${iname}: <b style="color:${tone}">${r.toFixed(2)}:1</b> — ${ok}</div>`
           );
         }
+      }
+      const accents = {
+        "green #58d98a": "58d98a", "blue #4f8cff": "4f8cff", "violet #8b6cff": "8b6cff",
+        "amber #f5b942": "f5b942", "rose #ff6b9a": "ff6b9a"
+      };
+      rows.push('<div style="margin-top:10px"><b>アクセント塗りつぶし上のボタン文字 (--accent-ink #0b1410)</b></div>');
+      for (const [name, hex] of Object.entries(accents)) {
+        const r = ratio(hex, "0b1410");
+        const tone = r >= 4.5 ? "#7ef0a8" : "#f87171";
+        rows.push(`<div>${name}: <b style="color:${tone}">${r.toFixed(2)}:1</b></div>`);
+      }
+      rows.push('<div style="margin-top:10px"><b>レイテンシチップ (白文字)</b></div>');
+      for (const [name, hex] of Object.entries({ good: "15803d", medium: "a16207", poor: "b91c1c" })) {
+        const r = ratio(hex, "ffffff");
+        rows.push(`<div>${name} #${hex}: <b style="color:${r >= 4.5 ? "#7ef0a8" : "#f87171"}">${r.toFixed(2)}:1</b></div>`);
       }
       document.getElementById("contrast").innerHTML = rows.join("");
     </script>
