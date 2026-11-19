@@ -161,8 +161,7 @@
   "navigation": {
     "home": "Store",
     "library": "Library",
-    "settings": "Settings",
-    "primary": "Primary navigation"
+    "settings": "Settings"
   },
   "home": {
     "searchPlaceholder": "Search games...",
