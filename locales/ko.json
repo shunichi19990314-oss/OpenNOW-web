@@ -232,8 +232,7 @@
     "labels": {
       "launchError": "실행 오류",
       "nowLoading": "지금 로드 중",
-      "adQueue": "광고 대기열",
-      "upstreamDetail": "GFN 응답: {{detail}}"
+      "adQueue": "광고 대기열"
     },
     "steps": {
       "queue": "대기열",
@@ -307,10 +306,7 @@
       "freeTier30MinutesRemaining": "이 무료 등급 세션이 30분 남았습니다.",
       "freeTier15MinutesRemaining": "이 무료 등급 세션이 15분 남았습니다.",
       "freeTierEndsSoon": "이 무료 등급 세션이 곧 종료됩니다."
-    },
-    "sessionStartingCannotResume": "이 세션은 아직 시작 중이라 이어할 수 없습니다. 종료한 뒤 다시 실행해 주세요.",
-    "terminateBlockingCloudSession": "실행을 막는 세션 종료",
-    "terminateBlockingCloudSessionTitle": "실행을 막는 세션 종료: {{title}}"
+    }
   },
   "stream": {
     "stats": {
@@ -707,15 +703,7 @@
     "sessionResumeFailedDescription": "실행 중인 세션에 대한 연결이 끊어졌고 재개에 실패했습니다.",
     "queueAdPlayTimeout": "광고 재생 시간 초과",
     "queueAdVideoStuck": "광고 영상이 멈췄어요",
-    "queueAdUrlLoad": "URL을 로드하는 중 오류가 발생했습니다.",
-    "duplicateSessionDescriptionGame": "{{game}} 실행을 시도했지만 이 계정에서 다른 클라우드 세션이 아직 실행 중입니다. 아래 버튼으로 기존 세션을 종료한 뒤 다시 실행하세요(GFN 타임아웃을 기다릴 필요 없음).",
-    "duplicateSessionEndAction": "기존 세션 종료",
-    "duplicateSessionEndConfirm": "계정에서 실행 중인 클라우드 세션을 종료할까요? 저장하지 않은 진행 상황이 사라질 수 있습니다.",
-    "duplicateSessionNoneFound": "종료할 수 있는 세션을 찾지 못했습니다. GFN에 세션이 남아 있을 수 있으니 몇 분 후 다시 시도하세요.",
-    "duplicateSessionEndFailed": "기존 세션을 종료하지 못했습니다.",
-    "duplicateSessionEnded": "기존 세션을 종료했습니다. 게임을 다시 실행하세요.",
-    "duplicateSessionRunning": "현재 이 계정에서 실행 중인 세션: {{games}}",
-    "duplicateSessionEndedPartial": "세션 {{stopped}}개를 종료했습니다. {{failed}}개는 종료하지 못했습니다. 다시 실행해 주세요."
+    "queueAdUrlLoad": "URL을 로드하는 중 오류가 발생했습니다."
   },
   "commandPalette": {
     "title": "명령 팔레트",
