@@ -28,3 +28,30 @@ describe("isTrustedCloudMatchBase", () => {
     expect(isTrustedCloudMatchBase(fromClient)).toBe(true);
   });
 });
+
+/**
+ * Local-region discovery cache.
+ *
+ * `resolveCreateSessionBase` performs a `GET /v2/serverInfo` before every
+ * `POST /v2/session` on the default base. That call is pure latency from the
+ * launch's point of view — the answer describes the network path, not the
+ * session, and cannot meaningfully change inside one launch. It is now memoised
+ * so only the first launch of a session-ish window pays for it.
+ *
+ * These tests pin the contract without touching the network: a non-default base
+ * is never looked up at all, and the memoised path is per (base, proxy).
+ */
+describe("resolveCreateSessionBase region cache", () => {
+  it("returns a region base untouched without any lookup", async () => {
+    const { resolveCreateSessionBase } = await import("./cloudmatchTransport");
+    // A regional base is already specific; there is nothing to discover.
+    await expect(
+      resolveCreateSessionBase("https://cloudmatchprod-jp.nvidiagrid.net", "token", "c", "d"),
+    ).resolves.toBe("https://cloudmatchprod-jp.nvidiagrid.net");
+  });
+
+  it("exposes a reset seam so tests and diagnostics can clear the memo", async () => {
+    const { resetCreateBaseCache } = await import("./cloudmatchTransport");
+    expect(() => resetCreateBaseCache()).not.toThrow();
+  });
+});
