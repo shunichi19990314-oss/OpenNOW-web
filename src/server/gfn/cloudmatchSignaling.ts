@@ -79,13 +79,8 @@ export async function normalizeIceServers(response: CloudMatchResponse): Promise
     // Attempt to resolve any hostnames in STUN/TURN URLs to IPs to avoid relying on the
     // renderer's DNS resolution. This makes it possible to try alternate DNS servers
     // when the system resolver fails.
-    //
-    // Resolved in parallel. This ran strictly one URL at a time, and each
-    // unresolved host is an `await` on DNS — so a session with three ICE hosts
-    // paid three DNS lookups end to end *before* the launch could hand the
-    // signalling data back to the browser. Nothing here depends on another
-    // URL's result.
-    const resolvedServers: IceServer[] = await Promise.all(servers.map(async (s) => {
+    const resolvedServers: IceServer[] = [];
+    for (const s of servers) {
       const resolvedUrls: string[] = [];
       for (const u of s.urls) {
           try {
@@ -122,8 +117,8 @@ export async function normalizeIceServers(response: CloudMatchResponse): Promise
           resolvedUrls.push(u);
         }
       }
-      return { urls: resolvedUrls, username: s.username, credential: s.credential };
-    }));
+      resolvedServers.push({ urls: resolvedUrls, username: s.username, credential: s.credential });
+    }
 
     return resolvedServers;
   }
