@@ -375,3 +375,103 @@ describe("theme coherence", () => {
     expect(luminance(hex(light!))).toBeLessThan(luminance(hex(dark!)));
   });
 });
+
+/**
+ * Compositing budget.
+ *
+ * "UIが少し重い" is not a taste complaint — it is a frame-time budget, and the
+ * things that blow it are specific and measurable in the stylesheet. Each test
+ * here corresponds to a cost that was actually present:
+ *
+ *   * an SVG displacement chain fed to `backdrop-filter` (the most expensive
+ *     effect available, re-run on every repaint of a fixed-position element);
+ *   * `will-change: transform` applied broadly, which pins one compositor layer
+ *     per interactive element and keeps it resident;
+ *   * a blurred layer animated with `scale()`, which forces the rasteriser to
+ *     redo the blur instead of reusing the texture;
+ *   * an oversized grain layer (4× the viewport) under `mix-blend-mode`.
+ *
+ * The thresholds are deliberately loose — this is not a micro-benchmark, it is a
+ * guard against reintroducing the expensive version.
+ */
+describe("compositing budget", () => {
+  const clean = css.replace(/\/\*[\s\S]*?\*\//g, "");
+  const parsed = rules(clean);
+
+  /** Declarations that apply unconditionally (not inside an opt-in scope). */
+  function unconditionalBackdropFilters(): Array<{ selector: string; value: string }> {
+    const found: Array<{ selector: string; value: string }> = [];
+    for (const rule of parsed) {
+      // Skip at-rule preludes: `rules()` walks braces, so a `@supports (...)`
+      // containing declarations surfaces as a rule whose prelude is the at-rule
+      // itself. Its body is the *scope*, not a selector that applies.
+      if (rule.prelude.startsWith("@")) continue;
+      // The opt-in scope is the only place displacement is allowed.
+      if (rule.prelude.includes(".lg-refract-on")) continue;
+      // Collect *every* declaration in the block, not just the first: a rule
+      // usually carries the `-webkit-` and the standard property, and taking
+      // only one of them let a regression hide in the other.
+      for (const match of rule.body.matchAll(/(?:^|[;{\s])(?:-webkit-)?backdrop-filter\s*:\s*([^;]+);/g)) {
+        for (const selector of rule.prelude.split(",").map((p) => p.trim())) {
+          found.push({ selector, value: match[1].trim() });
+        }
+      }
+    }
+    return found;
+  }
+
+  it("never feeds an SVG filter to backdrop-filter outside the opt-in scope", () => {
+    // `url(#...)` in a backdrop filter means feTurbulence + feDisplacementMap
+    // over the element's whole backdrop, on every repaint.
+    const offenders = unconditionalBackdropFilters().filter((entry) => /url\(/.test(entry.value));
+    expect(offenders).toEqual([]);
+  });
+
+  it("keeps every unconditional backdrop blur within the cost budget", () => {
+    // 40px+ was common before this pass; past ~32px the difference is invisible
+    // on a surface that is already 80%+ opaque, and the cost is superlinear.
+    const tooLarge = unconditionalBackdropFilters()
+      .flatMap((entry) => [...entry.value.matchAll(/blur\((\d+)px\)/g)].map((m) => ({
+        selector: entry.selector,
+        radius: Number(m[1]),
+      })))
+      .filter((entry) => entry.radius > 32);
+    expect(tooLarge).toEqual([]);
+  });
+
+  it("does not pin a compositor layer for every interactive element", () => {
+    // `will-change` is per-element and permanent; on a grid of cards it is a
+    // layer per card. It is only justified on large, singular surfaces.
+    const hinted = parsed
+      .filter((rule) => /will-change\s*:\s*transform/.test(rule.body))
+      .flatMap((rule) => rule.prelude.split(",").map((p) => p.trim()));
+
+    expect(hinted.length).toBeGreaterThan(0);
+    // Anything hint-able must be a single large surface, never a generic
+    // utility that many elements share.
+    expect(hinted).not.toContain(".lg-interactive");
+  });
+
+  it("animates blurred layers with translation only", () => {
+    // Scaling a blurred layer re-runs the blur; translating does not.
+    const drift = parsed.find((rule) => rule.prelude.includes("lg-drift"));
+    expect(drift, "lg-drift keyframes").toBeTruthy();
+    expect(drift!.body).not.toContain("scale(");
+  });
+
+  it("keeps the grain layer viewport-sized rather than oversized", () => {
+    const grain = parsed.find((rule) => rule.prelude.trim() === ".lg-canvas__grain");
+    expect(grain, "grain rule").toBeTruthy();
+    const body = css.slice(css.indexOf(".lg-canvas__grain"));
+    const block = body.slice(0, body.indexOf("}"));
+    // `inset: -50%` made it 2× the viewport in each axis (4× the pixels).
+    expect(block).not.toMatch(/inset\s*:\s*-/);
+  });
+
+  it("offers a no-blur path for reduced-transparency users", () => {
+    // Also the right fallback for a struggling machine: one rule removes every
+    // backdrop filter in the product.
+    expect(clean).toContain("prefers-reduced-transparency");
+    expect(clean).toMatch(/backdrop-filter\s*:\s*none\s*!important/);
+  });
+});
