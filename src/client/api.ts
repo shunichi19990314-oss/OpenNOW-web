@@ -36,8 +36,6 @@ export async function api<T>(path: string, init: RequestInit = {}): Promise<T> {
       error?: string;
       message?: string;
       upstreamCode?: number;
-      code?: string;
-      statusDescription?: string;
     } | null;
     // Some routes return a machine-readable `error` code plus a human `message`
     // (the AI proxy does). Preferring the code showed visitors "missing_key"
@@ -49,17 +47,9 @@ export async function api<T>(path: string, init: RequestInit = {}): Promise<T> {
       upstreamCode?: number;
       httpStatus?: number;
       errorCode?: string;
-      statusDescription?: string;
     };
-    // `code` is the provider's machine-readable error name (e.g.
-    // "SessionLimitExceeded"); it classifies a failure without parsing prose.
-    if (typeof payload?.code === "string") {
-      error.errorCode = payload.code;
-    } else if (typeof payload?.error === "string") {
+    if (typeof payload?.error === "string") {
       error.errorCode = payload.error;
-    }
-    if (typeof payload?.statusDescription === "string") {
-      error.statusDescription = payload.statusDescription;
     }
     // Preserve the CloudMatch protocol code (e.g. 69 = queue abandoned) so
     // callers can react to specific upstream outcomes.

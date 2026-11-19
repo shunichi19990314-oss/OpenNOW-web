@@ -117,12 +117,10 @@ import {
   isSessionInQueue,
   isSessionReadyForConnect,
   isStreamVideoReady,
-  QueueStallError,
   streamStatusToLoadingStage,
   toLaunchErrorState,
   toLoadingStatus,
 } from "./lib/sessionState";
-import { createQueueStallState, observeQueueProgress } from "./lib/queueStall";
 import { defaultDiagnostics, mergeNativeStreamStats } from "./lib/streamDiagnostics";
 import { applyAccentColor, applyTheme, applyTranslucentUI } from "./lib/uiCustomization";
 import { useTranslation } from "./i18n";
@@ -144,7 +142,7 @@ import { QueueServerSelectModal } from "./components/QueueServerSelectModal";
 import { CommandPalette } from "./components/CommandPalette";
 import { ReleaseHighlightsModal } from "./components/ReleaseHighlightsModal";
 import { overlayMotion, pageTransition, standardEase } from "./components/MotionProvider";
-import { LiquidGlassCanvas, LiquidGlassFilters } from "./components/liquid/LiquidGlass";
+import { LazyShaderAtmosphere } from "./components/LazyShaderAtmosphere";
 
 const DEFAULT_STREAM_PREFERENCES = getDefaultStreamPreferences();
 
@@ -167,34 +165,6 @@ const SESSION_READY_POLL_INTERVAL_MS = 2000;
 // position visibly frozen for most of a typical queue; 5 s keeps position and
 // ad-state fresh while still being lighter than the 2 s standard cadence.
 const SESSION_AD_POLL_INTERVAL_MS = 5000;
-
-/**
- * Faster cadence for the first few polls of a queue session.
- *
- * `createSession` frequently returns before GFN has assigned a queue position,
- * so the card shows "順番待ちの状況を確認しています..." until a poll brings one.
- * On the 5 s ad cadence that costs a full interval for information that is
- * usually available almost immediately — the visitor is waiting on our polling
- * period, not on the provider.
- *
- * The first few polls therefore run at the standard 2 s cadence; after that the
- * loop settles into the session's normal interval. The extra requests are
- * bounded (a handful), and each one is cheap now that the server no longer does
- * DNS on the critical path.
- */
-const QUEUE_STARTUP_POLL_INTERVAL_MS = 2000;
-const QUEUE_STARTUP_POLL_COUNT = 4;
-
-/** The interval to use between polls, given how many have happened. */
-export function resolveQueuePollIntervalMs(input: {
-  attempt: number;
-  adPolling: boolean;
-}): number {
-  if (input.attempt <= QUEUE_STARTUP_POLL_COUNT) {
-    return QUEUE_STARTUP_POLL_INTERVAL_MS;
-  }
-  return input.adPolling ? SESSION_AD_POLL_INTERVAL_MS : SESSION_READY_POLL_INTERVAL_MS;
-}
 const PLAYTIME_RESYNC_INTERVAL_MS = 5 * 60 * 1000;
 const FREE_TIER_30_MIN_WARNING_SECONDS = 30 * 60;
 const FREE_TIER_15_MIN_WARNING_SECONDS = 15 * 60;
@@ -341,10 +311,6 @@ export function App(): JSX.Element {
   const [streamingStore, setStreamingStore] = useState<string | null>(null);
   const [queuePosition, setQueuePosition] = useState<number | undefined>();
   const [navbarActiveSession, setNavbarActiveSession] = useState<ActiveSessionInfo | null>(null);
-  // Every live session on the account, including the ones that cannot be
-  // resumed (status 1 = queued/setup). Those still occupy the account's single
-  // session slot, so the UI must know about them to explain a rejected launch.
-  const [accountSessions, setAccountSessions] = useState<ActiveSessionInfo[]>([]);
   const [isResumingNavbarSession, setIsResumingNavbarSession] = useState(false);
   const [isTerminatingNavbarSession, setIsTerminatingNavbarSession] = useState(false);
   const [launchError, setLaunchError] = useState<LaunchErrorState | null>(null);
@@ -578,9 +544,6 @@ export function App(): JSX.Element {
   });
   const resetLaunchRuntimeRef = useRef<(options?: { keepLaunchError?: boolean; keepStreamingContext?: boolean }) => void>(() => {});
   const refreshNavbarActiveSessionRef = useRef<(sessionOverride?: AuthSession) => Promise<void>>(async () => {});
-  // Guards the "end every active session" recovery so a double click cannot
-  // fire two rounds of stop requests at GFN.
-  const endSessionsInFlightRef = useRef(false);
 
   const onBootstrapSettings = useCallback((loadedSettings: Settings, _sessionProxyUrl: string | undefined) => {
     setSettings(loadedSettings);
@@ -674,7 +637,6 @@ export function App(): JSX.Element {
     catalogSupportedCount,
     markOwnedInFlightByVariantId,
     catalogActionNotice,
-    setCatalogActionNotice,
     regions,
     setRegions,
     subscriptionInfo,
@@ -1285,7 +1247,6 @@ export function App(): JSX.Element {
     const session = sessionOverride ?? authSession;
     if (!session) {
       setNavbarActiveSession(null);
-      setAccountSessions([]);
       return;
     }
     const token = session.tokens.idToken ?? session.tokens.accessToken;
@@ -1293,7 +1254,6 @@ export function App(): JSX.Element {
       ?? (settings.region.trim() ? effectiveStreamingBaseUrl : session.provider.streamingServiceUrl);
     if (!token || !streamingBaseUrl) {
       setNavbarActiveSession(null);
-      setAccountSessions([]);
       return;
     }
     try {
@@ -1310,7 +1270,6 @@ export function App(): JSX.Element {
         resumableSessions[0] ??
         null;
       setNavbarActiveSession(candidate);
-      setAccountSessions(activeSessions);
     } catch (error) {
       console.warn("Failed to refresh active sessions:", error);
     }
@@ -1369,92 +1328,6 @@ export function App(): JSX.Element {
     });
     return true;
   }, [authSession]);
-
-  /**
-   * Resolve the "a session is already running" dead end.
-   *
-   * Previously the only way out was to wait for GFN to time the stale session
-   * out, because the home screen filtered out everything that was not resumable
-   * (statuses 2 and 3). Queued/setup sessions (status 1) were invisible yet still
-   * counted against the account limit, so every launch failed with no recourse.
-   * This lists every live session and ends them all, then tells the visitor to
-   * launch again — the account slot is genuinely free afterwards.
-   */
-  const handleEndActiveSessionsForLaunch = useCallback(async () => {
-    if (endSessionsInFlightRef.current) {
-      return;
-    }
-    if (!window.confirm(t("errors.duplicateSessionEndConfirm"))) {
-      return;
-    }
-    endSessionsInFlightRef.current = true;
-    try {
-      const token = authSession?.tokens.idToken ?? authSession?.tokens.accessToken;
-      const streamingBaseUrl = settings.region.trim()
-        ? effectiveStreamingBaseUrl
-        : authSession?.provider.streamingServiceUrl;
-      if (!token || !streamingBaseUrl) {
-        setCatalogActionNotice({ tone: "warn", text: t("errors.duplicateSessionEndFailed") });
-        return;
-      }
-
-      const liveSessions = await window.openNow.getActiveSessions(token, streamingBaseUrl);
-      if (liveSessions.length === 0) {
-        setCatalogActionNotice({ tone: "warn", text: t("errors.duplicateSessionNoneFound") });
-        setLaunchError(null);
-        void refreshNavbarActiveSession();
-        return;
-      }
-
-      let stopped = 0;
-      let failed = 0;
-      for (const liveSession of liveSessions) {
-        try {
-          const ok = await stopSessionByTarget({
-            sessionId: liveSession.sessionId,
-            zone: "",
-            streamingBaseUrl: liveSession.streamingBaseUrl ?? streamingBaseUrl,
-            serverIp: liveSession.serverIp,
-          });
-          if (ok) {
-            stopped += 1;
-          } else {
-            failed += 1;
-          }
-        } catch (error) {
-          console.warn("Failed to stop active session:", error);
-          failed += 1;
-        }
-      }
-
-      setLaunchError(null);
-      setAccountSessions([]);
-      void refreshNavbarActiveSession();
-      if (failed > 0 && stopped === 0) {
-        setCatalogActionNotice({ tone: "warn", text: t("errors.duplicateSessionEndFailed") });
-      } else if (failed > 0) {
-        setCatalogActionNotice({
-          tone: "warn",
-          text: t("errors.duplicateSessionEndedPartial", { stopped, failed }),
-        });
-      } else {
-        setCatalogActionNotice({ tone: "success", text: t("errors.duplicateSessionEnded") });
-      }
-    } catch (error) {
-      console.warn("Failed to look up active sessions:", error);
-      setCatalogActionNotice({ tone: "warn", text: t("errors.duplicateSessionEndFailed") });
-    } finally {
-      endSessionsInFlightRef.current = false;
-    }
-  }, [
-    authSession,
-    effectiveStreamingBaseUrl,
-    refreshNavbarActiveSession,
-    setCatalogActionNotice,
-    settings.region,
-    stopSessionByTarget,
-    t,
-  ]);
 
   useEffect(() => {
     if (!authSession || streamStatus !== "idle") {
@@ -2920,50 +2793,20 @@ export function App(): JSX.Element {
       setStreamingGame(matchedGameContext.game);
       setStreamingStore(launchVariant?.store ?? null);
 
-      // --- Pre-flight: three independent lookups, one round trip ----------
-      // These used to run strictly one after another (subscription -> storage
-      // region -> active sessions), so a launch from Japan paid three serial
-      // US round trips before the session was even created. The screenshots
-      // that prompted this showed "計算中" for ~30 s before a queue position of
-      // #15 appeared, which is the queue screen admitting it had nothing to say.
-      //
-      // They do not depend on each other's results: the storage-region lookup
-      // uses the *selected* region list, and the active-session check uses the
-      // selection or the provider default. So they overlap.
       const launchSubscription = await resolveSubscriptionInfoForLaunch();
       const streamSettings = buildCurrentStreamSettings(launchSubscription);
-      const [i2pStorageRegionBaseUrl, prefetchedActiveSessions] = await Promise.all([
-        resolveInstallToPlayStreamingBaseUrl(
-          matchedGameContext.game,
-          launchSubscription,
-          token || undefined,
-        ),
-        token
-          ? window.openNow
-              .getActiveSessions(token, effectiveStreamingBaseUrl)
-              .catch((error) => {
-                // Best effort: a failure here must not block the launch, it
-                // only means we skip the "you already have a session" hint.
-                console.warn("[Launch] Active-session pre-check failed:", error);
-                return null;
-              })
-          : Promise.resolve(null),
-      ]);
+      const i2pStorageRegionBaseUrl = await resolveInstallToPlayStreamingBaseUrl(
+        matchedGameContext.game,
+        launchSubscription,
+        token || undefined,
+      );
       const launchStreamingBaseUrl = i2pStorageRegionBaseUrl ?? options?.streamingBaseUrl ?? effectiveStreamingBaseUrl;
       let existingSessionStrategy: ExistingSessionStrategy | undefined;
 
       // Check for active sessions first
-      if (token && prefetchedActiveSessions !== null) {
-        // `getActiveSessions` was queried against the effective base, but the
-        // launch may have been re-routed to a storage region. Sessions are
-        // per-account, so the prefetched list is still the right answer; only
-        // re-query when the routing actually changed the host, because a
-        // wrong-base answer could describe a different pool.
-        const routedElsewhere = launchStreamingBaseUrl !== effectiveStreamingBaseUrl;
+      if (token) {
         try {
-          const activeSessions = routedElsewhere
-            ? await window.openNow.getActiveSessions(token, launchStreamingBaseUrl)
-            : prefetchedActiveSessions;
+          const activeSessions = await window.openNow.getActiveSessions(token, launchStreamingBaseUrl);
           if (activeSessions.length > 0) {
             // Only claim sessions that are already paused/ready (status 2 or 3).
             // Status=1 sessions are still in queue/setup; sending a RESUME claim
@@ -3068,73 +2911,37 @@ export function App(): JSX.Element {
       let isInQueueMode = isSessionInQueue(newSession);
       let attempt = 0;
 
-      // --- Queue stall detection -------------------------------------------
-      // The queue screen has no natural upper bound: a session the provider
-      // silently dropped reports exactly what a busy queue reports. Rather than
-      // wait forever, we measure *change* — a real queue moves — and give up
-      // with an explanation once nothing has moved for QUEUE_STALL_FAIL_MS.
-      // The state machine lives in lib/queueStall.ts so it is testable.
-      let stallState = createQueueStallState(newSession, Date.now());
-      const queuePollStartedAt = Date.now();
-
-      const checkQueueStall = (session: SessionInfo): void => {
-        const result = observeQueueProgress(stallState, session, Date.now(), isSessionInQueue(session));
-        stallState = result.state;
-        if (result.status === "warning") {
-          console.warn(
-            `[Launch] Queue has reported no change for ${Math.round(result.stalledMs / 1000)}s ` +
-            `(attempt ${attempt}, position=${session.queuePosition ?? "n/a"}, ` +
-            `seatSetupStep=${session.seatSetupStep ?? "n/a"})`,
-          );
-        } else if (result.status === "stalled") {
-          throw new QueueStallError(Math.round((Date.now() - queuePollStartedAt) / 60000));
-        }
-      };
-
       while (true) {
         attempt++;
-        checkQueueStall(latestSession);
 
-        // Poll first, wait afterwards.
-        //
-        // The loop used to sleep *before* polling, so the queue position always
-        // arrived one full interval late — 5 s on the ad-supported cadence. In
-        // the reported screenshots `createSession` returned no position at all,
-        // so the card sat on "計算中" for the whole first interval and only
-        // filled in "#15" after that delayed poll (30 s elapsed showing
-        // nothing). Polling first also means an already-ready session does not
-        // wait an interval before it starts connecting.
-        if (attempt > 1) {
-          const pollIntervalMs = resolveQueuePollIntervalMs({
-            attempt,
-            adPolling: shouldUseQueueAdPolling(latestSession, subscriptionInfo, authSession),
-          });
+        const pollIntervalMs = shouldUseQueueAdPolling(latestSession, subscriptionInfo, authSession)
+          ? SESSION_AD_POLL_INTERVAL_MS
+          : SESSION_READY_POLL_INTERVAL_MS;
 
-          // Sleep in small ticks during ad-polling intervals so the loop can react
-          // quickly when reportSessionAd clears isAdsRequired (which only updates
-          // sessionRef, not the local latestSession variable).  Standard 2 s intervals
-          // are kept as a single sleep since they're already short.
-          if (pollIntervalMs > SESSION_READY_POLL_INTERVAL_MS) {
-            const tickMs = 500;
-            let elapsed = 0;
-            while (elapsed < pollIntervalMs) {
-              await sleep(tickMs);
-              elapsed += tickMs;
-              if (launchAbortRef.current) return;
-              // Sync ad-action responses from sessionRef into the local tracking variable
-              // so shouldUseQueueAdPolling sees the updated adState immediately.
-              const refSession = sessionRef.current;
-              if (refSession && refSession.sessionId === latestSession.sessionId) {
-                latestSession = mergePolledSessionState(latestSession, refSession);
-              }
-              // Break out of the sleep early when ads are no longer required.
-              if (!shouldUseQueueAdPolling(latestSession, subscriptionInfo, authSession)) {
-                break;
-              }
+        // Sleep in small ticks during ad-polling intervals so the loop can react
+        // quickly when reportSessionAd clears isAdsRequired (which only updates
+        // sessionRef, not the local latestSession variable).  Standard 2 s intervals
+        // are kept as a single sleep since they're already short.
+        if (pollIntervalMs > SESSION_READY_POLL_INTERVAL_MS) {
+          const tickMs = 500;
+          let elapsed = 0;
+          while (elapsed < pollIntervalMs) {
+            await sleep(tickMs);
+            elapsed += tickMs;
+            if (launchAbortRef.current) return;
+            // Sync ad-action responses from sessionRef into the local tracking variable
+            // so shouldUseQueueAdPolling sees the updated adState immediately.
+            const refSession = sessionRef.current;
+            if (refSession && refSession.sessionId === latestSession.sessionId) {
+              latestSession = mergePolledSessionState(latestSession, refSession);
             }
-          } else {
-            await sleep(pollIntervalMs);
+            // Break out of the sleep early when ads are no longer required.
+            if (!shouldUseQueueAdPolling(latestSession, subscriptionInfo, authSession)) {
+              break;
+            }
           }
+        } else {
+          await sleep(pollIntervalMs);
         }
 
         if (shouldUseQueueAdPolling(latestSession, subscriptionInfo, authSession) && queueAdPlaybackRef.current) {
@@ -3258,35 +3065,7 @@ export function App(): JSX.Element {
         return;
       }
       console.error("Launch failed:", error);
-      const launchErrorState = toLaunchErrorState(t, error, loadingStep, launchGameContext);
-      if (launchErrorState.action === "end-active-session") {
-        // Name what is holding the slot. Best effort: the lookup can fail (for
-        // example when the zone index is unreachable) and the localized
-        // explanation plus the terminate button must still stand on their own.
-        try {
-          const token = authSession?.tokens.idToken ?? authSession?.tokens.accessToken;
-          const streamingBaseUrl = settings.region.trim()
-            ? effectiveStreamingBaseUrl
-            : authSession?.provider.streamingServiceUrl;
-          if (token && streamingBaseUrl) {
-            const liveSessions = await window.openNow.getActiveSessions(token, streamingBaseUrl);
-            const titles = liveSessions
-              .map((entry) => gameTitleByAppId.get(entry.appId))
-              .filter((title): title is string => Boolean(title));
-            if (titles.length > 0) {
-              const unique = Array.from(new Set(titles)).slice(0, 3);
-              launchErrorState.description = [
-                launchErrorState.description,
-                t("errors.duplicateSessionRunning", { games: unique.join(" / ") }),
-              ].join("\n");
-            }
-            setAccountSessions(liveSessions);
-          }
-        } catch (lookupError) {
-          console.warn("Failed to list active sessions for the launch error:", lookupError);
-        }
-      }
-      setLaunchError(launchErrorState);
+      setLaunchError(toLaunchErrorState(t, error, loadingStep, launchGameContext));
       await disconnectSignalingControlled();
       clientRef.current?.dispose();
       clientRef.current = null;
@@ -3303,7 +3082,6 @@ export function App(): JSX.Element {
     buildSignalingConnectRequest,
     claimAndConnectSession,
     effectiveStreamingBaseUrl,
-    gameTitleByAppId,
     refreshNavbarActiveSession,
     resetSignalingRecoveryState,
     resetLaunchRuntime,
@@ -3661,9 +3439,6 @@ export function App(): JSX.Element {
     : null;
 
   const handleResumeFromNavbar = useCallback(async () => {
-    // Only a status-2/3 session can be claimed. A queued/setup one (status 1) is
-    // not resumable, and its resume button is disabled in the navbar; this guard
-    // keeps the callback safe if it is ever invoked another way.
     if (
       !selectedProvider
       || !navbarActiveSession
@@ -3737,15 +3512,8 @@ export function App(): JSX.Element {
   ]);
 
   const handleTerminateNavbarSession = useCallback(async () => {
-    // `navbarActiveSession` is null while a queued/setup session (status 1) holds
-    // the account slot; that session is just as stoppable, and stopping it is the
-    // whole point of surfacing it.
-    const sessionToTerminate =
-      navbarActiveSession
-      ?? accountSessions.find((entry) => entry.status === 1)
-      ?? null;
     if (
-      !sessionToTerminate
+      !navbarActiveSession
       || isResumingNavbarSession
       || isTerminatingNavbarSession
       || navbarSessionActionInFlightRef.current
@@ -3756,7 +3524,7 @@ export function App(): JSX.Element {
       return;
     }
 
-    const activeSessionTitle = gameTitleByAppId.get(sessionToTerminate.appId)?.trim() || t("session.thisSession");
+    const activeSessionTitle = gameTitleByAppId.get(navbarActiveSession.appId)?.trim() || t("session.thisSession");
     if (!window.confirm(t("session.terminateConfirmation", { title: activeSessionTitle }))) {
       return;
     }
@@ -3765,17 +3533,12 @@ export function App(): JSX.Element {
     setIsTerminatingNavbarSession(true);
     try {
       await stopSessionByTarget({
-        sessionId: sessionToTerminate.sessionId,
+        sessionId: navbarActiveSession.sessionId,
         zone: "",
-        streamingBaseUrl: sessionToTerminate.streamingBaseUrl ?? (effectiveStreamingBaseUrl || undefined),
-        serverIp: sessionToTerminate.serverIp,
+        streamingBaseUrl: navbarActiveSession.streamingBaseUrl ?? (effectiveStreamingBaseUrl || undefined),
+        serverIp: navbarActiveSession.serverIp,
       });
       setNavbarActiveSession(null);
-      // Drop the terminated entry immediately so the navbar button does not
-      // linger on a session that GFN is already tearing down.
-      setAccountSessions((current) =>
-        current.filter((entry) => entry.sessionId !== sessionToTerminate.sessionId),
-      );
     } catch (error) {
       console.error("Navbar terminate failed:", error);
     } finally {
@@ -3784,7 +3547,6 @@ export function App(): JSX.Element {
       void refreshNavbarActiveSession();
     }
   }, [
-    accountSessions,
     effectiveStreamingBaseUrl,
     gameTitleByAppId,
     isResumingNavbarSession,
@@ -3840,28 +3602,6 @@ export function App(): JSX.Element {
   }, [markExplicitSignalingShutdown, refreshNavbarActiveSession, resetLaunchRuntime]);
 
   const handleLaunchErrorAction = useCallback((): void => {
-    if (launchError?.action === "end-active-session") {
-      void handleEndActiveSessionsForLaunch();
-      return;
-    }
-    if (launchError?.action === "retry-launch") {
-      // A stalled queue is cleared by starting over: the next createSession is
-      // placed on a new rig, so the wedged seat is not reused. Tear the failed
-      // attempt down first, then relaunch, so two launch loops never overlap.
-      const game = streamingGame;
-      const variantId = streamingStore && game
-        ? getSelectedVariant(game, variantByGameId[game.id] ?? defaultVariantId(game))?.id ?? undefined
-        : undefined;
-      void (async () => {
-        await handleDismissLaunchError();
-        if (game) {
-          // `bypassGuards` because the tear-down above has just reset the
-          // launch state; without it the guard would reject the retry.
-          await handlePlayGame(game, { bypassGuards: true, variantId });
-        }
-      })();
-      return;
-    }
     if (launchError?.action !== "persistent-storage-settings") return;
     void (async () => {
       try {
@@ -3874,7 +3614,7 @@ export function App(): JSX.Element {
         setCurrentPage("settings");
       }
     })();
-  }, [currentPage, defaultVariantId, handleDismissLaunchError, handleEndActiveSessionsForLaunch, handlePlayGame, launchError?.action, streamingGame, streamingStore, variantByGameId]);
+  }, [currentPage, handleDismissLaunchError, launchError?.action]);
 
   const releasePointerLockIfNeeded = useCallback(async () => {
     if (document.pointerLockElement) {
@@ -4104,23 +3844,8 @@ export function App(): JSX.Element {
     );
   }, [libraryGames, searchQuery, catalogSelectedSortId, playtime]);
 
-  /**
-   * Session shown in the navbar: the resumable one, or failing that a live but
-   * non-resumable one (status 1 = queued/setup).
-   *
-   * Not surfacing status 1 was the actual dead end reported by users: the home
-   * screen looked idle, yet GFN refused every launch because that invisible
-   * session already held the account's only slot.
-   */
-  const displayedSession = useMemo((): ActiveSessionInfo | null => {
-    if (navbarActiveSession) return navbarActiveSession;
-    return accountSessions.find((entry) => entry.status === 1) ?? null;
-  }, [accountSessions, navbarActiveSession]);
-
-  const displayedSessionIsResumable = navbarActiveSession !== null;
-
   const activeSessionAppIds = useMemo(
-    () => (displayedSession ? [displayedSession.appId] : []),
+    () => (navbarActiveSession ? [navbarActiveSession.appId] : []),
     [navbarActiveSession?.appId],
   );
 
@@ -4135,11 +3860,6 @@ export function App(): JSX.Element {
     }
     return null;
   }, [gameTitleByAppId, navbarActiveSession, session?.sessionId, streamingGame?.title]);
-
-  const displayedSessionGameTitle = useMemo(() => {
-    if (!displayedSession) return null;
-    return gameTitleByAppId.get(displayedSession.appId) ?? null;
-  }, [displayedSession, gameTitleByAppId]);
 
   const navigateControllerPage = useCallback((direction: -1 | 1): void => {
     const pages: AppPage[] = ["library", "home", "settings"];
@@ -4347,11 +4067,6 @@ export function App(): JSX.Element {
         : toLoadingStatus(streamStatus);
     return (
       <>
-        {/* The launch/queue scene keeps the canvas — it is the backdrop for the
-            glass loading panel — but muted, since the game's own art is the
-            subject and the scenery must not compete with it. */}
-        <LiquidGlassCanvas muted />
-        <LiquidGlassFilters />
         {hasActiveStreamView && (
           <StreamView
             videoRef={videoRef}
@@ -4475,7 +4190,6 @@ export function App(): JSX.Element {
                         description: launchError.description,
                         code: launchError.codeLabel,
                         actionLabel: launchError.actionLabel,
-                        detail: launchError.detail,
                       }
                     : undefined
                 }
@@ -4496,20 +4210,10 @@ export function App(): JSX.Element {
   }
 
   // Main app layout
-  // Drives the shell's catalog styling (atmosphere tone, poster scale context)
-  // and is unrelated to the retired WebGL layer.
   const showCatalogAtmosphere = currentPage === "home" || currentPage === "library";
   return (
     <div className={`app-container${effectiveControllerMode ? " app-container--controller" : ""}${showCatalogAtmosphere ? " app-container--atmosphere" : ""}`} style={getAppStyle(settings.posterSizeScale)}>
-      <LiquidGlassFilters />
-      <LiquidGlassCanvas muted={streamStatus !== "idle"} />
-      {/* Content scrolls *under* the floating bar; this fades the page out as it
-          passes beneath the glass so nothing is sliced mid-line. */}
-      {streamStatus === "idle" && <div className="lg-scroll-edge" aria-hidden="true" />}
-      {/* The catalog's WebGL atmosphere is retired: the liquid-glass canvas is
-          now the single background system, and two animated layers would fight
-          (the older one is opaque, so it would hide the caustics the glass
-          refracts). The queue/connecting scenes still use the shader. */}
+      {showCatalogAtmosphere && <LazyShaderAtmosphere variant="controller" className="catalog-atmosphere" />}
       <AnimatePresence>
         {startupRefreshNotice && (
           <m.div
@@ -4537,8 +4241,8 @@ export function App(): JSX.Element {
         onNavigate={handleNavigate}
         user={authSession.user}
         subscription={subscriptionInfo}
-        activeSession={displayedSession}
-        activeSessionGameTitle={displayedSessionGameTitle}
+        activeSession={navbarActiveSession}
+        activeSessionGameTitle={activeSessionGameTitle}
         isResumingSession={isResumingNavbarSession}
         isTerminatingSession={isTerminatingNavbarSession}
         onResumeSession={() => {

@@ -20,16 +20,6 @@ export type LaunchErrorState = {
   title: string;
   description: string;
   codeLabel?: string;
-  /**
-   * What the primary button does.
-   *
-   * `end-active-session` exists because the single most common launch failure is
-   * a session still running on the account; telling the visitor to "close it
-   * first" without offering the button leaves them stuck, since the home screen
-   * may not even show that session.
-   */
-  action?: "persistent-storage-settings" | "end-active-session" | "retry-launch";
+  action?: "persistent-storage-settings";
   actionLabel?: string;
-  /** Raw upstream sentence, shown verbatim under the localized explanation. */
-  detail?: string;
 };

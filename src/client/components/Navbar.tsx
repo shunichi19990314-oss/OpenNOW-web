@@ -148,10 +148,6 @@ export function Navbar({
   const firstEntitlementStart = formatDateTime(subscription?.firstEntitlementStartDateTime);
   const modalTitle = modalType === "time" ? t("navbar.playtimeDetails") : t("navbar.storageDetails");
   const activeSessionTitle = activeSessionGameTitle?.trim() || null;
-  // Status 1 = queued/setup. GFN still counts it against the account's session
-  // limit, but it cannot be claimed, so the resume action must say so instead of
-  // blaming a missing server address.
-  const activeSessionResumable = activeSession !== null && (activeSession.status === 2 || activeSession.status === 3);
   const activeUserId = user?.userId ?? null;
 
   useEffect(() => {
@@ -295,19 +291,15 @@ export function Navbar({
     : null;
 
   return (
-    <nav
-      className={`navbar lg-nav lg-glass lg-glass--refract lg-r-pill${controllerMode ? " navbar--controller" : ""}`}
-      aria-label={t("navigation.primary")}
-    >
-      <div className="navbar-left lg-nav__brand">
+    <nav className={`navbar${controllerMode ? " navbar--controller" : ""}`}>
+      <div className="navbar-left">
         <div className="navbar-brand">
           <OpenNowLogoMark className="opennow-logo-mark" />
         </div>
-        <span className="navbar-logo-text lg-nav__wordmark">OpenNOW</span>
+        <span className="navbar-logo-text">OpenNOW</span>
       </div>
 
-      {/* Navigation, centred, as a row of glass items inside the bar. */}
-      <div className="navbar-nav lg-nav__items" role="tablist">
+      <div className="navbar-nav">
         {navItems.map((item) => {
           const Icon = item.icon;
           const isActive = controllerMode
@@ -317,12 +309,8 @@ export function Navbar({
           return (
             <button
               key={item.id}
-              type="button"
-              role="tab"
-              aria-selected={isActive}
-              aria-current={isActive ? "page" : undefined}
               onClick={() => onNavigate(item.page)}
-              className={`navbar-link lg-nav__item ${isActive ? "active" : ""}`}
+              className={`navbar-link ${isActive ? "active" : ""}`}
             >
               <Icon size={16} />
               <span>{item.label}</span>
@@ -331,28 +319,21 @@ export function Navbar({
         })}
       </div>
 
-      <div className="navbar-right lg-nav__group">
+      <div className="navbar-right">
         {activeSession && !controllerMode && (
           <div className="navbar-session-actions">
             <button
               type="button"
-              className={`navbar-session-resume lg-pill lg-pill--primary${isResumingSession ? " is-loading" : ""}`}
+              className={`navbar-session-resume${isResumingSession ? " is-loading" : ""}`}
               title={
-                !activeSessionResumable
-                  ? t("session.sessionStartingCannotResume")
-                  : activeSession.serverIp
-                    ? activeSessionTitle
-                      ? t("session.resumeActiveCloudSessionTitle", { title: activeSessionTitle })
-                      : t("session.resumeActiveCloudSession")
-                    : t("session.activeSessionMissingServerAddress")
+                activeSession.serverIp
+                  ? activeSessionTitle
+                    ? t("session.resumeActiveCloudSessionTitle", { title: activeSessionTitle })
+                    : t("session.resumeActiveCloudSession")
+                  : t("session.activeSessionMissingServerAddress")
               }
               onClick={onResumeSession}
-              disabled={
-                isResumingSession
-                || isTerminatingSession
-                || !activeSessionResumable
-                || !activeSession.serverIp
-              }
+              disabled={isResumingSession || isTerminatingSession || !activeSession.serverIp}
             >
               {isResumingSession ? <MotionSpinner size={14} label={t("accessibility.resumingSession")} /> : <PlayCircle size={14} />}
               <span className="navbar-session-resume-text">{t("app.actions.resume")}</span>
@@ -360,13 +341,11 @@ export function Navbar({
             </button>
             <button
               type="button"
-              className={`navbar-session-terminate lg-pill lg-pill--danger${isTerminatingSession ? " is-loading" : ""}`}
+              className={`navbar-session-terminate${isTerminatingSession ? " is-loading" : ""}`}
               title={
-                activeSessionResumable && activeSessionTitle
+                activeSessionTitle
                   ? t("session.terminateActiveCloudSessionTitle", { title: activeSessionTitle })
-                  : activeSessionTitle
-                    ? t("session.terminateBlockingCloudSessionTitle", { title: activeSessionTitle })
-                    : t("session.terminateBlockingCloudSession")
+                  : t("session.terminateActiveCloudSession")
               }
               onClick={onTerminateSession}
               disabled={isResumingSession || isTerminatingSession}
@@ -381,7 +360,7 @@ export function Navbar({
             {timeLabel && (
               <button
                 type="button"
-                className={`navbar-subscription-chip lg-pill navbar-subscription-chip--${timeTone}`}
+                className={`navbar-subscription-chip navbar-subscription-chip--${timeTone}`}
                 title={t("navbar.showPlaytimeDetails")}
                 onClick={() => setModalType("time")}
               >
@@ -392,7 +371,7 @@ export function Navbar({
             {storageLabel && (
               <button
                 type="button"
-                className={`navbar-subscription-chip lg-pill navbar-subscription-chip--${storageTone}`}
+                className={`navbar-subscription-chip navbar-subscription-chip--${storageTone}`}
                 title={t("navbar.showStorageDetails")}
                 onClick={() => setModalType("storage")}
               >
@@ -407,7 +386,7 @@ export function Navbar({
             <div className="navbar-account-container" ref={accountContainerRef}>
               <button
                 type="button"
-                className="navbar-user navbar-user--clickable lg-pill"
+                className="navbar-user navbar-user--clickable"
                 onClick={() => setAccountDropdownOpen((previous) => !previous)}
                 aria-haspopup="menu"
                 aria-expanded={accountDropdownOpen}
@@ -537,7 +516,7 @@ export function Navbar({
             </div>
           </>
         ) : (
-          <div className="navbar-guest lg-pill lg-pill--quiet">
+          <div className="navbar-guest">
             <User size={14} />
             <span>{t("auth.accounts.guest")}</span>
           </div>

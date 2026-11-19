@@ -563,8 +563,7 @@ export const LibraryPage = memo(function LibraryPage({
 
   return (
     <div className="library-page">
-      {/* Same material as the dock: the library's chrome is a floating bar. */}
-      <header className="library-toolbar lg-glass lg-thin lg-r-pill">
+      <header className="library-toolbar">
         <div className="library-title">
           <Library className="library-title-icon" size={22} />
           <h1>{t("library.title")}</h1>

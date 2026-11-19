@@ -138,8 +138,7 @@
   "navigation": {
     "home": "Tienda",
     "library": "Biblioteca",
-    "settings": "Configuración",
-    "primary": "Navegación principal"
+    "settings": "Configuración"
   },
   "home": {
     "searchPlaceholder": "Buscar juegos...",
@@ -233,8 +232,7 @@
     "labels": {
       "launchError": "Error de inicio",
       "nowLoading": "Ahora cargando",
-      "adQueue": "Cola de anuncios",
-      "upstreamDetail": "Respuesta de GFN: {{detail}}"
+      "adQueue": "Cola de anuncios"
     },
     "steps": {
       "queue": "cola",
@@ -250,8 +248,7 @@
       "startingStream": "Iniciando transmisión...",
       "connectingToServer": "Conectándose al servidor...",
       "settingUpStream": "Configurando transmisión...",
-      "loading": "Cargando...",
-      "queueWaitingHint": "Comprobando tu posición en la cola..."
+      "loading": "Cargando..."
     },
     "ads": {
       "resumeToStayInQueue": "Reanudar anuncios para permanecer en la cola.",
@@ -309,10 +306,7 @@
       "freeTier30MinutesRemaining": "Quedan 30 minutos en esta sesión de nivel gratuito",
       "freeTier15MinutesRemaining": "Quedan 15 minutos en esta sesión de nivel gratuito",
       "freeTierEndsSoon": "Esta sesión de nivel gratuito finalizará pronto"
-    },
-    "sessionStartingCannotResume": "Esta sesión aún se está iniciando, así que no se puede reanudar. Ciérrala y vuelve a iniciar el juego.",
-    "terminateBlockingCloudSession": "Cerrar la sesión que bloquea el inicio",
-    "terminateBlockingCloudSessionTitle": "Cerrar la sesión que bloquea el inicio: {{title}}"
+    }
   },
   "stream": {
     "stats": {
@@ -709,18 +703,7 @@
     "sessionResumeFailedDescription": "La conexión con la sesión en ejecución se perdió y la reanudación falló.",
     "queueAdPlayTimeout": "Tiempo de espera de reproducción de anuncios",
     "queueAdVideoStuck": "El vídeo del anuncio está bloqueado.",
-    "queueAdUrlLoad": "Error al cargar la URL",
-    "duplicateSessionDescriptionGame": "Se intentó iniciar {{game}}, pero sigue activa otra sesión en la nube de esta cuenta. Finaliza la sesión existente abajo y vuelve a iniciar (no hace falta esperar al tiempo límite de GFN).",
-    "duplicateSessionEndAction": "Finalizar la sesión existente",
-    "duplicateSessionEndConfirm": "¿Finalizar la sesión en la nube activa de tu cuenta? El progreso sin guardar puede perderse.",
-    "duplicateSessionNoneFound": "No se pudo finalizar ninguna sesión. GFN puede mantener una activa; inténtalo de nuevo en unos minutos.",
-    "duplicateSessionEndFailed": "No se pudo finalizar la sesión existente.",
-    "duplicateSessionEnded": "Se finalizó la sesión existente. Inicia el juego de nuevo.",
-    "duplicateSessionRunning": "Sesiones activas en esta cuenta: {{games}}",
-    "duplicateSessionEndedPartial": "Se cerraron {{stopped}} sesión(es); {{failed}} no se pudieron cerrar. Inténtalo de nuevo.",
-    "queueStalledTitle": "La cola dejó de avanzar",
-    "queueStalledDescription": "Tu posición en la cola no cambió en absoluto durante {{minutes}} minuto(s). Es posible que la sesión haya dejado de responder en el lado de GeForce NOW. Si vuelves a empezar, te asignaremos un nuevo equipo.",
-    "queueStalledAction": "Empezar de nuevo"
+    "queueAdUrlLoad": "Error al cargar la URL"
   },
   "commandPalette": {
     "title": "Paleta de comandos",
