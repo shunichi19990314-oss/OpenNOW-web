@@ -232,8 +232,7 @@
     "labels": {
       "launchError": "Błąd uruchomienia",
       "nowLoading": "Teraz ładowanie",
-      "adQueue": "Kolejka reklamowa",
-      "upstreamDetail": "Odpowiedź GFN: {{detail}}"
+      "adQueue": "Kolejka reklamowa"
     },
     "steps": {
       "queue": "Kolejka",
@@ -307,10 +306,7 @@
       "freeTier30MinutesRemaining": "30 minut pozostało w tej sesji darmowego tieru",
       "freeTier15MinutesRemaining": "15 minut pozostało w tej sesji darmowego tieru",
       "freeTierEndsSoon": "Ta sesja darmowego tieru wkrótce się skończy"
-    },
-    "sessionStartingCannotResume": "Ta sesja wciąż się uruchamia, więc nie można jej wznowić. Zakończ ją i uruchom ponownie.",
-    "terminateBlockingCloudSession": "Zakończ sesję blokującą uruchomienie",
-    "terminateBlockingCloudSessionTitle": "Zakończ sesję blokującą uruchomienie: {{title}}"
+    }
   },
   "stream": {
     "stats": {
@@ -707,15 +703,7 @@
     "sessionResumeFailedDescription": "Połączenie z uruchomioną sesją zostało utracone i wznowienie nie powiodło się.",
     "queueAdPlayTimeout": "Limit czasu odtwarzania reklam",
     "queueAdVideoStuck": "Film reklamowy utknął",
-    "queueAdUrlLoad": "Błąd ładowania adresu URL",
-    "duplicateSessionDescriptionGame": "Próba uruchomienia {{game}} nie powiodła się: na tym koncie działa jeszcze inna sesja w chmurze. Zakończ istniejącą sesję poniżej i uruchom ponownie (nie trzeba czekać na limit GFN).",
-    "duplicateSessionEndAction": "Zakończ istniejącą sesję",
-    "duplicateSessionEndConfirm": "Zakończyć aktywną sesję w chmurze na koncie? Niezapisany postęp może zostać utracony.",
-    "duplicateSessionNoneFound": "Nie udało się zakończyć żadnej sesji. GFN może nadal ją trzymać; spróbuj ponownie za kilka minut.",
-    "duplicateSessionEndFailed": "Nie udało się zakończyć istniejącej sesji.",
-    "duplicateSessionEnded": "Zakończono istniejącą sesję. Uruchom grę ponownie.",
-    "duplicateSessionRunning": "Sesje działające teraz na tym koncie: {{games}}",
-    "duplicateSessionEndedPartial": "Zakończono {{stopped}} sesji; {{failed}} nie udało się zakończyć. Uruchom ponownie."
+    "queueAdUrlLoad": "Błąd ładowania adresu URL"
   },
   "commandPalette": {
     "title": "Paleta poleceń",

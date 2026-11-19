@@ -299,8 +299,7 @@
       "launchError": "起動エラー",
       "nowLoading": "読み込み中",
       "adQueue": "広告キュー",
-      "launchProgress": "ゲーム起動の進行状況",
-      "upstreamDetail": "GFN からの応答: {{detail}}"
+      "launchProgress": "ゲーム起動の進行状況"
     },
     "steps": {
       "queue": "キュー",
@@ -386,7 +385,7 @@
     "terminate": "終了",
     "terminateActiveCloudSession": "アクティブなクラウドセッションを終了する",
     "terminateActiveCloudSessionTitle": "アクティブなクラウド セッションを終了します: {{title}}",
-    "terminateConfirmation": "{{title}}を終了しますか? アクティブなクラウドセッションはすぐに終了します。",
+    "terminateConfirmation": "{{title}}を終了しますか? This will end the active cloud session immediately.",
     "activeSessionMissingServerAddress": "アクティブなセッションが見つかりました (サーバーアドレスがありません)",
     "thisGame": "このゲーム",
     "thisSession": "このセッション",
@@ -397,10 +396,7 @@
       "freeTier30MinutesRemaining": "このフリーティアセッションに残り時間は30分です。",
       "freeTier15MinutesRemaining": "このフリーティアセッションに残り時間は15分です。",
       "freeTierEndsSoon": "このフリーティアセッションはまもなく終了します"
-    },
-    "sessionStartingCannotResume": "このセッションはまだ起動中(準備中)のため再開できません。終了してから起動し直してください。",
-    "terminateBlockingCloudSession": "起動を妨げているセッションを終了する",
-    "terminateBlockingCloudSessionTitle": "起動を妨げているセッションを終了する: {{title}}"
+    }
   },
   "stream": {
     "stats": {
@@ -1091,15 +1087,7 @@
     "queueMaintenanceTitle": "キューサーバーのメンテナンス",
     "queueMaintenanceDescription": "キューサーバーがメンテナンスのため外されました(コード 71)。別のキューサーバーを選んで再試行してください。",
     "recoveryExhaustedTitle": "ゲームサーバーに接続できませんでした",
-    "recoveryExhaustedDescription": "ゲームサーバーを待機中に再接続の試行回数を使い切りました。もう一度起動してみてください。繰り返し失敗する場合は、時間帯やネットワークを変えてお試しください。",
-    "duplicateSessionDescriptionGame": "{{game}} を起動しようとしましたが、このアカウントでは別のクラウドセッションがまだ動いています。下のボタンで既存のセッションを終了してから、もう一度起動してください(GFN 側のタイムアウトを待つ必要はありません)。",
-    "duplicateSessionEndAction": "既存セッションを終了する",
-    "duplicateSessionEndConfirm": "アカウントで動作中のクラウドセッションを終了しますか? 進行中のゲームの続きは保存されない場合があります。",
-    "duplicateSessionNoneFound": "終了できるセッションが見つかりませんでした。GFN 側でセッションが残っている可能性があるため、数分待ってから再度お試しください。",
-    "duplicateSessionEndFailed": "既存セッションを終了できませんでした。",
-    "duplicateSessionEnded": "既存のセッションを終了しました。もう一度起動してください。",
-    "duplicateSessionRunning": "現在このアカウントで動作中のセッション: {{games}}",
-    "duplicateSessionEndedPartial": "{{stopped}} 件のセッションを終了しました({{failed}} 件は終了できませんでした)。もう一度起動してください。"
+    "recoveryExhaustedDescription": "ゲームサーバーを待機中に再接続の試行回数を使い切りました。もう一度起動してみてください。繰り返し失敗する場合は、時間帯やネットワークを変えてお試しください。"
   },
   "common": {
     "loading": "読み込み中..."

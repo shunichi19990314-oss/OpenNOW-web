@@ -232,8 +232,7 @@
     "labels": {
       "launchError": "Erreur de lancement",
       "nowLoading": "Chargement en cours",
-      "adQueue": "File d'attente des annonces",
-      "upstreamDetail": "Réponse de GFN : {{detail}}"
+      "adQueue": "File d'attente des annonces"
     },
     "steps": {
       "queue": "File d'attente",
@@ -307,10 +306,7 @@
       "freeTier30MinutesRemaining": "30 minutes restantes dans cette session gratuite",
       "freeTier15MinutesRemaining": "15 minutes restantes dans cette session gratuite",
       "freeTierEndsSoon": "Cette session gratuite se termine bientôt"
-    },
-    "sessionStartingCannotResume": "Cette session démarre encore et ne peut pas être reprise. Fermez-la puis relancez le jeu.",
-    "terminateBlockingCloudSession": "Fermer la session qui bloque le lancement",
-    "terminateBlockingCloudSessionTitle": "Fermer la session qui bloque le lancement : {{title}}"
+    }
   },
   "stream": {
     "stats": {
@@ -707,15 +703,7 @@
     "sessionResumeFailedDescription": "La connexion à la session en cours a été perdue et la reprise a échoué.",
     "queueAdPlayTimeout": "Délai d'expiration de la diffusion de l'annonce",
     "queueAdVideoStuck": "La vidéo publicitaire est bloquée",
-    "queueAdUrlLoad": "Erreur de chargement de l'URL",
-    "duplicateSessionDescriptionGame": "Lancement de {{game}} impossible : une autre session cloud tourne encore sur ce compte. Terminez la session existante ci-dessous puis relancez (inutile d'attendre l'expiration côté GFN).",
-    "duplicateSessionEndAction": "Terminer la session existante",
-    "duplicateSessionEndConfirm": "Terminer la session cloud active de votre compte ? La progression non sauvegardée peut être perdue.",
-    "duplicateSessionNoneFound": "Aucune session n'a pu être terminée. GFN peut en conserver une ; réessayez dans quelques minutes.",
-    "duplicateSessionEndFailed": "La session existante n'a pas pu être terminée.",
-    "duplicateSessionEnded": "La session existante a été terminée. Relancez le jeu.",
-    "duplicateSessionRunning": "Sessions en cours sur ce compte : {{games}}",
-    "duplicateSessionEndedPartial": "{{stopped}} session(s) fermée(s) ; {{failed}} n’ont pas pu être fermées. Relancez le jeu."
+    "queueAdUrlLoad": "Erreur de chargement de l'URL"
   },
   "commandPalette": {
     "title": "Palette de commandes",
