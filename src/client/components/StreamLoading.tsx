@@ -39,8 +39,6 @@ export interface StreamLoadingProps {
     description: string;
     code?: string;
     actionLabel?: string;
-    /** Raw upstream wording, kept verbatim for support and for honesty. */
-    detail?: string;
   };
   onAdPlaybackEvent?: (event: QueueAdPlaybackEvent, adId: string) => void;
   adPreviewRef?: Ref<QueueAdPreviewHandle>;
@@ -218,21 +216,12 @@ export function StreamLoading({
             />
           )}
           <div className="sload-status-text">
-            <p
-              className={`sload-message${status === "queue" && queuePosition && !hasError ? " sload-message--position" : ""}`}
-              role="status"
-              aria-live="polite"
-            >
-              {statusMessage}
-            </p>
+            <p className="sload-message" role="status" aria-live="polite">{statusMessage}</p>
             {!hasError && <p className="sload-detail">{getPhaseDetail(t, status)}</p>}
             {hasError && error && (
               <>
                 <p className="sload-error-title">{error.title}</p>
                 <p className="sload-error-desc">{error.description}</p>
-                {error.detail && (
-                  <p className="sload-error-detail">{t("streamLoading.labels.upstreamDetail", { detail: error.detail })}</p>
-                )}
                 {error.code && <p className="sload-error-code">{error.code}</p>}
               </>
             )}
@@ -254,18 +243,6 @@ export function StreamLoading({
               <strong>{getNextStep(t, status)}</strong>
             </div>
           </div>
-        )}
-
-        {/*
-          While the card has no queue position to show, explain the empty cell
-          instead of leaving "計算中" with only a spinner and a timer next to it.
-          A screen that cannot express progress is indistinguishable from one
-          that has hung — which is how the long waits were reported. Kept below
-          the facts so it annotates that cell rather than competing with the
-          primary status line above it.
-        */}
-        {status === "queue" && !queuePosition && !hasError && (
-          <p className="sload-queue-note">{t("streamLoading.status.queueWaitingHint")}</p>
         )}
 
         {!hasError && activeAd && cachedAdMediaUrl && (

@@ -138,8 +138,7 @@
   "navigation": {
     "home": "Winkel",
     "library": "Bibliotheek",
-    "settings": "Instellingen",
-    "primary": "Hoofdnavigatie"
+    "settings": "Instellingen"
   },
   "home": {
     "searchPlaceholder": "Zoek spellen...",
@@ -233,8 +232,7 @@
     "labels": {
       "launchError": "Startfout",
       "nowLoading": "Nu aan het laden",
-      "adQueue": "Advertentiewachtrij",
-      "upstreamDetail": "Antwoord van GFN: {{detail}}"
+      "adQueue": "Advertentiewachtrij"
     },
     "steps": {
       "queue": "Wachtrij",
@@ -250,8 +248,7 @@
       "startingStream": "Stream starten...",
       "connectingToServer": "Verbinding maken met server...",
       "settingUpStream": "Streamen instellen...",
-      "loading": "Laden...",
-      "queueWaitingHint": "Je positie in de wachtrij wordt gecontroleerd..."
+      "loading": "Laden..."
     },
     "ads": {
       "resumeToStayInQueue": "Hervat advertenties om in de wachtrij te blijven.",
@@ -309,10 +306,7 @@
       "freeTier30MinutesRemaining": "Er zijn nog 30 minuten over in deze free-tier sessie",
       "freeTier15MinutesRemaining": "Er zijn nog 15 minuten over in deze free-tier sessie",
       "freeTierEndsSoon": "Deze gratis sessie eindigt binnenkort"
-    },
-    "sessionStartingCannotResume": "Deze sessie start nog en kan niet worden hervat. Beëindig hem en start opnieuw.",
-    "terminateBlockingCloudSession": "Sessie die het starten blokkeert beëindigen",
-    "terminateBlockingCloudSessionTitle": "Sessie die het starten blokkeert beëindigen: {{title}}"
+    }
   },
   "stream": {
     "stats": {
@@ -709,18 +703,7 @@
     "sessionResumeFailedDescription": "De verbinding met de lopende sessie is verbroken en het hervatten is mislukt.",
     "queueAdPlayTimeout": "Time-out voor afspelen van advertentie",
     "queueAdVideoStuck": "Advertentievideo loopt vast",
-    "queueAdUrlLoad": "Fout bij laden van URL",
-    "duplicateSessionDescriptionGame": "{{game}} starten mislukte: er draait nog een andere cloudsessie op dit account. Beëindig hieronder de bestaande sessie en start opnieuw (wachten op de GFN-time-out is niet nodig).",
-    "duplicateSessionEndAction": "Bestaande sessie beëindigen",
-    "duplicateSessionEndConfirm": "De actieve cloudsessie van je account beëindigen? Niet-opgeslagen voortgang kan verloren gaan.",
-    "duplicateSessionNoneFound": "Er kon geen sessie worden beëindigd. GFN houdt er mogelijk nog een vast; probeer het over enkele minuten opnieuw.",
-    "duplicateSessionEndFailed": "De bestaande sessie kon niet worden beëindigd.",
-    "duplicateSessionEnded": "De bestaande sessie is beëindigd. Start het spel opnieuw.",
-    "duplicateSessionRunning": "Sessies die nu op dit account draaien: {{games}}",
-    "duplicateSessionEndedPartial": "{{stopped}} sessie(s) beëindigd; {{failed}} konden niet worden beëindigd. Start opnieuw.",
-    "queueStalledTitle": "De wachtrij komt niet vooruit",
-    "queueStalledDescription": "Je positie in de wachtrij is {{minutes}} minuut/minuten helemaal niet veranderd. Mogelijk reageert de sessie aan de kant van GeForce NOW niet meer. Opnieuw starten plaatst je op een nieuwe rig.",
-    "queueStalledAction": "Opnieuw starten"
+    "queueAdUrlLoad": "Fout bij laden van URL"
   },
   "commandPalette": {
     "title": "Opdrachtenpalet",

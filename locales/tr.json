@@ -138,8 +138,7 @@
   "navigation": {
     "home": "Mağaza",
     "library": "Kütüphane",
-    "settings": "Ayarlar",
-    "primary": "Ana gezinme"
+    "settings": "Ayarlar"
   },
   "home": {
     "searchPlaceholder": "Oyun ara...",
@@ -233,8 +232,7 @@
     "labels": {
       "launchError": "Başlatma Hatası",
       "nowLoading": "Şimdi Yükleniyor",
-      "adQueue": "Reklam Sırası",
-      "upstreamDetail": "GFN yanıtı: {{detail}}"
+      "adQueue": "Reklam Sırası"
     },
     "steps": {
       "queue": "Sıra",
@@ -250,8 +248,7 @@
       "startingStream": "Yayın başlatılıyor...",
       "connectingToServer": "Sunucuya bağlanılıyor...",
       "settingUpStream": "Akış ayarlanıyor...",
-      "loading": "Yükleniyor...",
-      "queueWaitingHint": "Sıradaki konumunuz kontrol ediliyor..."
+      "loading": "Yükleniyor..."
     },
     "ads": {
       "resumeToStayInQueue": "Sırada kalmak için reklamları devam ettirin.",
@@ -309,10 +306,7 @@
       "freeTier30MinutesRemaining": "Bu ücretsiz seviye oturumunda 30 dakika kaldı",
       "freeTier15MinutesRemaining": "Bu ücretsiz seviye oturumunda 15 dakika kaldı",
       "freeTierEndsSoon": "Bu ücretsiz seviye oturumu yakında sona erecek"
-    },
-    "sessionStartingCannotResume": "Bu oturum hâlâ başlatılıyor, bu yüzden devam ettirilemez. Kapatıp yeniden başlatın.",
-    "terminateBlockingCloudSession": "Başlatmayı engelleyen oturumu kapat",
-    "terminateBlockingCloudSessionTitle": "Başlatmayı engelleyen oturumu kapat: {{title}}"
+    }
   },
   "stream": {
     "stats": {
@@ -709,18 +703,7 @@
     "sessionResumeFailedDescription": "Çalışan oturumla bağlantı kesildi ve devam etme başarısız oldu.",
     "queueAdPlayTimeout": "Reklam oynatma zaman aşımı",
     "queueAdVideoStuck": "Reklam videosu takılı kaldı",
-    "queueAdUrlLoad": "URL yüklenirken hata oluştu",
-    "duplicateSessionDescriptionGame": "{{game}} başlatılamadı: bu hesapta hâlâ başka bir bulut oturumu çalışıyor. Aşağıdan mevcut oturumu bitirip yeniden başlatın (GFN zaman aşımını beklemek gerekmez).",
-    "duplicateSessionEndAction": "Mevcut oturumu bitir",
-    "duplicateSessionEndConfirm": "Hesapta çalışan bulut oturumu bitirilsin mi? Kaydedilmemiş ilerleme kaybolabilir.",
-    "duplicateSessionNoneFound": "Bitirilebilecek bir oturum bulunamadı. GFN hâlâ tutuyor olabilir; birkaç dakika sonra tekrar deneyin.",
-    "duplicateSessionEndFailed": "Mevcut oturum bitirilemedi.",
-    "duplicateSessionEnded": "Mevcut oturum bitirildi. Oyunu yeniden başlatın.",
-    "duplicateSessionRunning": "Bu hesapta çalışan oturumlar: {{games}}",
-    "duplicateSessionEndedPartial": "{{stopped}} oturum kapatıldı; {{failed}} oturum kapatılamadı. Yeniden başlatın.",
-    "queueStalledTitle": "Sıra ilerlemedi",
-    "queueStalledDescription": "Sıradaki konumunuz {{minutes}} dakika boyunca hiç değişmedi. Oturum GeForce NOW tarafında yanıt vermeyi bırakmış olabilir. Yeniden başlatmak sizi yeni bir makineye atar.",
-    "queueStalledAction": "Yeniden başlat"
+    "queueAdUrlLoad": "URL yüklenirken hata oluştu"
   },
   "commandPalette": {
     "title": "Komut paleti",

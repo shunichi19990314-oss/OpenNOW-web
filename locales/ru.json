@@ -138,8 +138,7 @@
   "navigation": {
     "home": "Магазин",
     "library": "Библиотека",
-    "settings": "Настройки",
-    "primary": "Основная навигация"
+    "settings": "Настройки"
   },
   "home": {
     "searchPlaceholder": "Поиск игр...",
@@ -233,8 +232,7 @@
     "labels": {
       "launchError": "Ошибка запуска",
       "nowLoading": "Сейчас загружается",
-      "adQueue": "Очередь объявлений",
-      "upstreamDetail": "Ответ GFN: {{detail}}"
+      "adQueue": "Очередь объявлений"
     },
     "steps": {
       "queue": "Очередь",
@@ -250,8 +248,7 @@
       "startingStream": "Начинаю стрим...",
       "connectingToServer": "Подключение к серверу...",
       "settingUpStream": "Настройка потока...",
-      "loading": "Загрузка...",
-      "queueWaitingHint": "Проверяем вашу позицию в очереди..."
+      "loading": "Загрузка..."
     },
     "ads": {
       "resumeToStayInQueue": "Возобновите рекламу, чтобы оставаться в очереди.",
@@ -309,10 +306,7 @@
       "freeTier30MinutesRemaining": "До конца этого сеанса бесплатного уровня осталось 30 минут.",
       "freeTier15MinutesRemaining": "До конца этого сеанса бесплатного уровня осталось 15 минут.",
       "freeTierEndsSoon": "Этот сеанс бесплатного уровня скоро завершится"
-    },
-    "sessionStartingCannotResume": "Эта сессия ещё запускается, поэтому продолжить её нельзя. Завершите её и запустите игру снова.",
-    "terminateBlockingCloudSession": "Завершить сессию, мешающую запуску",
-    "terminateBlockingCloudSessionTitle": "Завершить сессию, мешающую запуску: {{title}}"
+    }
   },
   "stream": {
     "stats": {
@@ -709,18 +703,7 @@
     "sessionResumeFailedDescription": "Соединение с работающим сеансом было потеряно, и возобновить его не удалось.",
     "queueAdPlayTimeout": "Тайм-аут воспроизведения рекламы",
     "queueAdVideoStuck": "Рекламное видео зависло",
-    "queueAdUrlLoad": "Ошибка загрузки URL.",
-    "duplicateSessionDescriptionGame": "Не удалось запустить {{game}}: на этом аккаунте всё ещё работает другая облачная сессия. Завершите существующую сессию ниже и запустите снова (ждать тайм-аут GFN не нужно).",
-    "duplicateSessionEndAction": "Завершить существующую сессию",
-    "duplicateSessionEndConfirm": "Завершить активную облачную сессию аккаунта? Несохранённый прогресс может быть потерян.",
-    "duplicateSessionNoneFound": "Не удалось завершить ни одну сессию. GFN может всё ещё удерживать её; повторите через несколько минут.",
-    "duplicateSessionEndFailed": "Не удалось завершить существующую сессию.",
-    "duplicateSessionEnded": "Существующая сессия завершена. Запустите игру снова.",
-    "duplicateSessionRunning": "Сессии, запущенные на этом аккаунте: {{games}}",
-    "duplicateSessionEndedPartial": "Завершено сессий: {{stopped}}; не удалось завершить: {{failed}}. Запустите игру снова.",
-    "queueStalledTitle": "Очередь не продвигается",
-    "queueStalledDescription": "Ваша позиция в очереди не менялась {{minutes}} мин. Возможно, сеанс перестал отвечать на стороне GeForce NOW. При повторном запуске вы будете назначены на новую машину.",
-    "queueStalledAction": "Запустить снова"
+    "queueAdUrlLoad": "Ошибка загрузки URL."
   },
   "commandPalette": {
     "title": "Палитра команд",

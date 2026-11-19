@@ -9278,19 +9278,6 @@ button.game-card-store-chip.owned.active:hover {
   line-height: 1.4;
 }
 
-.sload-error-detail {
-  margin: 2px 0 0;
-  font-size: 0.7rem;
-  line-height: 1.5;
-  color: #c9c9d1;
-  /* Long provider sentences must wrap instead of widening the dialog. */
-  overflow-wrap: anywhere;
-}
-
-.sload-error-desc {
-  white-space: pre-line;
-}
-
 .sload-error-code {
   margin: 0;
   font-size: 0.72rem;
