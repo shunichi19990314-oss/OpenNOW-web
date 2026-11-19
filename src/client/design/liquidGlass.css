@@ -3335,23 +3335,11 @@ kbd,
  * the resulting status line the most prominent thing on the card, so the state
  * of the launch can be read at a glance.
  */
-/* The "checking" note is a *fallback*, not a second status line: it appears
-   only while the card has no position, and it must not compete with the
-   primary message above it. */
 .sload-queue-note {
   margin-top: 2px;
   color: var(--ink-soft);
   font-size: 0.82rem;
   font-variant-numeric: tabular-nums;
-  text-align: center;
-}
-
-/* The queue position is the one number a waiting visitor looks for. When it is
-   known it becomes the headline, so the interval between "waiting" and
-   "position #15" reads as an arrival rather than a silent change of wording. */
-.sload-message--position {
-  font-variant-numeric: tabular-nums;
-  letter-spacing: -0.01em;
 }
 
 .sload-status-text {
