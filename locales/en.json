@@ -321,8 +321,7 @@
       "startingStream": "Starting stream...",
       "connectingToServer": "Connecting to server...",
       "settingUpStream": "Setting up stream...",
-      "loading": "Loading...",
-      "queueWaitingHint": "Checking your place in the queue..."
+      "loading": "Loading..."
     },
     "detail": {
       "queueMoving": "The live queue is moving. Your place is secured at #{{position}}.",
@@ -1109,10 +1108,7 @@
     "duplicateSessionEndFailed": "The existing session could not be ended.",
     "duplicateSessionEnded": "The existing session was ended. Launch the game again.",
     "duplicateSessionRunning": "Sessions currently running on this account: {{games}}",
-    "duplicateSessionEndedPartial": "Ended {{stopped}} session(s); {{failed}} could not be stopped. Try launching again.",
-    "queueStalledTitle": "The queue stopped moving",
-    "queueStalledDescription": "Your queue position did not change at all for {{minutes}} minute(s). The session may have stopped responding on GeForce NOW's side. Starting again will place you on a new rig.",
-    "queueStalledAction": "Start again"
+    "duplicateSessionEndedPartial": "Ended {{stopped}} session(s); {{failed}} could not be stopped. Try launching again."
   },
   "releaseHighlights": {
     "kicker": "What's new",

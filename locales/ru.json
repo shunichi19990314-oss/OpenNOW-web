@@ -250,8 +250,7 @@
       "startingStream": "Начинаю стрим...",
       "connectingToServer": "Подключение к серверу...",
       "settingUpStream": "Настройка потока...",
-      "loading": "Загрузка...",
-      "queueWaitingHint": "Проверяем вашу позицию в очереди..."
+      "loading": "Загрузка..."
     },
     "ads": {
       "resumeToStayInQueue": "Возобновите рекламу, чтобы оставаться в очереди.",
@@ -717,10 +716,7 @@
     "duplicateSessionEndFailed": "Не удалось завершить существующую сессию.",
     "duplicateSessionEnded": "Существующая сессия завершена. Запустите игру снова.",
     "duplicateSessionRunning": "Сессии, запущенные на этом аккаунте: {{games}}",
-    "duplicateSessionEndedPartial": "Завершено сессий: {{stopped}}; не удалось завершить: {{failed}}. Запустите игру снова.",
-    "queueStalledTitle": "Очередь не продвигается",
-    "queueStalledDescription": "Ваша позиция в очереди не менялась {{minutes}} мин. Возможно, сеанс перестал отвечать на стороне GeForce NOW. При повторном запуске вы будете назначены на новую машину.",
-    "queueStalledAction": "Запустить снова"
+    "duplicateSessionEndedPartial": "Завершено сессий: {{stopped}}; не удалось завершить: {{failed}}. Запустите игру снова."
   },
   "commandPalette": {
     "title": "Палитра команд",

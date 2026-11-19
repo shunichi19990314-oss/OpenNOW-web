@@ -250,8 +250,7 @@
       "startingStream": "Se pornește fluxul...",
       "connectingToServer": "Se conectează la server...",
       "settingUpStream": "Se configurează fluxul...",
-      "loading": "Se încarcă...",
-      "queueWaitingHint": "Se verifică poziția ta în coadă..."
+      "loading": "Se încarcă..."
     },
     "ads": {
       "resumeToStayInQueue": "Reluați anunțurile pentru a rămâne la coadă.",
@@ -717,10 +716,7 @@
     "duplicateSessionEndFailed": "Sesiunea existentă nu a putut fi încheiată.",
     "duplicateSessionEnded": "Sesiunea existentă a fost închisă. Lansează din nou jocul.",
     "duplicateSessionRunning": "Sesiuni active pe acest cont: {{games}}",
-    "duplicateSessionEndedPartial": "S-au încheiat {{stopped}} sesiuni; {{failed}} nu au putut fi închise. Reîncearcă lansarea.",
-    "queueStalledTitle": "Coada nu mai avansează",
-    "queueStalledDescription": "Poziția ta în coadă nu s-a schimbat deloc timp de {{minutes}} minut(e). Este posibil ca sesiunea să nu mai răspundă din partea GeForce NOW. Dacă pornești din nou, vei fi plasat pe un calculator nou.",
-    "queueStalledAction": "Pornește din nou"
+    "duplicateSessionEndedPartial": "S-au încheiat {{stopped}} sesiuni; {{failed}} nu au putut fi închise. Reîncearcă lansarea."
   },
   "commandPalette": {
     "title": "Paleta de comenzi",
