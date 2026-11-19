@@ -33,138 +33,33 @@ export function isReadySessionStatus(status: number): boolean {
   return READY_SESSION_STATUSES.has(status);
 }
 
-/**
- * How long a single hostname resolution may take before it is abandoned.
- *
- * This sits directly on the critical path of a queue poll: `toSessionInfo`
- * awaits `normalizeIceServers` before the poll response can be returned, so a
- * slow resolver delays the *queue position* the visitor is waiting for. 1.2 s
- * is enough for any healthy resolver and short enough that a broken one cannot
- * add a visible stall.
- */
-const DNS_LOOKUP_TIMEOUT_MS = 1200;
-
-/**
- * STUN/TURN hostnames are infrastructure, not per-session data: they resolve to
- * the same addresses for hours. Without this cache a three-host config did up to
- * nine DNS lookups per poll (system resolver plus two fallbacks, per host) on
- * every queue tick — which is what made the position appear tens of seconds
- * after the poll that contained it.
- */
-const DNS_CACHE_TTL_MS = 30 * 60 * 1000;
-const dnsCache = new Map<string, { address: string | null; at: number }>();
-
-/** Hostnames currently being resolved in the background. */
-const dnsInFlight = new Set<string>();
-
-/**
- * Overridable resolver, purely so tests can prove that a slow DNS cannot delay
- * a poll. Production always uses `resolveHostnameWithFallback`.
- */
-let hostnameResolver: (hostname: string) => Promise<string | null> = resolveHostnameWithFallback;
-
-/** Test seam: replace the resolver (pass `null` to restore the real one). */
-export function setHostnameResolverForTests(
-  resolver: ((hostname: string) => Promise<string | null>) | null,
-): void {
-  hostnameResolver = resolver ?? resolveHostnameWithFallback;
-  dnsCache.clear();
-  dnsInFlight.clear();
-}
-
-/** Test seam: clears the resolved-hostname cache. */
-export function resetIceHostnameCache(): void {
-  dnsCache.clear();
-}
-
-function withTimeout<T>(promise: Promise<T>, ms: number, label: string): Promise<T> {
-  return new Promise<T>((resolve, reject) => {
-    const timer = setTimeout(() => reject(new Error(`${label} timed out after ${ms}ms`)), ms);
-    promise.then(
-      (value) => {
-        clearTimeout(timer);
-        resolve(value);
-      },
-      (error) => {
-        clearTimeout(timer);
-        reject(error);
-      },
-    );
-  });
-}
-
 async function resolveHostnameWithFallback(hostname: string): Promise<string | null> {
-  const cached = dnsCache.get(hostname);
-  if (cached && Date.now() - cached.at < DNS_CACHE_TTL_MS) {
-    return cached.address;
+  // Try system resolver first, then fall back to Cloudflare (1.1.1.1) and Google (8.8.8.8)
+  try {
+    const r = await dns.promises.lookup(hostname);
+    if (r && (r as any).address) return (r as any).address;
+  } catch {
+    // ignore and try custom resolvers
   }
 
-  // System resolver and both public fallbacks race each other. They used to run
-  // strictly in sequence (system, then 1.1.1.1, then 8.8.8.8), so a failed
-  // system lookup cost the full timeout before the first fallback even started.
-  const attempts: Array<Promise<string | null>> = [
-    withTimeout(dns.promises.lookup(hostname), DNS_LOOKUP_TIMEOUT_MS, "system dns")
-      .then((r) => (r && (r as { address?: string }).address) || null),
-  ];
-
-  for (const server of ["1.1.1.1", "8.8.8.8"]) {
-    attempts.push(
-      (async () => {
-        const resolver = new dns.Resolver();
-        resolver.setServers([server]);
-        const addrs = await withTimeout(
-          new Promise<string[]>((resolve, reject) => {
-            resolver.resolve4(hostname, (err, addresses) => {
-              if (err) reject(err);
-              else resolve(addresses);
-            });
-          }),
-          DNS_LOOKUP_TIMEOUT_MS,
-          `dns ${server}`,
-        );
-        return addrs && addrs.length > 0 ? addrs[0] : null;
-      })().catch(() => null),
-    );
+  const fallbackServers = ["1.1.1.1", "8.8.8.8"];
+  for (const server of fallbackServers) {
+    try {
+      const resolver = new dns.Resolver();
+      resolver.setServers([server]);
+      const addrs: string[] = await new Promise((resolve, reject) => {
+        resolver.resolve4(hostname, (err, addresses) => {
+          if (err) reject(err);
+          else resolve(addresses);
+        });
+      });
+      if (addrs && addrs.length > 0) return addrs[0];
+    } catch {
+      // try next fallback
+    }
   }
 
-  // First successful answer wins; a total failure resolves to null so the
-  // caller keeps the original hostname (the browser can still resolve it).
-  const address = await Promise.race([
-    Promise.any(attempts.map(async (attempt) => {
-      const value = await attempt;
-      if (!value) throw new Error("no address");
-      return value;
-    })),
-    new Promise<null>((resolve) => setTimeout(() => resolve(null), DNS_LOOKUP_TIMEOUT_MS + 200)),
-  ]).catch(() => null);
-
-  dnsCache.set(hostname, { address, at: Date.now() });
-  return address;
-}
-
-/**
- * Cache-only lookup. Never awaits anything, so callers can build a response
- * without paying for DNS.
- */
-function cachedHostname(hostname: string): string | null {
-  const cached = dnsCache.get(hostname);
-  if (cached && Date.now() - cached.at < DNS_CACHE_TTL_MS) {
-    return cached.address;
-  }
   return null;
-}
-
-/**
- * Start resolving a hostname in the background, if it is not already known or
- * already in flight. The result lands in `dnsCache` for a later poll.
- */
-function primeHostname(hostname: string): void {
-  if (cachedHostname(hostname) !== null) return;
-  if (dnsInFlight.has(hostname)) return;
-  dnsInFlight.add(hostname);
-  void hostnameResolver(hostname)
-    .catch(() => null)
-    .finally(() => dnsInFlight.delete(hostname));
 }
 
 export async function normalizeIceServers(response: CloudMatchResponse): Promise<IceServer[]> {
@@ -215,25 +110,7 @@ export async function normalizeIceServers(response: CloudMatchResponse): Promise
             if (/^\d{1,3}(?:\.\d{1,3}){3}$/.test(host) || /^\[[0-9a-fA-F:]+\]$/.test(host)) {
               resolvedUrls.push(u);
             } else {
-              /*
-               * Never block a poll on DNS.
-               *
-               * This used to `await resolveHostnameWithFallback(host)` inline,
-               * which put a resolver round trip — up to 1.2 s with the timeout,
-               * and previously unbounded — in front of *every* queue poll, for
-               * every host, before the response carrying the queue position
-               * could be returned. The measured worst case in this environment
-               * was 23 s for a single unreachable fallback resolver.
-               *
-               * The queue position does not depend on STUN addresses, so the
-               * response now ships with whatever is already known (often the
-               * hostname itself, which the browser can resolve) and the next
-               * resolution happens in the background. By the time a session is
-               * actually ready there have been several polls, so the cache is
-               * warm and the addresses are the resolved IPs.
-               */
-              const ip = cachedHostname(host);
-              if (ip === null) primeHostname(host);
+              const ip = await resolveHostnameWithFallback(host);
               const finalHost = ip ?? host;
               const maybeBracketted = bracketIfIpv6(finalHost);
               resolvedUrls.push(`${scheme}:${maybeBracketted}${portPart}`);
@@ -251,19 +128,20 @@ export async function normalizeIceServers(response: CloudMatchResponse): Promise
     return resolvedServers;
   }
 
-  // Default fallbacks — same treatment, and the same reason: these three hosts
-  // were resolved one after another before every poll when the session had no
-  // ICE config, which is the common case while queued.
+  // Default fallbacks — try to resolve known STUN hostnames to IPs as well
   const defaults = ["s1.stun.gamestream.nvidia.com:19308", "stun.l.google.com:19302", "stun1.l.google.com:19302"];
-  const bracketIfIpv6 = (h: string) => (h.includes(":") && !h.startsWith("[") ? `[${h}]` : h);
-  return defaults.map((d) => {
+  const out: IceServer[] = [];
+  for (const d of defaults) {
     const parts = d.split(":");
     const host = parts[0];
     const port = parts.length > 1 ? `:${parts.slice(1).join(":")}` : "";
-    const ip = cachedHostname(host);
-    if (ip === null) primeHostname(host);
-    return { urls: [`stun:${bracketIfIpv6(ip ?? host)}${port}`] };
-  });
+    const ip = await resolveHostnameWithFallback(host);
+    const bracketIfIpv6 = (h: string) => (h.includes(":") && !h.startsWith("[") ? `[${h}]` : h);
+    if (ip) out.push({ urls: [`stun:${bracketIfIpv6(ip)}${port}`] });
+    else out.push({ urls: [`stun:${bracketIfIpv6(host)}${port}`] });
+  }
+
+  return out;
 }
 
 /**
