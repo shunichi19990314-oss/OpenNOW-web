@@ -70,28 +70,12 @@ function getContrastRatio(fg: RgbColor, bg: RgbColor): number {
   return (lighter + 0.05) / (darker + 0.05);
 }
 
-/**
- * Pick the label colour for an accent-filled control.
- *
- * The *button's own fill* decides this, not the page theme. Asking the theme is
- * what produced white text on the light green pill (1.79:1) that users reported
- * as unreadable: the button was light, the theme was dark, and the rule followed
- * the theme.
- *
- * Every accent in the palette is light enough that the dark ink wins; the light
- * ink is kept for a future dark accent rather than assumed away. The dark ink
- * matches `--accent-ink` in design/liquidGlass.css so the CSS fallback and this
- * runtime path agree.
- */
 function getContrastColor({ r, g, b }: RgbColor): string {
   const lightFg = { r: 248, g: 250, b: 252 };
-  // #0b1410 — the same value as the stylesheet's `--accent-ink`.
-  const darkFg = { r: 11, g: 20, b: 16 };
+  const darkFg = { r: 17, g: 19, b: 24 };
   const lightContrast = getContrastRatio(lightFg, { r, g, b });
   const darkContrast = getContrastRatio(darkFg, { r, g, b });
-  // Require a real margin before choosing the light label; otherwise the dark
-  // one, which is the readable choice for every colour in the palette today.
-  return lightContrast > darkContrast && lightContrast >= 4.5 ? "#f8fafc" : "#0b1410";
+  return lightContrast > darkContrast ? "#f8fafc" : "#111318";
 }
 
 export function getAccentColorOptions(): readonly AccentColorOption[] {
