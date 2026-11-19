@@ -167,6 +167,34 @@ const SESSION_READY_POLL_INTERVAL_MS = 2000;
 // position visibly frozen for most of a typical queue; 5 s keeps position and
 // ad-state fresh while still being lighter than the 2 s standard cadence.
 const SESSION_AD_POLL_INTERVAL_MS = 5000;
+
+/**
+ * Faster cadence for the first few polls of a queue session.
+ *
+ * `createSession` frequently returns before GFN has assigned a queue position,
+ * so the card shows "順番待ちの状況を確認しています..." until a poll brings one.
+ * On the 5 s ad cadence that costs a full interval for information that is
+ * usually available almost immediately — the visitor is waiting on our polling
+ * period, not on the provider.
+ *
+ * The first few polls therefore run at the standard 2 s cadence; after that the
+ * loop settles into the session's normal interval. The extra requests are
+ * bounded (a handful), and each one is cheap now that the server no longer does
+ * DNS on the critical path.
+ */
+const QUEUE_STARTUP_POLL_INTERVAL_MS = 2000;
+const QUEUE_STARTUP_POLL_COUNT = 4;
+
+/** The interval to use between polls, given how many have happened. */
+export function resolveQueuePollIntervalMs(input: {
+  attempt: number;
+  adPolling: boolean;
+}): number {
+  if (input.attempt <= QUEUE_STARTUP_POLL_COUNT) {
+    return QUEUE_STARTUP_POLL_INTERVAL_MS;
+  }
+  return input.adPolling ? SESSION_AD_POLL_INTERVAL_MS : SESSION_READY_POLL_INTERVAL_MS;
+}
 const PLAYTIME_RESYNC_INTERVAL_MS = 5 * 60 * 1000;
 const FREE_TIER_30_MIN_WARNING_SECONDS = 30 * 60;
 const FREE_TIER_15_MIN_WARNING_SECONDS = 15 * 60;
@@ -3077,9 +3105,10 @@ export function App(): JSX.Element {
         // nothing). Polling first also means an already-ready session does not
         // wait an interval before it starts connecting.
         if (attempt > 1) {
-          const pollIntervalMs = shouldUseQueueAdPolling(latestSession, subscriptionInfo, authSession)
-            ? SESSION_AD_POLL_INTERVAL_MS
-            : SESSION_READY_POLL_INTERVAL_MS;
+          const pollIntervalMs = resolveQueuePollIntervalMs({
+            attempt,
+            adPolling: shouldUseQueueAdPolling(latestSession, subscriptionInfo, authSession),
+          });
 
           // Sleep in small ticks during ad-polling intervals so the loop can react
           // quickly when reportSessionAd clears isAdsRequired (which only updates
