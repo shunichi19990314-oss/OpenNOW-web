@@ -346,38 +346,6 @@
         const r = ratio(hex, "ffffff");
         rows.push(`<div>${name} #${hex}: <b style="color:${r >= 4.5 ? "#7ef0a8" : "#f87171"}">${r.toFixed(2)}:1</b></div>`);
       }
-
-      // The light material is a separate calibration, not an inverted copy of
-      // the dark one: pale sheet, dark ink, pale canvas. Checking only the dark
-      // tokens is how a light-theme dialog shipped with dark-navy text on a
-      // near-black panel. These rows make that combination impossible to miss.
-      rows.push('<div style="margin-top:10px"><b>ライトテーマ (白いシート上のダークインク)</b></div>');
-      const lightSurfaces = {
-        "light sheet (0.97)": "fbfcfe",
-        "light section (inset)": "f2f4f8",
-        "light popup": "fafcff"
-      };
-      const lightInks = {
-        "label ink #101a2c": "101a2c",
-        "body ink #33405a": "33405a"
-      };
-      for (const [sname, sv] of Object.entries(lightSurfaces)) {
-        for (const [iname, iv] of Object.entries(lightInks)) {
-          const r = ratio(sv, iv);
-          const tone = r >= 4.5 ? "#7ef0a8" : "#f87171";
-          rows.push(`<div>${sname} × ${iname}: <b style="color:${tone}">${r.toFixed(2)}:1</b></div>`);
-        }
-      }
-
-      // And the failure mode that was actually reported: those light inks over
-      // the *dark* canvas. Kept as a visible negative example so the pairing
-      // that caused it is never reintroduced.
-      const brokenLightOnDark = ratio("0a0f13", "101a2c");
-      rows.push(
-        `<div style="margin-top:6px">⚠ ダークな背景 × ライト用インク (報告された不具合): ` +
-        `<b style="color:#f87171">${brokenLightOnDark.toFixed(2)}:1</b> — テーマと面が不一致</div>`
-      );
-
       document.getElementById("contrast").innerHTML = rows.join("");
     </script>
   </body>

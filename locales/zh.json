@@ -250,8 +250,7 @@
       "startingStream": "开始串流...",
       "connectingToServer": "正在连接到服务器...",
       "settingUpStream": "正在设置流...",
-      "loading": "加载中...",
-      "queueWaitingHint": "正在确认您的排队位置..."
+      "loading": "加载中..."
     },
     "ads": {
       "resumeToStayInQueue": "恢复广告以留在队列中。",
@@ -717,10 +716,7 @@
     "duplicateSessionEndFailed": "无法结束现有会话。",
     "duplicateSessionEnded": "已结束现有会话。请重新启动游戏。",
     "duplicateSessionRunning": "该账号正在运行的会话：{{games}}",
-    "duplicateSessionEndedPartial": "已结束 {{stopped}} 个会话;{{failed}} 个无法结束。请重新启动。",
-    "queueStalledTitle": "队列没有进展",
-    "queueStalledDescription": "您的排队位置在 {{minutes}} 分钟内完全没有变化。GeForce NOW 一侧的会话可能已停止响应。重新开始会为您分配一台新的设备。",
-    "queueStalledAction": "重新开始"
+    "duplicateSessionEndedPartial": "已结束 {{stopped}} 个会话;{{failed}} 个无法结束。请重新启动。"
   },
   "commandPalette": {
     "title": "命令面板",

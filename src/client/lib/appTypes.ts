@@ -28,7 +28,7 @@ export type LaunchErrorState = {
    * first" without offering the button leaves them stuck, since the home screen
    * may not even show that session.
    */
-  action?: "persistent-storage-settings" | "end-active-session" | "retry-launch";
+  action?: "persistent-storage-settings" | "end-active-session";
   actionLabel?: string;
   /** Raw upstream sentence, shown verbatim under the localized explanation. */
   detail?: string;
