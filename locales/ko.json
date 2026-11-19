@@ -138,8 +138,7 @@
   "navigation": {
     "home": "매장",
     "library": "도서관",
-    "settings": "설정",
-    "primary": "기본 탐색"
+    "settings": "설정"
   },
   "home": {
     "searchPlaceholder": "게임 검색...",

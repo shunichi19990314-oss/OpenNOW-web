@@ -138,8 +138,7 @@
   "navigation": {
     "home": "Mağaza",
     "library": "Kütüphane",
-    "settings": "Ayarlar",
-    "primary": "Ana gezinme"
+    "settings": "Ayarlar"
   },
   "home": {
     "searchPlaceholder": "Oyun ara...",
