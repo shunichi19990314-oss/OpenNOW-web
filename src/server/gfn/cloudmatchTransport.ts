@@ -137,22 +137,6 @@ export function isTrustedCloudMatchBase(value: string | null | undefined): boole
   }
 }
 
-/**
- * Local-region discovery is a property of the *network path*, not of the
- * session: the answer for "which regional CloudMatch does this client reach
- * fastest" changes on the order of minutes-to-hours, and never within one
- * launch. Caching it removes a serial round trip from every subsequent launch
- * after the first, which is where the "starting the game takes a while" report
- * was mostly spent — this call sits directly in front of `POST /v2/session`.
- */
-const CREATE_BASE_TTL_MS = 10 * 60 * 1000;
-const createBaseCache = new Map<string, { base: string; at: number }>();
-
-/** Test seam: clears the memoised local-region answer. */
-export function resetCreateBaseCache(): void {
-  createBaseCache.clear();
-}
-
 export async function resolveCreateSessionBase(
   base: string,
   token: string,
@@ -162,12 +146,6 @@ export async function resolveCreateSessionBase(
 ): Promise<string> {
   if (!isDefaultStreamingServiceBase(base)) {
     return base;
-  }
-
-  const cacheKey = `${base}|${proxyUrl ?? ""}`;
-  const cached = createBaseCache.get(cacheKey);
-  if (cached && Date.now() - cached.at < CREATE_BASE_TTL_MS) {
-    return cached.base;
   }
 
   try {
@@ -183,12 +161,10 @@ export async function resolveCreateSessionBase(
       (await response.json()) as CloudMatchServerInfoResponse,
     );
     if (!localRegionBase || localRegionBase === base) {
-      createBaseCache.set(cacheKey, { base, at: Date.now() });
       return base;
     }
 
     console.log(`[CloudMatch] createSession resolved ${base} to local region ${localRegionBase}`);
-    createBaseCache.set(cacheKey, { base: localRegionBase, at: Date.now() });
     return localRegionBase;
   } catch (error) {
     console.warn(`[CloudMatch] createSession local-region discovery failed: ${formatErrorForLog(error)}`);
