@@ -74,7 +74,7 @@ export function StreamWaitingForVideo({
           exit={{ opacity: 0 }}
           transition={{ duration: 0.28 }}
         >
-          <MotionSpinner className="sv-warm-spin" size={34} label="Preparing stream" />
+          <MotionSpinner className="sv-warm-spin" size={34} label={t("stream.preparingStream")} />
           <p className="sv-warm-text">{t("stream.stats.waitingForVideo")}</p>
         </m.div>
       )}

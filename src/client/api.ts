@@ -130,7 +130,7 @@ async function connectSignaling(payload: SignalingConnectRequest): Promise<void>
         const parsed = JSON.parse(String(message.data)) as { type?: string; payload?: MainToRendererSignalingEvent };
         if (parsed.type === "event" && parsed.payload) emitSignaling(parsed.payload);
       } catch {
-        emitSignaling({ type: "error", message: "Received an invalid signaling message." });
+        emitSignaling({ type: "error", message: "シグナリングメッセージの形式が正しくありません。" });
       }
     };
     // A socket replaced by a reconnect (connectSignaling closes the previous
@@ -155,7 +155,7 @@ const updaterState = {
   canDownload: false,
   canInstall: false,
   isPackaged: true,
-  message: "The web app is updated by its host.",
+  message: "Web 版アプリはホスト側で更新されます。",
 };
 
 const REGION_PING_CONCURRENCY = 6;
@@ -190,7 +190,7 @@ async function measureRegionLatency(url: string): Promise<PingResult> {
     return {
       url,
       pingMs: null,
-      error: error instanceof Error ? error.message : "Region latency check failed.",
+      error: error instanceof Error ? error.message : "リージョンのレイテンシ計測に失敗しました。",
     };
   } finally {
     window.clearTimeout(timeout);
@@ -356,7 +356,7 @@ const bridge: OpenNowApi = {
   deleteCache: async () => { localStorage.removeItem("opennow.catalog.snapshot.v1"); },
   fetchPrintedWasteQueue: async () => ({}),
   fetchPrintedWasteServerMapping: async () => ({}),
-  getThanksData: async () => ({ contributors: [], supporters: [], contributorsError: "Community data is unavailable in this web build." }),
+  getThanksData: async () => ({ contributors: [], supporters: [], contributorsError: "この Web 版ではコミュニティ情報を取得できません。" }),
   provisionZortosCommunityProxy: async () => { throw new Error("Community proxy provisioning is unavailable in the hosted web app."); },
   setDiscordActivity: async () => {},
   clearDiscordActivity: async () => {},

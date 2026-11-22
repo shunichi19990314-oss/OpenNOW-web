@@ -13,10 +13,12 @@ export function formatWarningSeconds(value: number | undefined): string | null {
   const total = Math.floor(value);
   const minutes = Math.floor(total / 60);
   const seconds = total % 60;
+  // Unit suffixes are Japanese: this string is printed next to the session
+  // warning ("残り 2分 30秒"), not in a log.
   if (minutes > 0) {
-    return `${minutes}m ${seconds.toString().padStart(2, "0")}s`;
+    return `${minutes}分 ${seconds.toString().padStart(2, "0")}秒`;
   }
-  return `${seconds}s`;
+  return `${seconds}秒`;
 }
 
 export function formatSessionTimeRemaining(value: number | null): string | null {

@@ -59,7 +59,7 @@ export function Navbar({
 
   const navItems = controllerMode
     ? [
-        { id: "store", page: "home" as const, label: "Store", icon: StoreIcon },
+        { id: "store", page: "home" as const, label: t("navigation.home"), icon: StoreIcon },
         { id: "library", page: "library" as const, label: t("navigation.library"), icon: Library },
         { id: "settings", page: "settings" as const, label: t("navigation.settings"), icon: Settings },
       ]
@@ -76,12 +76,16 @@ export function Navbar({
     return Number.isInteger(rounded) ? String(rounded) : rounded.toFixed(1);
   };
   const formatHoursAndMinutes = (value: number): string => {
-    if (!Number.isFinite(value)) return "0m";
+    // The "m"/"h" suffixes used to be hard-coded here, so the navbar showed
+    // "2h 30m" on an otherwise Japanese page. Unit words now come from `t`.
+    if (!Number.isFinite(value)) return t("app.units.minutes", { value: 0 });
     const totalMinutes = Math.max(0, Math.round(value * 60));
     const hours = Math.floor(totalMinutes / 60);
     const minutes = totalMinutes % 60;
-    if (hours === 0) return `${minutes}m`;
-    return minutes === 0 ? `${hours}h` : `${hours}h ${minutes}m`;
+    if (hours === 0) return t("app.units.minutes", { value: minutes });
+    return minutes === 0
+      ? t("app.units.hours", { value: hours })
+      : t("app.units.hoursMinutes", { value: hours, minutes });
   };
   const formatGb = (value: number): string => {
     if (!Number.isFinite(value)) return "0";

@@ -41,7 +41,7 @@ export function defaultDiagnostics(): StreamDiagnostics {
     mouseResidualMagnitude: 0,
     mouseAdaptiveFlushActive: false,
     lagReason: "unknown",
-    lagReasonDetail: "Waiting for stream stats",
+    lagReasonDetail: "ストリーム統計を待機中",
     gpuType: "",
     serverRegion: "",
     decoderPressureActive: false,
@@ -106,8 +106,8 @@ export function mergeNativeStreamStats(
     mouseResidualMagnitude: 0,
     lagReason: dropPercent > 1 ? "render" : "stable",
     lagReasonDetail: stats.lastTransitionSummary
-      ? `Native bitrate ${stats.bitratePerformancePercent.toFixed(0)}% of target · ${stats.lastTransitionSummary}`
-      : `Native bitrate ${stats.bitratePerformancePercent.toFixed(0)}% of target`,
+      ? `ネイティブのビットレートは目標の ${stats.bitratePerformancePercent.toFixed(0)}% · ${stats.lastTransitionSummary}`
+      : `ネイティブのビットレートは目標の ${stats.bitratePerformancePercent.toFixed(0)}%`,
     decoderPressureActive: false,
     nativeRequestedFps: stats.requestedFps,
     nativeCapsFramerate: stats.capsFramerate,

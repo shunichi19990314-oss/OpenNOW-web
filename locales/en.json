@@ -62,7 +62,9 @@
       "milliseconds": "{{value}}ms",
       "minutes": "{{value}} min",
       "percent": "{{value}}%",
-      "seconds": "{{value}}s"
+      "seconds": "{{value}}s",
+      "lessThanMinute": "< 1 min",
+      "hoursMinutes": "{{value}} h {{minutes}} min"
     },
     "labels": {
       "auto": "Auto",
@@ -399,7 +401,11 @@
       "freeTier30MinutesRemaining": "30 minutes remaining in this free-tier session",
       "freeTier15MinutesRemaining": "15 minutes remaining in this free-tier session",
       "freeTierEndsSoon": "This free-tier session ends soon"
-    }
+    },
+    "exitPromptPrefix": "Do you really want to exit ",
+    "exitPromptSuffix": "?",
+    "keepPlaying": "Keep Playing",
+    "exitStreamConfirm": "Exit Stream"
   },
   "stream": {
     "sessionStarted": {
@@ -450,7 +456,33 @@
         "render": "Render",
         "stable": "Stable",
         "unknown": "Unknown"
-      }
+      },
+      "decodeShort": "D",
+      "renderShort": "R",
+      "jitterBufferShort": "JB",
+      "inputQueueShort": "IQ",
+      "partiallyReliableShort": "PR",
+      "mouseFlushShort": "MF",
+      "lagShort": "Lag",
+      "transportMouse": "mouse",
+      "transportOpen": "open",
+      "off": "off",
+      "inUse": "in use",
+      "notActive": "not active",
+      "active": "active",
+      "idle": "idle",
+      "none": "none",
+      "unknown": "unknown",
+      "perSecond": "{{value}}/s",
+      "advancedInputQueue": "Input queue peak {{peak}}KB · PR peak {{prPeak}}KB · drops {{drops}} · sched {{sched}}ms · residual {{residual}}",
+      "advancedGstreamerOn": "GStreamer enabled · {{state}}",
+      "advancedGstreamerOff": "GStreamer disabled · Chromium WebRTC",
+      "advancedDecoderRecovery": "Decoder recovery {{state}} · attempts {{attempts}} · action {{action}}",
+      "advancedNativeTransition": "Native transition {{summary}} · queue {{queue}} · caps {{caps}}{{extras}}",
+      "advancedRequested": "requested {{value}}fps",
+      "advancedPending": "pending {{value}}",
+      "advancedFlush": "flush {{partial}}/{{complete}}",
+      "advancedStreamFeatures": "Stream features requested {{requested}} · finalized {{finalized}}"
     },
     "controls": {
       "antiAfkEnabled": "Anti-AFK is enabled",
@@ -510,7 +542,74 @@
     "muteMic": "Mute microphone",
     "unmuteMic": "Unmute microphone",
     "mutedBadge": "Muted",
-    "adBreak": "Ad Break"
+    "adBreak": "Ad Break",
+    "pointerLockHint": "Press {{shortcut}} to exit fullscreen & release mouse",
+    "pointerLockEscapeHint": "Press Escape will also exit fullscreen per your settings.",
+    "pointerLockEscapeHold": "Escape goes to the game while pointer-locked; hold Escape ~1.5s to exit fullscreen.",
+    "kbdSelect": "Select",
+    "kbdBack": "Back",
+    "kbdPages": "Pages",
+    "windowed": "Windowed",
+    "capturing": "Capturing...",
+    "keyboard": "Keyboard",
+    "mousePreferences": "Mouse Preferences",
+    "mousePreferencesHint": "Fine-tune cursor movement.",
+    "mouseSensitivityHint": "Multiplier applied to mouse movement (1.00 = default).",
+    "mouseAccelerationHint": "Dynamic turn boost strength (1% = off-like, 150% = strongest).",
+    "videoFilters": "Video Filters",
+    "videoFiltersHint": "GPU shaders applied to the stream.",
+    "enableFilters": "Enable Filters",
+    "enableFiltersHint": "Enable GPU post-processing filters",
+    "resetFilters": "Reset Filters",
+    "microphoneMode": "Microphone Mode",
+    "micSendLevelHint": "Microphone send level (what others hear)",
+    "micNotActive": "Mic not active — check mode and permissions.",
+    "screenshotKey": "Screenshot key: {{key}}",
+    "capture": "Capture",
+    "recordingKey": "Record key: {{key}}",
+    "codec": "Codec: {{codec}}",
+    "recordingBitrate": "Recording bitrate: {{bitrate}}",
+    "auto": "Auto",
+    "recordingWithElapsed": "Recording {{elapsed}}",
+    "record": "Record",
+    "stop": "Stop",
+    "start": "Start",
+    "noScreenshotsYet": "No screenshots yet. Press {{key}} to capture one.",
+    "noRecordingsYet": "No recordings yet. Press {{key}} to record.",
+    "shortcutBindings": "Shortcut Bindings",
+    "shortcutPlaceholder": "Click, then press a key",
+    "toggleStats": "Toggle Stats",
+    "stopStream": "Stop Stream",
+    "toggleMicrophone": "Toggle Microphone",
+    "toggleSidebar": "Toggle Sidebar",
+    "screenshotPreview": "Screenshot preview",
+    "screenshotAlt": "Screenshot {{fileName}}",
+    "connectingToStream": "Connecting to stream",
+    "connectingTo": "Connecting to {{title}}",
+    "settingUp": "Setting up stream...",
+    "timeLeft": "{{value}} left",
+    "antiAfkOn": "Anti-AFK on",
+    "antiAfkOff": "Anti-AFK off",
+    "statsLabel": "Stats",
+    "shortcutEmpty": "Shortcut cannot be empty.",
+    "shortcutInvalid": "Invalid shortcut format.",
+    "shortcutConflict": "Shortcut conflicts with an existing binding.",
+    "galleryApiUnavailable": "Screenshot API unavailable. Restart OpenNOW to enable gallery.",
+    "galleryLoadFailed": "Unable to load screenshot gallery.",
+    "captureApiUnavailable": "Screenshot API unavailable. Restart OpenNOW to enable capture.",
+    "notReadyForScreenshots": "Stream is not ready for screenshots yet.",
+    "screenshotFailed": "Screenshot failed. Try again.",
+    "screenshotDeleteFailed": "Unable to delete screenshot.",
+    "screenshotSaveFailed": "Unable to save screenshot.",
+    "recordingsLoadFailed": "Unable to load recordings.",
+    "recordingDeleteFailed": "Unable to delete recording.",
+    "recordingApiUnavailable": "Recording API unavailable. Restart OpenNOW to enable recording.",
+    "notReadyForRecording": "Stream is not ready for recording yet.",
+    "recordingStartFailed": "Could not start recording.",
+    "recordingSaveFailed": "Recording could not be saved.",
+    "recordingError": "Recording encountered an error.",
+    "preparingStream": "Preparing stream",
+    "micLabel": "Mic"
   },
   "sidebar": {
     "title": "Sidebar",
@@ -669,7 +768,8 @@
       "syncSummary_plural": "{{count}} synced games as of {{date}}",
       "syncState": "Sync state: {{state}}",
       "syncUnknown": "Unknown",
-      "recently": "recently"
+      "recently": "recently",
+      "updating": "Updating..."
     },
     "video": {
       "title": "Video",
@@ -769,7 +869,9 @@
       "permissionDenied": "Microphone access was denied. Enable microphone access for OpenNOW in System Settings > Privacy & Security > Microphone.",
       "permissionRestricted": "Microphone access is restricted by macOS and cannot be enabled from OpenNOW.",
       "permissionUnknown": "Unable to determine microphone permission status. Check macOS microphone privacy settings for OpenNOW.",
-      "permissionUnavailable": "Microphone access is not available."
+      "permissionUnavailable": "Microphone access is not available.",
+      "permissionDeniedRetry": "Microphone access was denied. Allow access for OpenNOW and try again.",
+      "devicesUnavailable": "Unable to access microphone devices right now."
     },
     "input": {
       "title": "Input",
@@ -804,7 +906,9 @@
       "toggleStreamSidebar": "Toggle stream sidebar",
       "shortcutHint": "Click a field and press the keys to bind, or paste a shortcut ({{examples}}). Escape cancels focus. Full screen: {{fullscreen}}. Stop: {{stop}}. Mic: {{mic}}. Screenshot: {{screenshot}}. Recording: {{recording}}.",
       "touchGamepad": "Touch gamepad overlay",
-      "touchGamepadHint": "Show on-screen sticks and buttons while streaming on touch devices. Input is sent to the game as a virtual controller."
+      "touchGamepadHint": "Show on-screen sticks and buttons while streaming on touch devices. Input is sent to the game as a virtual controller.",
+      "conflictsWithSidebarToggle": "Shortcut conflicts with the settings sidebar toggle.",
+      "conflictsWithAnotherBinding": "Shortcut conflicts with another binding."
     },
     "interface": {
       "appearance": "Appearance",
@@ -937,7 +1041,10 @@
       "transportModeWebrtc": "WebRTC (Default)",
       "transportModeNvst": "NVST (Experimental)",
       "transportModeHint": "WebRTC is the supported path. NVST (experimental) uses classic RTSPS + UDP video (Moonlight-hypothesis scaffold) while keyboard/mouse/controller stay on WebRTC SCTP datachannels. First live sessions may need SRTP/pcap validation.",
-      "transportModeWindowsOnlyHint": "NVST transport is Windows-only for now. This platform always uses WebRTC."
+      "transportModeWindowsOnlyHint": "NVST transport is Windows-only for now. This platform always uses WebRTC.",
+      "autoBackendDescription": "Pick the default native path for the session",
+      "directx12Description": "Use the D3D12 decoder and renderer",
+      "directx11Description": "Use the D3D11 decoder and renderer"
     },
     "thanks": {
       "title": "Thanks for helping OpenNOW grow",
@@ -955,7 +1062,9 @@
       "loadingContributors": "Loading contributors from GitHub...",
       "loadingSupporters": "Loading supporters from GitHub Sponsors...",
       "noContributors": "No contributors could be shown right now.",
-      "noSupporters": "No supporters could be shown right now."
+      "noSupporters": "No supporters could be shown right now.",
+      "loadFailed": "Failed to load",
+      "contributions": "{{count}} contribution(s)"
     },
     "connectionTest": {
       "title": "Connection Test",
@@ -1143,7 +1252,13 @@
       "CA": "Canada",
       "THAI": "Southeast Asia",
       "MY": "Malaysia"
-    }
+    },
+    "launch": "Launch",
+    "badgeAuto": "AUTO",
+    "badgeNearest": "NEAREST",
+    "pinging": "pinging…",
+    "queueShort": "Q:{{position}}",
+    "fetchError": "Could not load queue data. You can still launch with default routing."
   },
   "accessibility": {
     "loading": "Loading",
@@ -1342,7 +1457,9 @@
       "unknown_action": "The AI asked for an unsupported action, so nothing was sent.",
       "input_not_ready": "The input channel is not connected yet. Waiting for it.",
       "frame_rejected": "The AI provider refused the screenshot, so this round used text only. Pick an image-capable model to use the screen.",
-      "timeout": "The AI reply timed out. Pick a different model or try again later."
+      "timeout": "The AI reply timed out. Pick a different model or try again later.",
+      "frame_captured": "画面画像を AI に送信しました。",
+      "forced_variety": "操作のバリエーションを確保するため、別の行動を選びました。"
     },
     "lastError": "Latest error (details in the activity log)",
     "visionUnavailableSwitch": "Pick an image-capable model (e.g. {{model}}) to send the screen",

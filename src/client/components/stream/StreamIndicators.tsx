@@ -77,6 +77,7 @@ export function AntiAfkIndicator({
   showAntiAfkIndicator: boolean;
   isConnecting: boolean;
 }): JSX.Element | null {
+  const { t } = useTranslation();
   const hasGamepad = useStreamDiagnosticsSelector(
     diagnosticsStore,
     (stats) => stats.connectedGamepads > 0,
@@ -87,7 +88,7 @@ export function AntiAfkIndicator({
   }
 
   return (
-    <div className={`sv-afk${hasGamepad ? " sv-afk--stacked" : ""}`} title="Anti-AFK is enabled">
+    <div className={`sv-afk${hasGamepad ? " sv-afk--stacked" : ""}`} title={t("stream.controls.antiAfkEnabled")}>
       <span className="sv-afk-dot" />
       <span className="sv-afk-label">ANTI-AFK ON</span>
     </div>
