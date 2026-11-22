@@ -68,7 +68,11 @@ export function RemainingPlaytimeIndicator({ subscriptionInfo, startedAtMs, acti
   const nowMs = useTicker(60_000);
   const elapsedSeconds = active && startedAtMs != null ? Math.max(0, Math.floor((nowMs - startedAtMs) / 1000)) : 0;
   const consumedHours = active ? Math.floor(elapsedSeconds / 60) / 60 : 0;
-  const remainingPlaytimeText = formatRemainingPlaytimeFromSubscription(subscriptionInfo, consumedHours);
+  const remainingPlaytimeText = formatRemainingPlaytimeFromSubscription(
+    subscriptionInfo,
+    consumedHours,
+    t("app.labels.unlimited"),
+  );
 
   return (
     <span className={className}>

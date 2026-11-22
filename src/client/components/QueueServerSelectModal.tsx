@@ -104,7 +104,7 @@ export function QueueServerSelectModal({ game, initialQueueData = null, onConfir
         const data = await window.openNow.fetchPrintedWasteQueue();
         if (!cancelled) setQueueData(data);
       } catch {
-        if (!cancelled) setFetchError("Could not load queue data. You can still launch with default routing.");
+        if (!cancelled) setFetchError(t("queueModal.fetchError"));
       } finally {
         if (!cancelled) setQueueLoading(false);
       }
@@ -530,7 +530,7 @@ export function QueueServerSelectModal({ game, initialQueueData = null, onConfir
                 btn.style.boxShadow = launchBtn.boxShadow as string;
               }}
             >
-              Launch
+              {t("queueModal.launch")}
             </button>
           </div>
         </div>
@@ -638,6 +638,7 @@ interface ZoneRowProps {
 }
 
 function ZoneRow({ zone, isAuto, isClosest, isPinging, selected, onClick }: ZoneRowProps): JSX.Element {
+  const { t } = useTranslation();
   const [hovered, setHovered] = useState(false);
 
   return (
@@ -679,12 +680,12 @@ function ZoneRow({ zone, isAuto, isClosest, isPinging, selected, onClick }: Zone
         </span>
         {isAuto && (
           <span style={{ fontSize: 10, background: "var(--accent-surface-strong)", color: "var(--accent)", borderRadius: 4, padding: "1px 5px", fontWeight: 700 }}>
-            AUTO
+            {t("queueModal.badgeAuto")}
           </span>
         )}
         {isClosest && !isAuto && (
           <span style={{ fontSize: 10, background: "var(--accent-surface)", color: "var(--accent)", borderRadius: 4, padding: "1px 5px", fontWeight: 700 }}>
-            NEAREST
+            {t("queueModal.badgeNearest")}
           </span>
         )}
       </div>
@@ -692,14 +693,14 @@ function ZoneRow({ zone, isAuto, isClosest, isPinging, selected, onClick }: Zone
       {/* Right */}
       <div style={{ display: "flex", gap: 10, alignItems: "center", flexShrink: 0 }}>
         {isPinging ? (
-          <span style={{ fontSize: 11, color: "var(--ink-dim)", fontStyle: "italic" }}>pinging…</span>
+          <span style={{ fontSize: 11, color: "var(--ink-dim)", fontStyle: "italic" }}>{t("queueModal.pinging")}</span>
         ) : zone.pingMs !== null ? (
           <span style={{ fontSize: 12, color: getPingColor(zone.pingMs), fontWeight: 600, minWidth: 46, textAlign: "right" }}>
             {zone.pingMs}ms
           </span>
         ) : null}
         <span style={{ fontSize: 12, color: getQueueColor(zone.queuePosition), fontWeight: 700, minWidth: 32, textAlign: "right" }}>
-          Q:{zone.queuePosition}
+          {t("queueModal.queueShort", { position: zone.queuePosition })}
         </span>
         {zone.etaMs !== undefined && (
           <span style={{ fontSize: 11, color: "var(--ink-muted)", minWidth: 44, textAlign: "right" }}>

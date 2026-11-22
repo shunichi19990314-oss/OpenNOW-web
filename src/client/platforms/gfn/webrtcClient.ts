@@ -588,7 +588,7 @@ export class GfnWebRtcClient {
     mouseResidualMagnitude: 0,
     mouseAdaptiveFlushActive: false,
     lagReason: "unknown",
-    lagReasonDetail: "Waiting for stream stats",
+    lagReasonDetail: "ストリーム統計を待機中",
     gpuType: "",
     serverRegion: "",
     decoderPressureActive: false,
@@ -1052,7 +1052,7 @@ export class GfnWebRtcClient {
       mouseResidualMagnitude: 0,
       mouseAdaptiveFlushActive: this.mouseAdaptiveFlushActive,
       lagReason: "unknown",
-      lagReasonDetail: "Waiting for stream stats",
+      lagReasonDetail: "ストリーム統計を待機中",
       gpuType: this.gpuType,
       serverRegion: this.serverRegion,
       decoderPressureActive: false,
@@ -1936,9 +1936,10 @@ export class GfnWebRtcClient {
       this.diagnostics.codec = this.currentCodec || "Native";
     }
     this.diagnostics.lagReason = "stable";
+    // Rendered in the stats overlay/tooltip, so it follows the UI language.
     this.diagnostics.lagReasonDetail = this.nativeElectronInputBridge
-      ? "Native streamer Electron input bridge active"
-      : "Native streamer external-window input active";
+      ? "ネイティブストリーマーの Electron 入力ブリッジが動作中"
+      : "ネイティブストリーマーの外部ウィンドウ入力が動作中";
     this.diagnostics.inputQueueBufferedBytes = 0;
     this.diagnostics.inputQueuePeakBufferedBytes = 0;
     this.diagnostics.partiallyReliableInputQueueBufferedBytes = 0;

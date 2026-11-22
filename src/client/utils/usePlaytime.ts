@@ -67,12 +67,13 @@ export function formatPlaytime(totalSeconds: number, neverLabel = "Never played"
 export function formatRemainingPlaytimeFromSubscription(
   subscription: { isUnlimited: boolean; remainingHours: number } | null,
   consumedHours = 0,
+  unlimitedLabel = "Unlimited",
 ): string {
   if (!subscription) {
     return "--";
   }
   if (subscription.isUnlimited) {
-    return "Unlimited";
+    return unlimitedLabel;
   }
 
   const baseHours = Number.isFinite(subscription.remainingHours) ? subscription.remainingHours : 0;

@@ -25,7 +25,7 @@ export class PageErrorBoundary extends Component<Props, State> {
     if (this.state.error) {
       return (
         <div style={{ padding: 32, color: "#fff", fontFamily: "monospace", whiteSpace: "pre-wrap" }}>
-          <h2 style={{ color: "#ff6b6b" }}>UI crashed{this.props.label ? `: ${this.props.label}` : ""}</h2>
+          <h2 style={{ color: "#ff6b6b" }}>{this.props.label ? `画面の描画に失敗しました: ${this.props.label}` : "画面の描画に失敗しました"}</h2>
           <p>{this.state.error.message}</p>
           <pre style={{ opacity: 0.8, fontSize: 12 }}>{this.state.error.stack}</pre>
         </div>

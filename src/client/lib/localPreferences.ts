@@ -158,16 +158,57 @@ export function compareGameTitles(left: string, right: string): number {
   }
 }
 
-/** Human readable total playtime, matching the desktop client's compact style. */
-export function formatTotalPlaytime(totalSeconds: number, neverLabel = "Never played"): string {
+/**
+ * Human readable total playtime.
+ *
+ * The unit words come from the caller (`t("app.units.hours")` etc.) instead of
+ * being baked in as "h"/"min": the rail and the library used to render the
+ * desktop client's compact English units on an otherwise Japanese page, which
+ * read as "4 min" right next to "2日前". Formatting stays here, wording does not.
+ */
+export function formatTotalPlaytime(
+  totalSeconds: number,
+  neverLabel = "未プレイ",
+  units: PlaytimeUnitLabels = DEFAULT_PLAYTIME_UNITS,
+): string {
   const seconds = toNonNegativeNumber(totalSeconds);
   if (seconds <= 0) return neverLabel;
-  if (seconds < 60) return "< 1 min";
+  if (seconds < 60) return units.lessThanMinute;
   const minutes = Math.floor(seconds / 60);
-  if (minutes < 60) return `${minutes} min`;
+  if (minutes < 60) return units.minutes(minutes);
   const hours = Math.floor(minutes / 60);
   const remainingMinutes = minutes % 60;
-  return remainingMinutes === 0 ? `${hours} h` : `${hours} h ${remainingMinutes} min`;
+  return remainingMinutes === 0 ? units.hours(hours) : units.hoursMinutes(hours, remainingMinutes);
+}
+
+/** Unit wording for {@link formatTotalPlaytime}; injected so it can be translated. */
+export interface PlaytimeUnitLabels {
+  lessThanMinute: string;
+  minutes(minutes: number): string;
+  hours(hours: number): string;
+  hoursMinutes(hours: number, minutes: number): string;
+}
+
+const DEFAULT_PLAYTIME_UNITS: PlaytimeUnitLabels = {
+  lessThanMinute: "< 1 min",
+  minutes: (minutes) => `${minutes} min`,
+  hours: (hours) => `${hours} h`,
+  hoursMinutes: (hours, minutes) => `${hours} h ${minutes} min`,
+};
+
+/**
+ * Build the playtime units from the active translations.
+ *
+ * `t` is passed in rather than imported so this module stays DOM/React free
+ * (the library page and the rail both call it during render).
+ */
+export function playtimeUnits(t: (key: string, values?: Record<string, string | number>) => string): PlaytimeUnitLabels {
+  return {
+    lessThanMinute: t("app.units.lessThanMinute"),
+    minutes: (minutes) => t("app.units.minutes", { value: minutes }),
+    hours: (hours) => t("app.units.hours", { value: hours }),
+    hoursMinutes: (hours, minutes) => t("app.units.hoursMinutes", { value: hours, minutes }),
+  };
 }
 
 /** Rank games by relevance then recent activity, for the command palette. */
