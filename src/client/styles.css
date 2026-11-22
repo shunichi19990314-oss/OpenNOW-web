@@ -12379,22 +12379,26 @@ body {
   margin-bottom: 26px;
 }
 
+/* Horizontal rails hide their scrollbar entirely (same as the controller
+   theater rows). A visible bar under every row was the brightest line on the
+   page, and it cannot be themed reliably: as soon as `scrollbar-width` is
+   declared, Chrome 121+ ignores `::-webkit-scrollbar` and paints the OS
+   scrollbar, whose colour comes from `scrollbar-color` (unset => a light UA
+   default even in dark mode). Hiding it is the only engine-independent result. */
 .home-row-scroller {
   display: flex;
   gap: 12px;
   overflow-x: auto;
   scroll-snap-type: x proximity;
   padding: 2px 2px 10px;
-  scrollbar-width: thin;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
 }
 
 .home-row-scroller::-webkit-scrollbar {
-  height: 6px;
-}
-
-.home-row-scroller::-webkit-scrollbar-thumb {
-  border-radius: var(--r-full);
-  background: color-mix(in srgb, var(--ink) 12%, transparent);
+  display: none;
+  width: 0;
+  height: 0;
 }
 
 .home-row-item {
@@ -12627,7 +12631,11 @@ body {
   flex: 1 1 auto;
   overflow-y: auto;
   padding: 8px;
+  /* `thin` alone hands the bar back to the UA (see `.home-row-scroller`):
+     Chromium drops ::-webkit-scrollbar and paints a light grey bar on the
+     dark panel. `scrollbar-color` keeps the engine-rendered bar on-theme. */
   scrollbar-width: thin;
+  scrollbar-color: color-mix(in srgb, var(--ink) 22%, transparent) transparent;
 }
 
 .command-palette-group + .command-palette-group {
