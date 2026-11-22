@@ -103,7 +103,7 @@ export function SettingsThanksSection(): JSX.Element {
             <span className="settings-person-badge">{t("settings.thanks.contributor")}</span>
           </div>
           <div className="settings-person-meta">
-            <span>{contributor.contributions} contribution{contributor.contributions === 1 ? "" : "s"}</span>
+            <span>{t("settings.thanks.contributions", { count: contributor.contributions })}</span>
             <ExternalLink size={14} />
           </div>
         </div>
@@ -189,7 +189,7 @@ export function SettingsThanksSection(): JSX.Element {
             </div>
           ) : (
             <div className="settings-thanks-state settings-thanks-state--muted">
-              <span>{thanksData?.contributorsError ?? t("settings.thanks.noContributors")}</span>
+              <span>{t("settings.thanks.noContributors")}</span>
             </div>
           )}
         </section>
@@ -215,7 +215,7 @@ export function SettingsThanksSection(): JSX.Element {
             </div>
           ) : (
             <div className="settings-thanks-state settings-thanks-state--muted">
-              <span>{thanksData?.supportersError ?? t("settings.thanks.noSupporters")}</span>
+              <span>{t("settings.thanks.noSupporters")}</span>
             </div>
           )}
         </section>
@@ -223,8 +223,10 @@ export function SettingsThanksSection(): JSX.Element {
 
       {hasThanksError && thanksData && (
         <section className="settings-section settings-thanks-status">
-          {thanksData.contributorsError && <span>{t("settings.thanks.contributorsTitle")}: {thanksData.contributorsError}</span>}
-          {thanksData.supportersError && <span>{t("settings.thanks.supportersTitle")}: {thanksData.supportersError}</span>}
+          {/* The payload's error text is opaque (and was English); name the part
+              that failed instead of printing a host-provided string. */}
+          {thanksData.contributorsError && <span>{t("settings.thanks.contributorsTitle")}: {t("settings.thanks.loadFailed")}</span>}
+          {thanksData.supportersError && <span>{t("settings.thanks.supportersTitle")}: {t("settings.thanks.loadFailed")}</span>}
         </section>
       )}
     </div>

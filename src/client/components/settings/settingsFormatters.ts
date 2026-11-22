@@ -18,6 +18,9 @@ import {
   isNativeStreamerSupportedPlatform,
   USER_FACING_VIDEO_CODEC_OPTIONS,
 } from "@shared/gfn";
+
+/** Minimal shape of `t` so this module stays independent of the i18n runtime. */
+export type TranslateFn = (key: string, values?: Record<string, string | number>) => string;
 import { getAccentColorOptions } from "../../lib/uiCustomization";
 import { normalizeShortcut } from "../../shortcuts";
 
@@ -213,23 +216,36 @@ export type ShortcutSettingKey = keyof typeof shortcutDefaults;
 
 export const SHORTCUT_SETTING_KEYS = Object.keys(shortcutDefaults) as ShortcutSettingKey[];
 
+/** Title/description wording for the native backend chips (labels are product names). */
+export function nativeVideoBackendDescription(value: NativeVideoBackendPreference, t: TranslateFn): string {
+  switch (value) {
+    case "d3d12":
+      return t("settings.nativeStreamer.directx12Description");
+    case "d3d11":
+      return t("settings.nativeStreamer.directx11Description");
+    default:
+      return t("settings.nativeStreamer.autoBackendDescription");
+  }
+}
+
 export function getShortcutConflictMessage(
   editingKey: ShortcutSettingKey,
   candidateCanonical: string,
   currentSettings: Settings,
+  t: TranslateFn,
 ): string | null {
   const sidebarShortcuts = SIDEBAR_TOGGLE_SHORTCUT_ALIASES
     .map((value) => normalizeShortcut(value))
     .filter((parsed) => parsed.valid)
     .map((parsed) => parsed.canonical);
   if (sidebarShortcuts.includes(candidateCanonical)) {
-    return "Shortcut conflicts with the settings sidebar toggle.";
+    return t("settings.input.conflictsWithSidebarToggle");
   }
   for (const key of SHORTCUT_SETTING_KEYS) {
     if (key === editingKey) continue;
     const parsed = normalizeShortcut(currentSettings[key]);
     if (parsed.valid && parsed.canonical === candidateCanonical) {
-      return "Shortcut conflicts with another binding.";
+      return t("settings.input.conflictsWithAnotherBinding");
     }
   }
   return null;
@@ -241,16 +257,16 @@ export const microphoneModeOptions: Array<{ value: MicrophoneMode; label: string
   { value: "voice-activity", label: "Voice Activity" },
 ];
 
-export function getMicrophonePermissionError(result: MicrophonePermissionResult): string {
+export function getMicrophonePermissionError(result: MicrophonePermissionResult, t: TranslateFn): string {
   switch (result.status) {
     case "denied":
-      return "Microphone access was denied. Enable microphone access for OpenNOW in System Settings → Privacy & Security → Microphone.";
+      return t("settings.audio.permissionDenied");
     case "restricted":
-      return "Microphone access is restricted by macOS and cannot be enabled from OpenNOW.";
+      return t("settings.audio.permissionRestricted");
     case "unknown":
-      return "Unable to determine microphone permission status. Check macOS microphone privacy settings for OpenNOW.";
+      return t("settings.audio.permissionUnknown");
     default:
-      return "Microphone access is not available.";
+      return t("settings.audio.permissionUnavailable");
   }
 }
 

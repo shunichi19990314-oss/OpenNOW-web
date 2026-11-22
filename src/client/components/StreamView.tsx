@@ -425,12 +425,12 @@ export function StreamView({
   const getScreenshotShortcutError = useCallback((rawValue: string): string | null => {
     const trimmed = rawValue.trim();
     if (!trimmed) {
-      return "Shortcut cannot be empty.";
+      return t("stream.shortcutEmpty");
     }
 
     const normalized = normalizeShortcut(trimmed);
     if (!normalized.valid) {
-      return "Invalid shortcut format.";
+      return t("stream.shortcutInvalid");
     }
 
     const reserved = [
@@ -448,7 +448,7 @@ export function StreamView({
       .map((parsed) => parsed.canonical);
 
     if (reserved.includes(normalized.canonical)) {
-      return "Shortcut conflicts with an existing binding.";
+      return t("stream.shortcutConflict");
     }
 
     return null;
@@ -457,12 +457,12 @@ export function StreamView({
   const getRecordingShortcutError = useCallback((rawValue: string): string | null => {
     const trimmed = rawValue.trim();
     if (!trimmed) {
-      return "Shortcut cannot be empty.";
+      return t("stream.shortcutEmpty");
     }
 
     const normalized = normalizeShortcut(trimmed);
     if (!normalized.valid) {
-      return "Invalid shortcut format.";
+      return t("stream.shortcutInvalid");
     }
 
     const reserved = [
@@ -480,7 +480,7 @@ export function StreamView({
       .map((parsed) => parsed.canonical);
 
     if (reserved.includes(normalized.canonical)) {
-      return "Shortcut conflicts with an existing binding.";
+      return t("stream.shortcutConflict");
     }
 
     return null;
@@ -498,7 +498,7 @@ export function StreamView({
       }
       const normalized = normalizeShortcut(canonical.trim());
       if (!normalized.valid) {
-        setScreenshotShortcutError("Invalid shortcut format.");
+        setScreenshotShortcutError(t("stream.shortcutInvalid"));
         return;
       }
       setScreenshotShortcutError(null);
@@ -519,7 +519,7 @@ export function StreamView({
       }
       const normalized = normalizeShortcut(canonical.trim());
       if (!normalized.valid) {
-        setRecordingShortcutError("Invalid shortcut format.");
+        setRecordingShortcutError(t("stream.shortcutInvalid"));
         return;
       }
       setRecordingShortcutError(null);
@@ -588,7 +588,7 @@ export function StreamView({
   const refreshScreenshots = useCallback(async () => {
     setGalleryError(null);
     if (!screenshotApiAvailable) {
-      setGalleryError("Screenshot API unavailable. Restart OpenNOW to enable gallery.");
+      setGalleryError(t("stream.galleryApiUnavailable"));
       return;
     }
     try {
@@ -596,14 +596,14 @@ export function StreamView({
       setScreenshots(items);
     } catch (error) {
       console.error("[StreamView] Failed to load screenshots:", error);
-      setGalleryError("Unable to load screenshot gallery.");
+      setGalleryError(t("stream.galleryLoadFailed"));
     }
   }, [screenshotApiAvailable]);
 
   const captureScreenshot = useCallback(async () => {
     setGalleryError(null);
     if (!screenshotApiAvailable) {
-      setGalleryError("Screenshot API unavailable. Restart OpenNOW to enable capture.");
+      setGalleryError(t("stream.captureApiUnavailable"));
       return;
     }
     if (isSavingScreenshot) {
@@ -612,7 +612,7 @@ export function StreamView({
 
     const video = localVideoRef.current;
     if (!video || video.videoWidth <= 0 || video.videoHeight <= 0) {
-      setGalleryError("Stream is not ready for screenshots yet.");
+      setGalleryError(t("stream.notReadyForScreenshots"));
       return;
     }
 
@@ -632,7 +632,7 @@ export function StreamView({
       setScreenshots((prev) => [saved, ...prev.filter((item) => item.id !== saved.id)].slice(0, 60));
     } catch (error) {
       console.error("[StreamView] Failed to capture screenshot:", error);
-      setGalleryError("Screenshot failed. Try again.");
+      setGalleryError(t("stream.screenshotFailed"));
     } finally {
       setIsSavingScreenshot(false);
     }
@@ -648,7 +648,7 @@ export function StreamView({
   const handleDeleteScreenshot = useCallback(async () => {
     setGalleryError(null);
     if (!screenshotApiAvailable) {
-      setGalleryError("Screenshot API unavailable. Restart OpenNOW to enable gallery.");
+      setGalleryError(t("stream.galleryApiUnavailable"));
       return;
     }
     if (!selectedScreenshot) return;
@@ -659,14 +659,14 @@ export function StreamView({
       setSelectedScreenshotId(null);
     } catch (error) {
       console.error("[StreamView] Failed to delete screenshot:", error);
-      setGalleryError("Unable to delete screenshot.");
+      setGalleryError(t("stream.screenshotDeleteFailed"));
     }
   }, [screenshotApiAvailable, selectedScreenshot]);
 
   const handleSaveScreenshotAs = useCallback(async () => {
     setGalleryError(null);
     if (!screenshotApiAvailable) {
-      setGalleryError("Screenshot API unavailable. Restart OpenNOW to enable gallery.");
+      setGalleryError(t("stream.galleryApiUnavailable"));
       return;
     }
     if (!selectedScreenshot) return;
@@ -675,7 +675,7 @@ export function StreamView({
       await window.openNow.saveScreenshotAs({ id: selectedScreenshot.id });
     } catch (error) {
       console.error("[StreamView] Failed to save screenshot as:", error);
-      setGalleryError("Unable to save screenshot.");
+      setGalleryError(t("stream.screenshotSaveFailed"));
     }
   }, [screenshotApiAvailable, selectedScreenshot]);
 
@@ -687,7 +687,7 @@ export function StreamView({
       setRecordings(items);
     } catch (error) {
       console.error("[StreamView] Failed to load recordings:", error);
-      setRecordingError("Unable to load recordings.");
+      setRecordingError(t("stream.recordingsLoadFailed"));
     }
   }, [recordingApiAvailable]);
 
@@ -699,7 +699,7 @@ export function StreamView({
       setRecordings((prev) => prev.filter((r) => r.id !== id));
     } catch (error) {
       console.error("[StreamView] Failed to delete recording:", error);
-      setRecordingError("Unable to delete recording.");
+      setRecordingError(t("stream.recordingDeleteFailed"));
     }
   }, [recordingApiAvailable]);
 
@@ -718,13 +718,13 @@ export function StreamView({
     }
 
     if (!recordingApiAvailable) {
-      setRecordingError("Recording API unavailable. Restart OpenNOW to enable recording.");
+      setRecordingError(t("stream.recordingApiUnavailable"));
       return;
     }
 
     const video = localVideoRef.current;
     if (!video || !video.srcObject) {
-      setRecordingError("Stream is not ready for recording yet.");
+      setRecordingError(t("stream.notReadyForRecording"));
       return;
     }
 
@@ -772,7 +772,7 @@ export function StreamView({
       console.error("[StreamView] Failed to begin recording:", error);
       audioCtx.close().catch(() => undefined);
       audioCtxRef.current = null;
-      setRecordingError("Could not start recording.");
+      setRecordingError(t("stream.recordingStartFailed"));
       return;
     }
 
@@ -864,7 +864,7 @@ export function StreamView({
         })
         .catch((err: unknown) => {
           console.error("[StreamView] Failed to finish recording:", err);
-          setRecordingError("Recording could not be saved.");
+          setRecordingError(t("stream.recordingSaveFailed"));
         });
     };
 
@@ -880,7 +880,7 @@ export function StreamView({
       if (id) {
         window.openNow.abortRecording({ recordingId: id }).catch(() => undefined);
       }
-      setRecordingError("Recording encountered an error.");
+      setRecordingError(t("stream.recordingError"));
     };
 
     mediaRecorderRef.current = recorder;
@@ -1469,11 +1469,11 @@ export function StreamView({
 
       {pointerLockHintVisible && (
         <div className="sv-pointerlock-hint" role="status" aria-live="polite">
-          <div>Press {shortcuts.toggleFullscreen} to exit fullscreen & release mouse</div>
+          <div>{t("stream.pointerLockHint", { shortcut: shortcuts.toggleFullscreen })}</div>
           <div className="sv-pointerlock-hint-sub">
             {allowEscapeToExitFullscreen
-              ? "Press Escape will also exit fullscreen per your settings."
-              : "Escape goes to the game while pointer-locked; hold Escape ~1.5s to exit fullscreen."}
+              ? t("stream.pointerLockEscapeHint")
+              : t("stream.pointerLockEscapeHold")}
           </div>
         </div>
       )}
@@ -1503,9 +1503,9 @@ export function StreamView({
             footer={(
               <>
                 <div className="sidebar-controller-hints" aria-hidden="true">
-                  <span><kbd>A</kbd> Select</span>
-                  <span><kbd>B</kbd> Back</span>
-                  <span><kbd>LB</kbd><kbd>RB</kbd> Pages</span>
+                  <span><kbd>A</kbd> {t("stream.kbdSelect")}</span>
+                  <span><kbd>B</kbd> {t("stream.kbdBack")}</span>
+                  <span><kbd>LB</kbd><kbd>RB</kbd> {t("stream.kbdPages")}</span>
                 </div>
                 <button
                   type="button"
@@ -1598,7 +1598,7 @@ export function StreamView({
                   <div className="sidebar-quick-actions">
                     <button type="button" className="sidebar-action-card" onClick={handleFullscreenToggle}>
                       {isFullscreen ? <Minimize size={16} /> : <Maximize size={16} />}
-                      <span>{isFullscreen ? "Windowed" : "Fullscreen"}</span>
+                      <span>{isFullscreen ? t("stream.windowed") : t("stream.controls.enterFullscreen")}</span>
                     </button>
                     <button type="button" className="sidebar-action-card" onClick={handlePointerLockToggle}>
                       <MousePointer2 size={16} />
@@ -1617,7 +1617,7 @@ export function StreamView({
                       disabled={isSavingScreenshot || !screenshotApiAvailable}
                     >
                       <Camera size={16} />
-                      <span>{isSavingScreenshot ? "Capturing" : "Screenshot"}</span>
+                      <span>{isSavingScreenshot ? t("stream.capturing") : t("sidebar.screenshot")}</span>
                     </button>
                   </div>
                 </section>
@@ -1638,7 +1638,7 @@ export function StreamView({
                   </label>
                 )}
                 <div className="sidebar-open-shortcuts">
-                  <span><kbd>{sidebarToggleShortcutDisplay}</kbd> Keyboard</span>
+                  <span><kbd>{sidebarToggleShortcutDisplay}</kbd> {t("stream.keyboard")}</span>
                   <span><Gamepad2 size={14} /> {CONTROLLER_SIDEBAR_SHORTCUT_DISPLAY}</span>
                 </div>
               </div>
@@ -1648,12 +1648,12 @@ export function StreamView({
               <div className="sidebar-page" role="tabpanel">
                 <section className="sidebar-section">
                   <div className="sidebar-section-header">
-                    <span>Mouse Preferences</span>
-                    <span className="sidebar-section-sub">Fine-tune cursor movement.</span>
+                    <span>{t("stream.mousePreferences")}</span>
+                    <span className="sidebar-section-sub">{t("stream.mousePreferencesHint")}</span>
                   </div>
                   <div className="sidebar-row sidebar-row--column">
                     <div className="sidebar-row-top">
-                      <span className="sidebar-label">Mouse Sensitivity</span>
+                      <span className="sidebar-label">{t("sidebar.mouseSensitivity")}</span>
                       <span className="settings-value-badge">{mouseSensitivity.toFixed(2)}x</span>
                     </div>
                     <input
@@ -1672,11 +1672,11 @@ export function StreamView({
                         }
                       }}
                     />
-                    <span className="sidebar-hint">Multiplier applied to mouse movement (1.00 = default).</span>
+                    <span className="sidebar-hint">{t("stream.mouseSensitivityHint")}</span>
                   </div>
                   <div className="sidebar-row sidebar-row--column">
                     <div className="sidebar-row-top">
-                      <span className="sidebar-label">Mouse Accelerator</span>
+                      <span className="sidebar-label">{t("sidebar.mouseAcceleration")}</span>
                       <span className="settings-value-badge">{Math.round(mouseAcceleration)}%</span>
                     </div>
                     <input
@@ -1695,22 +1695,22 @@ export function StreamView({
                         }
                       }}
                     />
-                    <span className="sidebar-hint">Dynamic turn boost strength (1% = off-like, 150% = strongest).</span>
+                    <span className="sidebar-hint">{t("stream.mouseAccelerationHint")}</span>
                   </div>
                 </section>
                 <div className="sidebar-separator" aria-hidden="true" />
                 <section className="sidebar-section">
                   <div className="sidebar-section-header">
-                    <span>Video Filters</span>
-                    <span className="sidebar-section-sub">GPU shaders applied to the stream.</span>
+                    <span>{t("stream.videoFilters")}</span>
+                    <span className="sidebar-section-sub">{t("stream.videoFiltersHint")}</span>
                   </div>
                   {gstreamerEnabled ? (
                     <span className="sidebar-hint">{t("sidebar.filtersNativeUnavailable")}</span>
                   ) : (
                     <>
                       <div className="sidebar-row sidebar-row--aligned">
-                        <span className="sidebar-label">Enable Filters</span>
-                        <label className="sidebar-mini-toggle" title="Enable GPU post-processing filters" tabIndex={0}>
+                        <span className="sidebar-label">{t("stream.enableFilters")}</span>
+                        <label className="sidebar-mini-toggle" title={t("stream.enableFiltersHint")} tabIndex={0}>
                           <input
                             type="checkbox"
                             name="enable-video-filters"
@@ -1760,7 +1760,7 @@ export function StreamView({
                             </div>
                           ))}
                           <div className="sidebar-row sidebar-row--aligned">
-                            <span className="sidebar-label">Reset Filters</span>
+                            <span className="sidebar-label">{t("stream.resetFilters")}</span>
                             <button
                               type="button"
                               className="sidebar-button"
@@ -1782,7 +1782,7 @@ export function StreamView({
                   </div>
                   <div className="sidebar-row sidebar-row--column">
                     <div className="sidebar-row-top">
-                      <span className="sidebar-label">Microphone Mode</span>
+                      <span className="sidebar-label">{t("stream.microphoneMode")}</span>
                       <span className="settings-value-badge">
                         {microphoneModes.find((option) => option.value === microphoneMode)?.label ?? microphoneMode}
                       </span>
@@ -1812,9 +1812,9 @@ export function StreamView({
                       <canvas
                         ref={micMeterRef}
                         className="mic-meter-canvas"
-                        aria-label="Microphone send level (what others hear)"
+                        aria-label={t("stream.micSendLevelHint")}
                       />
-                      {!micTrack && <span className="sidebar-hint">Mic not active — check mode and permissions.</span>}
+                      {!micTrack && <span className="sidebar-hint">{t("stream.micNotActive")}</span>}
                     </div>
                   )}
                 </section>
@@ -1826,7 +1826,7 @@ export function StreamView({
                 <section className="sidebar-section">
                   <div className="sidebar-section-header">
                     <span>{t("sidebar.gallery")}</span>
-                    <span className="sidebar-section-sub">Screenshot key: {shortcuts.screenshot}</span>
+                    <span className="sidebar-section-sub">{t("stream.screenshotKey", { key: shortcuts.screenshot })}</span>
                   </div>
                   <div className="sidebar-row sidebar-row--aligned">
                     <span className="sidebar-label">{t("sidebar.screenshots")}</span>
@@ -1839,7 +1839,7 @@ export function StreamView({
                       disabled={isSavingScreenshot || !screenshotApiAvailable}
                     >
                       <Camera size={14} />
-                      <span>{isSavingScreenshot ? "Capturing..." : "Capture"}</span>
+                      <span>{isSavingScreenshot ? t("stream.capturing") : t("stream.capture")}</span>
                     </button>
                   </div>
                   <div className="sidebar-gallery-row">
@@ -1874,7 +1874,7 @@ export function StreamView({
                     </button>
                   </div>
                   {screenshots.length === 0 && (
-                    <span className="sidebar-hint">No screenshots yet. Press {shortcuts.screenshot} to capture one.</span>
+                    <span className="sidebar-hint">{t("stream.noScreenshotsYet", { key: shortcuts.screenshot })}</span>
                   )}
                   {galleryError && <span className="sidebar-hint sidebar-hint--error">{galleryError}</span>}
                 </section>
@@ -1882,17 +1882,19 @@ export function StreamView({
                 <section className="sidebar-section">
                   <div className="sidebar-section-header">
                     <span>{t("sidebar.recordings")}</span>
-                    <span className="sidebar-section-sub">Record key: {shortcuts.recording}</span>
+                    <span className="sidebar-section-sub">{t("stream.recordingKey", { key: shortcuts.recording })}</span>
                   </div>
                   {usedMimeType && (
-                    <span className="sidebar-hint sidebar-hint--codec">Codec: {usedMimeType}</span>
+                    <span className="sidebar-hint sidebar-hint--codec">{t("stream.codec", { codec: usedMimeType })}</span>
                   )}
                   <span className="sidebar-hint sidebar-hint--codec">
-                    Recording bitrate: {recordingBitrateMbps === null ? "Auto" : `${recordingBitrateMbps} Mbps`}
+                    {t("stream.recordingBitrate", { bitrate: recordingBitrateMbps === null ? t("stream.auto") : `${recordingBitrateMbps} Mbps` })}
                   </span>
                   <div className="sidebar-row sidebar-row--aligned">
                     <span className="sidebar-label">
-                      {isRecording ? `Recording ${formatElapsed(Math.round(recordingDurationMs / 1000))}` : "Record"}
+                      {isRecording
+                        ? t("stream.recordingWithElapsed", { elapsed: formatElapsed(Math.round(recordingDurationMs / 1000)) })
+                        : t("stream.record")}
                     </span>
                     <button
                       type="button"
@@ -1901,14 +1903,14 @@ export function StreamView({
                       disabled={!recordingApiAvailable}
                     >
                       {isRecording ? <Square size={14} /> : <Circle size={14} />}
-                      <span>{isRecording ? "Stop" : "Start"}</span>
+                      <span>{isRecording ? t("stream.stop") : t("stream.start")}</span>
                     </button>
                   </div>
                   {recordingError && (
                     <span className="sidebar-hint sidebar-hint--error">{recordingError}</span>
                   )}
                   {recordings.length === 0 ? (
-                    <span className="sidebar-hint">No recordings yet. Press {shortcuts.recording} to record.</span>
+                    <span className="sidebar-hint">{t("stream.noRecordingsYet", { key: shortcuts.recording })}</span>
                   ) : (
                     <div className="sidebar-gallery-row">
                       <button
@@ -1981,12 +1983,12 @@ export function StreamView({
               <div className="sidebar-page" role="tabpanel">
                 <section className="sidebar-section">
                   <div className="sidebar-section-header">
-                    <span>Shortcut Bindings</span>
+                    <span>{t("stream.shortcutBindings")}</span>
                     <span className="sidebar-section-sub">{t("sidebar.editScreenshotKeybind")}</span>
                   </div>
                   <div className="sidebar-row sidebar-row--column">
                     <div className="sidebar-row-top">
-                      <span className="sidebar-label">Screenshot Shortcut</span>
+                      <span className="sidebar-label">{t("sidebar.screenshotShortcut")}</span>
                     </div>
                     <input
                       type="text"
@@ -2005,7 +2007,7 @@ export function StreamView({
                         }
                         const normalized = normalizeShortcut(screenshotShortcutInput.trim());
                         if (!normalized.valid) {
-                          setScreenshotShortcutError("Invalid shortcut format.");
+                          setScreenshotShortcutError(t("stream.shortcutInvalid"));
                           return;
                         }
                         setScreenshotShortcutError(null);
@@ -2015,7 +2017,7 @@ export function StreamView({
                         }
                       }}
                       onKeyDown={handleStreamScreenshotShortcutKeyDown}
-                      placeholder="Click, then press a key"
+                      placeholder={t("stream.shortcutPlaceholder")}
                       title={t("sidebar.keybindFocusHint")}
                       spellCheck={false}
                     />
@@ -2023,7 +2025,7 @@ export function StreamView({
                   {screenshotShortcutError && <span className="sidebar-hint sidebar-hint--error">{screenshotShortcutError}</span>}
                   <div className="sidebar-row sidebar-row--column">
                     <div className="sidebar-row-top">
-                      <span className="sidebar-label">Recording Shortcut</span>
+                      <span className="sidebar-label">{t("sidebar.recordingShortcut")}</span>
                     </div>
                     <input
                       type="text"
@@ -2042,7 +2044,7 @@ export function StreamView({
                         }
                         const normalized = normalizeShortcut(recordingShortcutInput.trim());
                         if (!normalized.valid) {
-                          setRecordingShortcutError("Invalid shortcut format.");
+                          setRecordingShortcutError(t("stream.shortcutInvalid"));
                           return;
                         }
                         setRecordingShortcutError(null);
@@ -2052,32 +2054,32 @@ export function StreamView({
                         }
                       }}
                       onKeyDown={handleStreamRecordingShortcutKeyDown}
-                      placeholder="Click, then press a key"
+                      placeholder={t("stream.shortcutPlaceholder")}
                       title={t("sidebar.keybindFocusHint")}
                       spellCheck={false}
                     />
                   </div>
                   {recordingShortcutError && <span className="sidebar-hint sidebar-hint--error">{recordingShortcutError}</span>}
                   <div className="sidebar-row sidebar-row--aligned">
-                    <span className="sidebar-label">Toggle Stats</span>
+                    <span className="sidebar-label">{t("stream.toggleStats")}</span>
                     <span className="settings-value-badge">{shortcuts.toggleStats}</span>
                   </div>
                   <div className="sidebar-row sidebar-row--aligned">
-                    <span className="sidebar-label">Mouse Lock</span>
+                    <span className="sidebar-label">{t("stream.mouseLock")}</span>
                     <span className="settings-value-badge">{shortcuts.togglePointerLock}</span>
                   </div>
                   <div className="sidebar-row sidebar-row--aligned">
-                    <span className="sidebar-label">Stop Stream</span>
+                    <span className="sidebar-label">{t("stream.stopStream")}</span>
                     <span className="settings-value-badge">{shortcuts.stopStream}</span>
                   </div>
                   {shortcuts.toggleMicrophone && (
                     <div className="sidebar-row sidebar-row--aligned">
-                      <span className="sidebar-label">Toggle Microphone</span>
+                      <span className="sidebar-label">{t("stream.toggleMicrophone")}</span>
                       <span className="settings-value-badge">{shortcuts.toggleMicrophone}</span>
                     </div>
                   )}
                   <div className="sidebar-row sidebar-row--aligned">
-                    <span className="sidebar-label">Toggle Sidebar</span>
+                    <span className="sidebar-label">{t("stream.toggleSidebar")}</span>
                     <span className="sidebar-shortcut-stack">
                       <span className="settings-value-badge">{sidebarToggleShortcutDisplay}</span>
                       <span className="settings-value-badge">{CONTROLLER_SIDEBAR_SHORTCUT_DISPLAY}</span>
@@ -2091,7 +2093,7 @@ export function StreamView({
       </AnimatePresence>
 
       {selectedScreenshot && (
-        <div className="sv-shot-modal" role="dialog" aria-modal="true" aria-label="Screenshot preview">
+        <div className="sv-shot-modal" role="dialog" aria-modal="true" aria-label={t("stream.screenshotPreview")}>
           <button
             type="button"
             className="sv-shot-modal-backdrop"
@@ -2113,7 +2115,7 @@ export function StreamView({
             <img
               className="sv-shot-modal-image"
               src={selectedScreenshot.dataUrl}
-              alt={`Screenshot ${selectedScreenshot.fileName}`}
+              alt={t("stream.screenshotAlt", { fileName: selectedScreenshot.fileName })}
             />
             <div className="sv-shot-modal-actions">
               <button
@@ -2149,8 +2151,8 @@ export function StreamView({
       {isConnecting && (
         <div className="sv-connect">
           <div className="sv-connect-inner">
-            <MotionSpinner className="sv-connect-spin" size={44} label="Connecting to stream" />
-            <p className="sv-connect-title">Connecting to {gameTitle}</p>
+            <MotionSpinner className="sv-connect-spin" size={44} label={t("stream.connectingToStream")} />
+            <p className="sv-connect-title">{t("stream.connectingTo", { title: gameTitle })}</p>
             {PlatformIcon && (
               <div className="sv-connect-platform" title={platformName}>
                 <span className="sv-connect-platform-icon">
@@ -2159,7 +2161,7 @@ export function StreamView({
                 <span>{platformName}</span>
               </div>
             )}
-            <p className="sv-connect-sub">Setting up stream...</p>
+            <p className="sv-connect-sub">{t("stream.settingUp")}</p>
           </div>
         </div>
       )}
@@ -2182,7 +2184,7 @@ export function StreamView({
           <AlertTriangle size={14} />
           <span>
             {streamWarning.message}
-            {warningSeconds ? ` · ${warningSeconds} left` : ""}
+            {warningSeconds ? ` · ${t("stream.timeLeft", { value: warningSeconds })}` : ""}
           </span>
         </div>
       )}
@@ -2190,7 +2192,7 @@ export function StreamView({
       {antiAfkToggleAck && !isConnecting && (
         <div className={`sv-afk-ack sv-afk-ack--${antiAfkToggleAck}`} role="status" aria-live="polite">
           <span className="sv-afk-ack-dot" aria-hidden />
-          <span>{antiAfkToggleAck === "on" ? "Anti-AFK on" : "Anti-AFK off"}</span>
+          <span>{antiAfkToggleAck === "on" ? t("stream.antiAfkOn") : t("stream.antiAfkOff")}</span>
         </div>
       )}
 
@@ -2255,20 +2257,20 @@ export function StreamView({
             <div className="sv-exit-kicker">{t("session.control")}</div>
             <h3 className="sv-exit-title">{t("session.exitStream")}</h3>
             <p className="sv-exit-text">
-              Do you really want to exit <strong>{exitPrompt.gameTitle}</strong>?
+              {t("session.exitPromptPrefix")}<strong>{exitPrompt.gameTitle}</strong>{t("session.exitPromptSuffix")}
             </p>
             <p className="sv-exit-subtext">{t("stream.exitBody")}</p>
             <div className="sv-exit-actions">
               <button type="button" className="sv-exit-btn sv-exit-btn-cancel" onClick={onCancelExit}>
-                Keep Playing
+                {t("session.keepPlaying")}
               </button>
               <button type="button" className="sv-exit-btn sv-exit-btn-confirm" onClick={onConfirmExit}>
-                Exit Stream
+                {t("session.exitStreamConfirm")}
               </button>
             </div>
             <div className="sv-exit-hint">
               <span><kbd>Enter</kbd> {t("stream.kbdConfirm")} · <kbd>Esc</kbd> {t("stream.kbdCancel")}</span>
-              <span><kbd>A</kbd> select · <kbd>B</kbd> cancel</span>
+              <span><kbd>A</kbd> {t("stream.kbdSelect")} · <kbd>B</kbd> {t("stream.kbdCancel")}</span>
             </div>
           </div>
         </div>,
@@ -2302,12 +2304,12 @@ export function StreamView({
       {/* Keyboard hints */}
       {showHints && !isConnecting && (
         <div className="sv-hints">
-          <div className="sv-hint"><kbd>{shortcuts.toggleStats}</kbd><span>Stats</span></div>
+          <div className="sv-hint"><kbd>{shortcuts.toggleStats}</kbd><span>{t("stream.statsLabel")}</span></div>
           <div className="sv-hint"><kbd>{shortcuts.togglePointerLock}</kbd><span>{t("stream.mouseLock")}</span></div>
           <div className="sv-hint"><kbd>{shortcuts.toggleFullscreen}</kbd><span>{t("stream.fullScreenShort")}</span></div>
-          <div className="sv-hint"><kbd>{shortcuts.stopStream}</kbd><span>Stop</span></div>
+          <div className="sv-hint"><kbd>{shortcuts.stopStream}</kbd><span>{t("stream.stop")}</span></div>
           <div className="sv-hint"><kbd>{CONTROLLER_SIDEBAR_SHORTCUT_DISPLAY}</kbd><span>{t("stream.controllerMenu")}</span></div>
-          {shortcuts.toggleMicrophone && <div className="sv-hint"><kbd>{shortcuts.toggleMicrophone}</kbd><span>Mic</span></div>}
+          {shortcuts.toggleMicrophone && <div className="sv-hint"><kbd>{shortcuts.toggleMicrophone}</kbd><span>{t("stream.micLabel")}</span></div>}
         </div>
       )}
 

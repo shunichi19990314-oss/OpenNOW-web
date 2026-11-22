@@ -67,7 +67,7 @@ export function SettingsInputSection({ settings, showAll, handleChange }: Settin
   const handleShortcutBlur = (key: ShortcutSettingKey, rawValue: string): void => {
     const trimmed = rawValue.trim();
     if (!trimmed) {
-      const msg = "Shortcut cannot be empty.";
+      const msg = t("stream.shortcutEmpty");
       switch (key) {
         case "shortcutToggleStats": setToggleStatsError(msg); break;
         case "shortcutTogglePointerLock": setTogglePointerLockError(msg); break;
@@ -83,7 +83,7 @@ export function SettingsInputSection({ settings, showAll, handleChange }: Settin
 
     const normalized = normalizeShortcut(trimmed);
     if (!normalized.valid) {
-      const msg = "Invalid shortcut format.";
+      const msg = t("stream.shortcutInvalid");
       switch (key) {
         case "shortcutToggleStats": setToggleStatsError(msg); break;
         case "shortcutTogglePointerLock": setTogglePointerLockError(msg); break;
@@ -97,7 +97,7 @@ export function SettingsInputSection({ settings, showAll, handleChange }: Settin
       return;
     }
 
-    const conflict = getShortcutConflictMessage(key, normalized.canonical, settings);
+    const conflict = getShortcutConflictMessage(key, normalized.canonical, settings, t);
     if (conflict) {
       switch (key) {
         case "shortcutToggleStats": setToggleStatsError(conflict); break;
@@ -140,7 +140,7 @@ export function SettingsInputSection({ settings, showAll, handleChange }: Settin
   };
 
   const applyShortcutCapture = (key: ShortcutSettingKey, canonical: string): void => {
-    const conflict = getShortcutConflictMessage(key, canonical, settings);
+    const conflict = getShortcutConflictMessage(key, canonical, settings, t);
     if (conflict) {
       switch (key) {
         case "shortcutToggleStats": setToggleStatsError(conflict); break;
@@ -210,7 +210,7 @@ export function SettingsInputSection({ settings, showAll, handleChange }: Settin
     e.preventDefault();
     const normalized = normalizeShortcut(text);
     if (!normalized.valid) {
-      const msg = "Invalid shortcut format.";
+      const msg = t("stream.shortcutInvalid");
       switch (key) {
         case "shortcutToggleStats": setToggleStatsError(msg); break;
         case "shortcutTogglePointerLock": setTogglePointerLockError(msg); break;

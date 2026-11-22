@@ -28,7 +28,7 @@ export function classifyStreamLagReason(
   if (params.nativeInputActive || params.nativeRendererActive) {
     return {
       reason: "stable",
-      detail: "Native streamer input bridge active",
+      detail: "ネイティブストリーマーの入力ブリッジが動作中",
     };
   }
 
@@ -92,10 +92,12 @@ export function classifyStreamLagReason(
     }
   }
 
+  // `detail` is not a diagnostic log line: the stats overlay prints it under
+  // "ラグの原因 …" and in the warning pill tooltip, so it stays Japanese.
   return {
     reason: params.decodeFps > 0 || params.renderFps > 0 ? "stable" : "unknown",
     detail: params.decodeFps > 0 || params.renderFps > 0
-      ? "No dominant lag source detected"
-      : "Waiting for stream stats",
+      ? "目立った原因はありません"
+      : "ストリーム統計を待機中",
   };
 }

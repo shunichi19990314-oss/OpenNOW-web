@@ -6,7 +6,7 @@ import type { CatalogSortOption, GameInfo } from "@shared/gfn";
 import { GameCardListItem, useCatalogCardActionsRef } from "./GameCardListItem";
 import { GameDetailsModal } from "./GameDetailsModal";
 import type { PlaytimeData } from "../lib/gameCatalog";
-import { formatTotalPlaytime, toFavoriteSet } from "../lib/localPreferences";
+import { formatTotalPlaytime, playtimeUnits, toFavoriteSet } from "../lib/localPreferences";
 import { getControllerFeaturedGames } from "../lib/controllerCatalogUi";
 import {
   gameMatchesLibraryFilters,
@@ -516,7 +516,7 @@ export const LibraryPage = memo(function LibraryPage({
             // One row only: the relative time already appears above, repeating
             // it next to the total made the card look inconsistent.
             <div className="library-playtime" title={t("library.totalPlaytime")}>
-              <span>{formatTotalPlaytime(totalPlaytime, t("home.continuePlaying.neverPlayed"))}</span>
+              <span>{formatTotalPlaytime(totalPlaytime, t("home.continuePlaying.neverPlayed"), playtimeUnits(t))}</span>
             </div>
           )}
         </div>
