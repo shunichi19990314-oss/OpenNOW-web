@@ -6,10 +6,12 @@ export interface LaunchOwnershipError {
   description: string;
 }
 
+// Rendered in the launch error overlay, so the copy is Japanese. It lives here
+// rather than in `t()` because the helper is sync and has no translator.
 const EPIC_OWNERSHIP_ERROR: LaunchOwnershipError = {
-  title: "Epic Games Library Required",
+  title: "Epic Games のライブラリが必要です",
   description:
-    "This Epic Games version is not in your GeForce NOW library. Add it to Epic, sync GeForce NOW, or choose another owned store.",
+    "この Epic Games 版は GeForce NOW のライブラリにありません。Epic に追加して GeForce NOW を同期するか、所有済みの別ストアを選んでください。",
 };
 
 export function isInstallToPlayGame(game: Pick<GameInfo, "playType">): boolean {

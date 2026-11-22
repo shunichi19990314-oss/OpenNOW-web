@@ -131,7 +131,7 @@ export function SettingsThanksSection(): JSX.Element {
         </div>
         <div className="settings-person-body">
           <div className="settings-person-title-row">
-            <span className="settings-person-name">{supporter.name || "Private"}</span>
+            <span className="settings-person-name">{supporter.name || t("settings.thanks.privateSupporterName")}</span>
             <span className="settings-person-badge settings-person-badge--supporter">{t("settings.thanks.supporter")}</span>
           </div>
           <div className="settings-person-meta">

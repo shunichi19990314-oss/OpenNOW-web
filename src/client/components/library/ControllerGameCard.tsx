@@ -1,5 +1,6 @@
 import type { JSX } from "react";
 import type { GameInfo } from "@shared/gfn";
+import { useTranslation } from "../../i18n";
 import { getGameLogoUrl } from "../../lib/controllerCatalogUi";
 import { getStoreDisplayName, getStoreIconComponent } from "../GameCard";
 
@@ -16,6 +17,7 @@ export function ControllerGameCard({
   onSelect: () => void;
   onPlay: () => void;
 }): JSX.Element {
+  const { t } = useTranslation();
   const variants = game.variants ?? [];
   const selectedVariant = variants.find((variant) => variant.id === selectedVariantId)
     ?? variants[game.selectedVariantIndex]
@@ -36,7 +38,7 @@ export function ControllerGameCard({
         {game.imageUrl ? <img src={game.imageUrl} alt="" loading="lazy" /> : <span className="controller-native-card-placeholder">{game.title.slice(0, 1)}</span>}
       </span>
       {store && (
-        <span className="controller-native-card-store" title={getStoreDisplayName(store)}>
+        <span className="controller-native-card-store" title={getStoreDisplayName(store, t)}>
           <StoreIcon />
         </span>
       )}

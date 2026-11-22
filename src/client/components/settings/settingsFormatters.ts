@@ -31,24 +31,24 @@ export const POSTER_SIZE_STEP = 5;
 export const codecOptions: VideoCodecPreference[] = ["AUTO", ...USER_FACING_VIDEO_CODEC_OPTIONS];
 
 export const accelerationOptions: { value: VideoAccelerationPreference; label: string }[] = [
-  { value: "auto", label: "Auto" },
-  { value: "hardware", label: "Hardware" },
-  { value: "software", label: "Software (CPU)" },
+  { value: "auto", label: "自動" },
+  { value: "hardware", label: "ハードウェア" },
+  { value: "software", label: "ソフトウェア（CPU）" },
 ];
 
 export const allColorQualityOptions: { value: ColorQuality; label: string; description: string }[] = [
-  { value: "8bit_420", label: "8-bit 4:2:0", description: "Most compatible" },
-  { value: "8bit_444", label: "8-bit 4:4:4", description: "Sharper chroma" },
-  { value: "10bit_420", label: "10-bit 4:2:0", description: "Higher bit depth" },
-  { value: "10bit_444", label: "10-bit 4:4:4", description: "Highest chroma and bit depth" },
+  { value: "8bit_420", label: "8-bit 4:2:0", description: "最も互換性が高い" },
+  { value: "8bit_444", label: "8-bit 4:4:4", description: "クロマがより精細" },
+  { value: "10bit_420", label: "10-bit 4:2:0", description: "ビット深度が高い" },
+  { value: "10bit_444", label: "10-bit 4:4:4", description: "クロマとビット深度が最大" },
 ];
 
 export const colorQualityOptions: { value: ColorQuality; label: string; description: string }[] = [...allColorQualityOptions];
 
 export const nativeVideoBackendOptions: { value: NativeVideoBackendPreference; label: string; description: string }[] = [
-  { value: "auto", label: "Auto", description: "Pick the default native path for the session" },
-  { value: "d3d12", label: "DirectX 12", description: "Use the D3D12 decoder and renderer" },
-  { value: "d3d11", label: "DirectX 11", description: "Use the D3D11 decoder and renderer" },
+  { value: "auto", label: "自動", description: "セッションの既定のネイティブ経路を使用します" },
+  { value: "d3d12", label: "DirectX 12", description: "D3D12 のデコーダーとレンダラーを使用します" },
+  { value: "d3d11", label: "DirectX 11", description: "D3D11 のデコーダーとレンダラーを使用します" },
 ];
 
 export const APP_LANGUAGE_LABELS: Record<string, string> = {
@@ -87,9 +87,9 @@ export function formatNativeVideoBackendName(backend: string | undefined): strin
     case "vulkan":
       return "Vulkan";
     case "software":
-      return "Software";
+      return "ソフトウェア";
     default:
-      return backend ?? "Unknown";
+      return backend ?? "不明";
   }
 }
 
@@ -115,13 +115,13 @@ export function getAvailableNativeCodecLabels(backend: NativeVideoBackendCapabil
 export function formatGstreamerRuntimeLabel(status: NativeStreamerStatus | null): string {
   switch (status?.gstreamerRuntime.source) {
     case "bundled":
-      return status.gstreamerAvailable ? "Bundled Runtime Used" : "Bundled Runtime Found";
+      return status.gstreamerAvailable ? "同梱ランタイムを使用中" : "同梱ランタイムを検出";
     case "system":
-      return "System Runtime";
+      return "システムランタイム";
     case "missing":
-      return "Runtime Missing";
+      return "ランタイムが見つかりません";
     default:
-      return "Runtime Unknown";
+      return "ランタイム不明";
   }
 }
 
@@ -164,13 +164,13 @@ export const STATIC_RESOLUTION_PRESETS: ResolutionPreset[] = [
   { value: "1680x1050", label: "WSXGA (16:10)" },
   { value: "1920x1080", label: "1080p (16:9)" },
   { value: "1920x1200", label: "1200p (16:10)" },
-  { value: "2560x1080", label: "Ultrawide 1080p (21:9)" },
+  { value: "2560x1080", label: "1080p ウルトラワイド (21:9)" },
   { value: "2560x1440", label: "1440p (16:9)" },
   { value: "2560x1600", label: "1600p (16:10)" },
-  { value: "3440x1440", label: "Ultrawide 1440p (21:9)" },
+  { value: "3440x1440", label: "1440p ウルトラワイド (21:9)" },
   { value: "3840x2160", label: "4K (16:9)" },
   { value: "3840x2400", label: "4K (16:10)" },
-  { value: "5120x1440", label: "Super Ultrawide (32:9)" },
+  { value: "5120x1440", label: "スーパーウルトラワイド (32:9)" },
 ];
 
 export const STATIC_FPS_PRESETS: FpsPreset[] = [
@@ -186,7 +186,7 @@ export const STATIC_FPS_PRESETS: FpsPreset[] = [
 
 export const isMac = navigator.platform.toLowerCase().includes("mac");
 export const isWindows = isNativeStreamerSupportedPlatform(`${navigator.platform} ${navigator.userAgent}`);
-export const shortcutExamples = "Examples: F3, Ctrl+Shift+Q, Ctrl+Shift+K";
+export const shortcutExamples = "例: F3、Ctrl+Shift+Q、Ctrl+Shift+K";
 export const shortcutDefaults = {
   shortcutToggleStats: "F3",
   shortcutTogglePointerLock: "F8",
@@ -252,9 +252,9 @@ export function getShortcutConflictMessage(
 }
 
 export const microphoneModeOptions: Array<{ value: MicrophoneMode; label: string }> = [
-  { value: "disabled", label: "Disabled" },
-  { value: "push-to-talk", label: "Push-to-Talk" },
-  { value: "voice-activity", label: "Voice Activity" },
+  { value: "disabled", label: "オフ" },
+  { value: "push-to-talk", label: "押して話す" },
+  { value: "voice-activity", label: "音声検出" },
 ];
 
 export function getMicrophonePermissionError(result: MicrophonePermissionResult, t: TranslateFn): string {
@@ -305,24 +305,30 @@ export const gameLanguageOptions: Array<{ value: GameLanguage; label: string }> 
 
 /* ── Aspect ratio helpers ─────────────────────────────────────────── */
 
+/**
+ * Group headings for the resolution dropdown.
+ *
+ * These used to read "16:9 Standard" / "21:9 Ultrawide" and were rendered as the
+ * dropdown's group label, so the whole list was English in a Japanese UI.
+ */
 export const ASPECT_RATIO_ORDER = [
-  "16:9 Standard",
-  "16:10 Widescreen",
-  "21:9 Ultrawide",
-  "32:9 Super Ultrawide",
-  "4:3 Legacy",
-  "Other",
+  "16:9 スタンダード",
+  "16:10 ワイド",
+  "21:9 ウルトラワイド",
+  "32:9 スーパーウルトラワイド",
+  "4:3 レガシー",
+  "その他",
 ] as const;
 
 export function classifyAspectRatio(width: number, height: number): string {
   const ratio = width / height;
-  if (Math.abs(ratio - 16 / 9) < 0.05) return "16:9 Standard";
-  if (Math.abs(ratio - 16 / 10) < 0.05) return "16:10 Widescreen";
-  if (Math.abs(ratio - 21 / 9) < 0.05) return "21:9 Ultrawide";
-  if (Math.abs(ratio - 32 / 9) < 0.05) return "32:9 Super Ultrawide";
-  if (Math.abs(ratio - 4 / 3) < 0.05) return "4:3 Legacy";
-  if (ratio > 2 && ratio < 3.5) return "21:9 Ultrawide";
-  return "Other";
+  if (Math.abs(ratio - 16 / 9) < 0.05) return "16:9 スタンダード";
+  if (Math.abs(ratio - 16 / 10) < 0.05) return "16:10 ワイド";
+  if (Math.abs(ratio - 21 / 9) < 0.05) return "21:9 ウルトラワイド";
+  if (Math.abs(ratio - 32 / 9) < 0.05) return "32:9 スーパーウルトラワイド";
+  if (Math.abs(ratio - 4 / 3) < 0.05) return "4:3 レガシー";
+  if (ratio > 2 && ratio < 3.5) return "21:9 ウルトラワイド";
+  return "その他";
 }
 
 export function friendlyResolutionName(width: number, height: number): string {
@@ -330,9 +336,9 @@ export function friendlyResolutionName(width: number, height: number): string {
   if (width === 1920 && height === 1080) return "1080p (FHD)";
   if (width === 2560 && height === 1440) return "1440p (QHD)";
   if (width === 3840 && height === 2160) return "4K (UHD)";
-  if (width === 2560 && height === 1080) return "2560x1080 (UW)";
-  if (width === 3440 && height === 1440) return "3440x1440 (UW)";
-  if (width === 5120 && height === 1440) return "5120x1440 (SUW)";
+  if (width === 2560 && height === 1080) return "2560x1080 (ウルトラワイド)";
+  if (width === 3440 && height === 1440) return "3440x1440 (ウルトラワイド)";
+  if (width === 5120 && height === 1440) return "5120x1440 (スーパーウルトラワイド)";
   return `${width}x${height}`;
 }
 
@@ -454,23 +460,23 @@ export function formatUpdaterTimestamp(value?: number): string | null {
 export function getUpdaterBadgeLabel(state: AppUpdaterState): string {
   switch (state.status) {
     case "disabled":
-      return "Packaged builds only";
+      return "パッケージ版のみ";
     case "idle":
-      return "Idle";
+      return "待機中";
     case "checking":
-      return "Checking";
+      return "確認中";
     case "available":
-      return "Update available";
+      return "アップデートあり";
     case "not-available":
-      return "Up to date";
+      return "最新です";
     case "downloading":
-      return "Downloading";
+      return "ダウンロード中";
     case "downloaded":
-      return "Ready to install";
+      return "インストール準備完了";
     case "error":
-      return "Error";
+      return "エラー";
     default:
-      return "Idle";
+      return "待機中";
   }
 }
 

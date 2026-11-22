@@ -49,7 +49,7 @@ export const AiPlayerPanel = memo(function AiPlayerPanel({
   captureFrame = null,
   enabled = true,
 }: AiPlayerPanelProps): JSX.Element {
-  const { t } = useTranslation();
+  const { t, locale } = useTranslation();
   const [open, setOpen] = useState(false);
   const [running, setRunning] = useState(false);
   const [status, setStatus] = useState<AiPlayerStatus | null>(null);
@@ -81,13 +81,13 @@ export const AiPlayerPanel = memo(function AiPlayerPanel({
         setModel(body.model);
       } catch (error) {
         if (cancelled) return;
-        setStatusError(error instanceof Error ? error.message : "unavailable");
+        setStatusError(error instanceof Error ? error.message : t("aiPlayer.statusUnavailableFallback"));
       }
     })();
     return () => {
       cancelled = true;
     };
-  }, [open, status, statusError]);
+  }, [open, status, statusError, t, locale]);
 
   const appendLog = useCallback((entry: AiPlayerLogEntry) => {
     setLog((current) => [...current.slice(-(DEFAULT_LOG_LIMIT - 1)), entry]);
@@ -248,7 +248,7 @@ export const AiPlayerPanel = memo(function AiPlayerPanel({
 
   const configured = status?.configured === true;
   const unavailableReason = statusError
-    ? t("aiPlayer.statusUnavailable")
+    ? t("aiPlayer.statusUnavailableFallback")
     : status && !configured
       ? t("aiPlayer.missingKey")
       : null;

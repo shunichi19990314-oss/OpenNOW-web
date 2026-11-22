@@ -43,7 +43,9 @@ export function codecLabelFromMimeType(mimeType: string, codecId?: string): stri
   if (codecId) {
     return normalizeCodecName(codecId);
   }
-  return mimeType || "Unknown";
+  // No codec resolved: return an empty string so the stats overlay hides the
+  // badge instead of printing the English word "Unknown".
+  return mimeType;
 }
 
 /**
@@ -55,7 +57,7 @@ export function detectGpuType(): string {
     const canvas = document.createElement("canvas");
     const gl = canvas.getContext("webgl2") || canvas.getContext("webgl");
     if (!gl) {
-      return "Unknown";
+      return "";
     }
 
     const debugInfo = gl.getExtension("WEBGL_debug_renderer_info");
@@ -84,11 +86,11 @@ export function detectGpuType(): string {
         gpuName = gpuName.substring(0, 27) + "...";
       }
 
-      return gpuName || vendor || "Unknown";
+      return gpuName || vendor || "";
     }
-    return "Unknown";
+    return "";
   } catch {
-    return "Unknown";
+    return "";
   }
 }
 

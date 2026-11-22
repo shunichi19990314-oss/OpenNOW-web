@@ -79,7 +79,7 @@ export function LibraryControllerView({
   const heroImageUrl = featuredGame ? getControllerHeroBackgroundCandidates(featuredGame)[0] : undefined;
   const heroLogoUrl = featuredGame ? getControllerHeroLogoUrl(featuredGame) : undefined;
   const heroSelectedVariantId = featuredGame ? selectedVariantByGameId[featuredGame.id] : undefined;
-  const heroStoreLabel = featuredGame ? getSelectedVariantStoreLabel(featuredGame, selectedVariantByGameId[featuredGame.id], t("library.storeNotListed")) : "";
+  const heroStoreLabel = featuredGame ? getSelectedVariantStoreLabel(featuredGame, selectedVariantByGameId[featuredGame.id], t("library.storeNotListed"), t) : "";
   const featuredGameHasActiveSession = featuredGame ? gameMatchesActiveSession(featuredGame, activeSessionAppIds) : false;
   const heroShouldBuy = Boolean(featuredGame && !featuredGameHasActiveSession && !featuredGame.isInLibrary);
   const dotCount = Math.min(Math.max(controllerFeaturedGames.length, 1), 6);
