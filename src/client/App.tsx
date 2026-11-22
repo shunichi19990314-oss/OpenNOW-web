@@ -2506,7 +2506,7 @@ export function App(): JSX.Element {
             nativeRequestedFps: event.transition.requestedFps,
             nativeCapsFramerate: event.transition.capsFramerate,
             nativeQueueMode: event.transition.queueMode,
-            lagReasonDetail: event.transition.summary ?? "Native video transition detected",
+            lagReasonDetail: event.transition.summary ?? "ネイティブ映像の切り替えを検出しました",
           });
         } else if (event.type === "native-stream-stopped") {
           const reason = event.reason ?? "Native streamer stopped";

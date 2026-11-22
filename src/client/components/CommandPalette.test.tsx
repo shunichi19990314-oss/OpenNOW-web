@@ -85,7 +85,9 @@ describe("ContinuePlayingRail", () => {
     );
     expect(markup).toContain("home-continue-row");
     expect(markup).toContain("Beta");
-    expect(markup).toContain("2 h");
+    // Playtime units follow the UI language: this used to assert the
+    // hard-coded English "2 h" that leaked into the Japanese rail.
+    expect(markup).toContain("2時間");
     expect(markup).toContain("Alpha");
   });
 

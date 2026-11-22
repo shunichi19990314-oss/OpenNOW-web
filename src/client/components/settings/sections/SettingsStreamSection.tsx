@@ -1186,7 +1186,7 @@ export function SettingsStreamSection({
           {showAll && <div className="settings-section-context">{t("settings.sections.stream")}</div>}
           <div className="settings-section-header">
             <Cpu size={18} />
-            <h2>Advanced</h2>
+            <h2>{t("settings.advanced")}</h2>
           </div>
           <div className="settings-rows">
             {showStreamVideo && (

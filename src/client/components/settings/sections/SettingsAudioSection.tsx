@@ -59,7 +59,7 @@ export function SettingsAudioSection({ settings, showAll, handleChange }: Settin
 
           if (permission.isMacOs && !permission.granted) {
             setMicrophoneDevices([]);
-            setMicrophonePermissionError(getMicrophonePermissionError(permission));
+            setMicrophonePermissionError(getMicrophonePermissionError(permission, t));
             return;
           }
         }
@@ -96,8 +96,8 @@ export function SettingsAudioSection({ settings, showAll, handleChange }: Settin
 
         if (!cancelled) {
           const message = err instanceof DOMException && err.name === "NotAllowedError"
-            ? "Microphone access was denied. Allow access for OpenNOW and try again."
-            : "Unable to access microphone devices right now.";
+            ? t("settings.audio.permissionDeniedRetry")
+            : t("settings.audio.devicesUnavailable");
           setMicrophonePermissionError(message);
           setMicrophoneDevices([]);
         }

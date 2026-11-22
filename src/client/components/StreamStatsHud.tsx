@@ -113,29 +113,63 @@ export function StreamStatsHud({
 
   const advancedLines = useMemo(() => {
     const lines: string[] = [];
+    // The expanded overlay is user-visible text, so even these diagnostics lines
+    // are translated; only units (KB/ms/px) and product names stay as-is.
     lines.push(
-      `Input queue peak ${(stats.inputQueuePeakBufferedBytes / 1024).toFixed(1)}KB · PR peak ${(stats.partiallyReliableInputQueuePeakBufferedBytes / 1024).toFixed(1)}KB · drops ${stats.inputQueueDropCount} · sched ${stats.inputQueueMaxSchedulingDelayMs.toFixed(1)}ms · residual ${mouseResidualText}`,
+      t("stream.stats.advancedInputQueue", {
+        peak: (stats.inputQueuePeakBufferedBytes / 1024).toFixed(1),
+        prPeak: (stats.partiallyReliableInputQueuePeakBufferedBytes / 1024).toFixed(1),
+        drops: stats.inputQueueDropCount,
+        sched: stats.inputQueueMaxSchedulingDelayMs.toFixed(1),
+        residual: mouseResidualText,
+      }),
     );
     lines.push(
       gstreamerEnabled
-        ? `GStreamer enabled · ${stats.nativeRendererActive ? "in use" : "not active"}`
-        : "GStreamer disabled · Chromium WebRTC",
+        ? t("stream.stats.advancedGstreamerOn", {
+            state: stats.nativeRendererActive ? t("stream.stats.inUse") : t("stream.stats.notActive"),
+          })
+        : t("stream.stats.advancedGstreamerOff"),
     );
     const hwLine = [stats.hardwareAcceleration, stats.colorCodec].filter(Boolean).join(" · ");
     if (hwLine) lines.push(hwLine);
     if (stats.decoderPressureActive || stats.decoderRecoveryAttempts > 0) {
       lines.push(
-        `Decoder recovery ${stats.decoderPressureActive ? "active" : "idle"} · attempts ${stats.decoderRecoveryAttempts} · action ${stats.decoderRecoveryAction}`,
+        t("stream.stats.advancedDecoderRecovery", {
+          state: stats.decoderPressureActive ? t("stream.stats.active") : t("stream.stats.idle"),
+          attempts: stats.decoderRecoveryAttempts,
+          action: stats.decoderRecoveryAction,
+        }),
       );
     }
     if (stats.nativeTransitionSummary || stats.nativeQueueMode || stats.nativeCapsFramerate) {
+      const none = t("stream.stats.none");
+      const extras = [
+        typeof stats.nativeRequestedFps === "number"
+          ? t("stream.stats.advancedRequested", { value: stats.nativeRequestedFps })
+          : "",
+        typeof stats.nativeFramesPendingToPresent === "number"
+          ? t("stream.stats.advancedPending", { value: stats.nativeFramesPendingToPresent })
+          : "",
+        typeof stats.nativePartialFlushCount === "number" || typeof stats.nativeCompleteFlushCount === "number"
+          ? t("stream.stats.advancedFlush", { partial: stats.nativePartialFlushCount ?? 0, complete: stats.nativeCompleteFlushCount ?? 0 })
+          : "",
+      ].filter(Boolean).join(" · ");
       lines.push(
-        `Native transition ${stats.nativeTransitionSummary ?? "none"} · queue ${stats.nativeQueueMode ?? "unknown"} · caps ${stats.nativeCapsFramerate ?? "unknown"}${typeof stats.nativeRequestedFps === "number" ? ` · requested ${stats.nativeRequestedFps}fps` : ""}${typeof stats.nativeFramesPendingToPresent === "number" ? ` · pending ${stats.nativeFramesPendingToPresent}` : ""}${typeof stats.nativePartialFlushCount === "number" || typeof stats.nativeCompleteFlushCount === "number" ? ` · flush ${stats.nativePartialFlushCount ?? 0}/${stats.nativeCompleteFlushCount ?? 0}` : ""}`,
+        t("stream.stats.advancedNativeTransition", {
+          summary: stats.nativeTransitionSummary ?? none,
+          queue: stats.nativeQueueMode ?? t("stream.stats.unknown"),
+          caps: stats.nativeCapsFramerate ?? t("stream.stats.unknown"),
+          extras,
+        }),
       );
     }
     if (stats.nativeRequestedStreamingFeaturesSummary || stats.nativeFinalizedStreamingFeaturesSummary) {
       lines.push(
-        `Stream features requested ${stats.nativeRequestedStreamingFeaturesSummary ?? "none"} · finalized ${stats.nativeFinalizedStreamingFeaturesSummary ?? "none"}`,
+        t("stream.stats.advancedStreamFeatures", {
+          requested: stats.nativeRequestedStreamingFeaturesSummary ?? t("stream.stats.none"),
+          finalized: stats.nativeFinalizedStreamingFeaturesSummary ?? t("stream.stats.none"),
+        }),
       );
     }
     const gpuRegion = [stats.gpuType, regionLabel].filter(Boolean).join(" · ");
@@ -268,19 +302,19 @@ export function StreamStatsHud({
 
               <div className="sv-stats-metrics">
                 <span className="sv-stats-chip" title={t("stream.stats.roundTripLatency")}>
-                  RTT{" "}
+                  {t("stream.stats.rtt")}{" "}
                   <span className="sv-stats-chip-val" style={{ color: rttColor }}>
                     {rttText}
                   </span>
                 </span>
                 <span className="sv-stats-chip" title={t("stream.stats.decodeTime")}>
-                  D <span className="sv-stats-chip-val" style={{ color: decodeColor }}>{dText}</span>
+                  {t("stream.stats.decodeShort")} <span className="sv-stats-chip-val" style={{ color: decodeColor }}>{dText}</span>
                 </span>
                 <span className="sv-stats-chip" title={t("stream.stats.renderTime")}>
-                  R <span className="sv-stats-chip-val" style={{ color: renderColor }}>{rText}</span>
+                  {t("stream.stats.renderShort")} <span className="sv-stats-chip-val" style={{ color: renderColor }}>{rText}</span>
                 </span>
                 <span className="sv-stats-chip" title={t("stream.stats.jitterBuffer")}>
-                  JB <span className="sv-stats-chip-val" style={{ color: jitterBufferColor }}>{jbText}</span>
+                  {t("stream.stats.jitterBufferShort")} <span className="sv-stats-chip-val" style={{ color: jitterBufferColor }}>{jbText}</span>
                 </span>
                 <span className="sv-stats-chip" title={lossTitle}>
                   {lossLabel}{" "}
@@ -289,40 +323,40 @@ export function StreamStatsHud({
                   </span>
                 </span>
                 <span className="sv-stats-chip" title={t("stream.stats.bitratePerformance")}>
-                  Bit{" "}
+                  {t("stream.stats.bitrateShort")}{" "}
                   <span className="sv-stats-chip-val" style={{ color: bitratePerformanceColor }}>
                     {bitratePerformanceText}
                   </span>
                 </span>
                 <span className="sv-stats-chip" title={t("stream.stats.inputQueuePressure")}>
-                  IQ{" "}
+                  {t("stream.stats.inputQueueShort")}{" "}
                   <span className="sv-stats-chip-val" style={{ color: inputQueueColor }}>
                     {inputQueueText}
                   </span>
                 </span>
                 <span className="sv-stats-chip" title={t("stream.stats.inputChannelState")}>
-                  PR{" "}
+                  {t("stream.stats.partiallyReliableShort")}{" "}
                   <span
                     className="sv-stats-chip-val"
                     style={{ color: stats.partiallyReliableInputOpen ? "var(--success)" : "var(--ink-muted)" }}
                   >
                     {stats.partiallyReliableInputOpen
-                      ? `${stats.mouseMoveTransport === "partially_reliable" ? "mouse" : "open"} · ${partiallyReliableQueueText}`
-                      : "off"}
+                      ? `${stats.mouseMoveTransport === "partially_reliable" ? t("stream.stats.transportMouse") : t("stream.stats.transportOpen")} · ${partiallyReliableQueueText}`
+                      : t("stream.stats.off")}
                   </span>
                 </span>
                 <span className="sv-stats-chip" title={t("stream.stats.mouseFlushCadence")}>
-                  MF{" "}
+                  {t("stream.stats.mouseFlushShort")}{" "}
                   <span
                     className="sv-stats-chip-val"
                     style={{ color: stats.mouseAdaptiveFlushActive ? "var(--warning)" : "var(--success)" }}
                   >
-                    {stats.mouseFlushIntervalMs.toFixed(0)}ms · {stats.mousePacketsPerSecond}/s
+                    {stats.mouseFlushIntervalMs.toFixed(0)}ms · {t("stream.stats.perSecond", { value: stats.mousePacketsPerSecond })}
                   </span>
                 </span>
                 {hasLagIssue && (
                   <span className="sv-stats-chip sv-stats-chip--warn" title={stats.lagReasonDetail}>
-                    Lag{" "}
+                    {t("stream.stats.lagShort")}{" "}
                     <span className="sv-stats-chip-val" style={{ color: getLagReasonColor(stats.lagReason) }}>
                       {t(getLagReasonLabel(stats.lagReason))}
                     </span>

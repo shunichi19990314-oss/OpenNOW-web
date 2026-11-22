@@ -4,7 +4,7 @@ import { memo, type JSX } from "react";
 import type { GameInfo } from "@shared/gfn";
 
 import { useTranslation } from "../i18n";
-import { formatTotalPlaytime, type RecentActivityEntry } from "../lib/localPreferences";
+import { formatTotalPlaytime, playtimeUnits, type RecentActivityEntry } from "../lib/localPreferences";
 import { formatCatalogLastPlayed } from "../utils/lastPlayedFormat";
 
 export interface ContinuePlayingRailProps {
@@ -66,7 +66,7 @@ export const ContinuePlayingRail = memo(function ContinuePlayingRail({
                 <span className="home-continue-tile-title" title={game.title}>{game.title}</span>
                 <span className="home-continue-tile-meta">
                   <Clock size={11} aria-hidden="true" />
-                  {formatTotalPlaytime(totalSeconds, t("home.continuePlaying.neverPlayed"))}
+                  {formatTotalPlaytime(totalSeconds, t("home.continuePlaying.neverPlayed"), playtimeUnits(t))}
                 </span>
                 <span className="home-continue-tile-meta home-continue-tile-meta--muted">
                   {lastPlayedMs > 0
