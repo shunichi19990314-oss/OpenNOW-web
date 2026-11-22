@@ -1,7 +1,7 @@
 {
   "name": "OpenNOW Web",
   "short_name": "OpenNOW",
-  "description": "Browser-native GeForce NOW client with QR authentication and WebRTC streaming.",
+  "description": "QR コード認証と WebRTC ストリーミングに対応した、ブラウザで動く GeForce NOW クライアント。",
   "id": "/",
   "start_url": "/",
   "scope": "/",

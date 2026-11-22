@@ -2,10 +2,23 @@ import { describe, expect, it } from "vitest";
 
 import type { GameInfo } from "@shared/gfn";
 
+import ja from "../../../locales/ja.json";
+
 import { gameMatchesLibraryFilters, getLibraryFilterGroups } from "./libraryFilters";
 import { loadPlaytimeStore, summarizeRecentActivity, toggleFavoriteId } from "./localPreferences";
 
 const t = (key: string) => key;
+
+/** Real ja.json lookup so the assertions below see the shipped wording. */
+const readJapanese = (key: string): string => {
+  const value = key
+    .split(".")
+    .reduce<unknown>(
+      (node, part) => (node && typeof node === "object" ? (node as Record<string, unknown>)[part] : undefined),
+      ja as unknown as Record<string, unknown>,
+    );
+  return typeof value === "string" ? value : key;
+};
 
 function game(id: string, overrides: Partial<GameInfo> = {}): GameInfo {
   return {
@@ -32,6 +45,44 @@ describe("gameMatchesLibraryFilters", () => {
   it("keeps non-favorite filter behavior unchanged without a favorite list", () => {
     const candidate = game("1");
     expect(gameMatchesLibraryFilters(candidate, ["activity:never-played"], {}, t)).toBe(true);
+  });
+});
+
+describe("getLibraryFilterGroups labels and ids", () => {
+  it("labels raw playType/control values but keeps ids tied to the API value", () => {
+    const candidate = game("1", {
+      playType: "FREE_TO_PLAY",
+      supportedControls: ["keyboard", "gamepad"],
+      availableStores: ["Unknown"],
+    });
+
+    // The real ja.json wording, not the pass-through translator used above.
+    const groups = getLibraryFilterGroups([candidate], {}, readJapanese, []);
+    const play = groups.find((group) => group.id === "play");
+    const controls = groups.find((group) => group.id === "controls");
+    const platform = groups.find((group) => group.id === "platform");
+
+    expect(play?.options.map((option) => option.label)).toContain("無料でプレイ");
+    expect(play?.options.every((option) => option.id.startsWith("play:"))).toBe(true);
+    expect(play?.options.some((option) => option.id === "play:free-to-play")).toBe(true);
+
+    // Inputs are grouped into three chips, so `keyboard` folds into the
+    // keyboard-and-mouse chip and `gamepad` into the controller chip.
+    expect(controls?.options.map((option) => option.id).sort()).toEqual([
+      "controls:controller",
+      "controls:keyboard-mouse",
+    ]);
+    expect(controls?.options.map((option) => option.label).sort()).toEqual([
+      "キーボードとマウス",
+      "コントローラー",
+    ]);
+    expect(platform?.options[0]?.label).toBe("不明");
+    expect(platform?.options[0]?.id).toBe("platform:UNKNOWN");
+  });
+
+  it("matches the Japanese-labelled chip against the same game", () => {
+    const candidate = game("1", { playType: "FREE_TO_PLAY" });
+    expect(gameMatchesLibraryFilters(candidate, ["play:free-to-play"], {}, readJapanese)).toBe(true);
   });
 });
 

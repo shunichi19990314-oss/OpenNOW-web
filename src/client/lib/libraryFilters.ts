@@ -1,5 +1,6 @@
 import type { GameInfo } from "@shared/gfn";
 import { getStoreDisplayName, normalizeStoreKey } from "../components/GameCard";
+import { controlLabel, playTypeFilterLabel } from "./gfnLabels";
 import type { PlaytimeData } from "./gameCatalog";
 
 export interface LibraryFilterOption {
@@ -23,15 +24,6 @@ function normalizeLibraryFilterValue(value: string | undefined): string {
     .replace(/['’]/g, "")
     .replace(/[^a-z0-9]+/g, "-")
     .replace(/^-+|-+$/g, "");
-}
-
-function formatLibraryFilterLabel(value: string): string {
-  return value
-    .trim()
-    .replace(/[_-]+/g, " ")
-    .replace(/\s+/g, " ")
-    .toLowerCase()
-    .replace(/\b\w/g, (match) => match.toUpperCase());
 }
 
 function getGameCatalogSkuText(game: GameInfo): string {
@@ -67,12 +59,14 @@ function getGamePlayTypeFilter(game: GameInfo, t: LibraryTranslation): LibraryFi
   if (normalized.includes("instant") || normalized.includes("stream") || normalized.includes("cloud")) {
     return { id: "play:cloud-launch", label: t("library.filterOptions.cloudLaunch"), count: 0 };
   }
-  const label = formatLibraryFilterLabel(game.playType);
-  const key = normalizeLibraryFilterValue(label);
-  return key ? { id: `play:${key}`, label, count: 0 } : null;
+  // `FREE_TO_PLAY` used to be title-cased into "Free To Play" and shown as-is.
+  // The filter id must stay derived from the API value, not the label: the label
+  // is now Japanese, and a Japanese label normalizes to an empty key.
+  const label = playTypeFilterLabel(game.playType, t);
+  return label ? { id: `play:${normalized}`, label, count: 0 } : null;
 }
 
-function getGameStoreFilters(game: GameInfo): Array<{ id: string; label: string }> {
+function getGameStoreFilters(game: GameInfo, t: LibraryTranslation): Array<{ id: string; label: string }> {
   const stores = game.availableStores?.length ? game.availableStores : game.variants.map((variant) => variant.store);
   const seen = new Set<string>();
   const filters: Array<{ id: string; label: string }> = [];
@@ -81,7 +75,7 @@ function getGameStoreFilters(game: GameInfo): Array<{ id: string; label: string 
     const key = normalizeStoreKey(store);
     if (seen.has(key)) continue;
     seen.add(key);
-    filters.push({ id: `platform:${key}`, label: getStoreDisplayName(store) });
+    filters.push({ id: `platform:${key}`, label: getStoreDisplayName(store, t) });
   }
   return filters;
 }
@@ -98,9 +92,11 @@ function getControlFilter(control: string, t: LibraryTranslation): { id: string;
   if (normalized.includes("touch")) {
     return { id: "controls:touch", label: t("library.filterOptions.touch") };
   }
-  const label = formatLibraryFilterLabel(control);
-  const key = normalizeLibraryFilterValue(label);
-  return key ? { id: `controls:${key}`, label } : null;
+  // Unrecognised control strings are dropped rather than title-cased into
+  // English chip labels. The id keeps following the API value so switching the
+  // UI language never changes which filter a chip matches.
+  const label = controlLabel(control, t);
+  return label ? { id: `controls:${normalized}`, label } : null;
 }
 
 function getGameControlFilters(game: GameInfo, t: LibraryTranslation): Array<{ id: string; label: string }> {
@@ -168,7 +164,7 @@ export function getLibraryFilterGroups(
     const playTypeOption = getGamePlayTypeFilter(game, t);
     if (playTypeOption) upsertLibraryFilterOption(playTypeOptions, playTypeOption.id, playTypeOption.label);
 
-    for (const option of getGameStoreFilters(game)) {
+    for (const option of getGameStoreFilters(game, t)) {
       upsertLibraryFilterOption(platformOptions, option.id, option.label);
     }
 
@@ -212,7 +208,7 @@ export function gameMatchesLibraryFilter(
   }
 
   if (groupId === "platform") {
-    return getGameStoreFilters(game).some((option) => option.id === filterId);
+    return getGameStoreFilters(game, t).some((option) => option.id === filterId);
   }
 
   if (groupId === "controls") {

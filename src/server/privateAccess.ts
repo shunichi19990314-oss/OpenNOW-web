@@ -93,10 +93,10 @@ export const privateAccessMiddleware: RequestHandler = (request, response, next)
   response.setHeader("WWW-Authenticate", `Basic realm="${ACCESS_REALM}", charset="UTF-8"`);
   response.setHeader("Cache-Control", "no-store");
   if (request.path.startsWith("/api/")) {
-    response.status(401).json({ error: "Private access authentication required." });
+    response.status(401).json({ error: "プライベートアクセスの認証が必要です。" });
     return;
   }
-  response.status(401).type("text").send("OpenNOW is private. Please sign in with the authorized account.");
+  response.status(401).type("text").send("OpenNOW はプライベート設定です。許可されたアカウントでサインインしてください。");
 };
 
 export const privateAccessInternals = {

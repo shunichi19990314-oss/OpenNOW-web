@@ -103,7 +103,7 @@ export function registerApi(app: Express): void {
     if (retryAfterSec !== null) {
       response.setHeader("Retry-After", String(retryAfterSec));
       response.setHeader("Cache-Control", "no-store");
-      response.status(429).json({ error: "Too many speed tests. Try again in a few seconds." });
+      response.status(429).json({ error: "スピードテストの回数が多すぎます。数秒後にもう一度お試しください。" });
       return;
     }
 

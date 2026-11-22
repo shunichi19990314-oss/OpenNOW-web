@@ -557,7 +557,7 @@ export class GfnWebRtcClient {
     connectedGamepads: 0,
     resolution: "",
     codec: "",
-    hardwareAcceleration: "Chromium GPU decode",
+    hardwareAcceleration: "Chromium GPU デコード",
     colorCodec: "",
     isHdr: false,
     bitrateKbps: 0,
@@ -628,7 +628,7 @@ export class GfnWebRtcClient {
     // Detect GPU once on construction
     this.gpuType = detectGpuType();
     this.diagnostics.gpuType = this.gpuType;
-    this.diagnostics.hardwareAcceleration = "Chromium GPU decode";
+    this.diagnostics.hardwareAcceleration = "Chromium GPU デコード";
 
     // Initialize microphone manager if mode is enabled
     const micMode = options.microphoneMode ?? "disabled";
@@ -1021,7 +1021,7 @@ export class GfnWebRtcClient {
       connectedGamepads: 0,
       resolution: "",
       codec: "",
-      hardwareAcceleration: "Chromium GPU decode",
+      hardwareAcceleration: "Chromium GPU デコード",
       colorCodec: "",
       isHdr: false,
       bitrateKbps: 0,
@@ -1111,7 +1111,7 @@ export class GfnWebRtcClient {
     this.diagnostics.codec = codec;
     this.diagnostics.hardwareAcceleration = nativeRendererActive
       ? describeNativeHardwareAcceleration()
-      : "Chromium GPU decode";
+      : "Chromium GPU デコード";
     this.diagnostics.colorCodec = describeColorQuality(settings.colorQuality);
     this.diagnostics.isHdr = this.isHdr;
     this.diagnostics.targetBitrateKbps = this.negotiatedMaxBitrateKbps;

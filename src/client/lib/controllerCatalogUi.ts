@@ -1,5 +1,6 @@
 import type { GameInfo } from "@shared/gfn";
 import { getStoreDisplayName } from "../components/GameCard";
+import type { TranslateFn } from "./gfnLabels";
 
 const CONTROLLER_HERO_BACKGROUND_KEYS = [
   "MARQUEE_HERO_IMAGE",
@@ -61,11 +62,16 @@ export function getGameStoreSummary(game: GameInfo, fallback: string): string {
   return stores.length > 3 ? `${visible} +${stores.length - 3}` : visible;
 }
 
-export function getSelectedVariantStoreLabel(game: GameInfo, selectedVariantId: string | undefined, fallback: string): string {
+export function getSelectedVariantStoreLabel(
+  game: GameInfo,
+  selectedVariantId: string | undefined,
+  fallback: string,
+  t: TranslateFn,
+): string {
   const selectedVariant = game.variants.find((variant) => variant.id === selectedVariantId)
     ?? game.variants[game.selectedVariantIndex]
     ?? game.variants[0];
-  return selectedVariant?.store ? getStoreDisplayName(selectedVariant.store) : fallback;
+  return selectedVariant?.store ? getStoreDisplayName(selectedVariant.store, t) : fallback;
 }
 
 export function getPlayerSummary(game: GameInfo): string | null {

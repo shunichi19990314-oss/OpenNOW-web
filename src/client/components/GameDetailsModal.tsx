@@ -4,6 +4,7 @@ import type { GameInfo } from "@shared/gfn";
 import { useTranslation } from "../i18n";
 import { getJapaneseGameDescription } from "../utils/localizedGameText";
 import { getStoreDisplayName } from "./GameCard";
+import { playTypeLabel } from "../lib/gfnLabels";
 
 export interface GameDetailsModalProps {
   game: GameInfo;
@@ -15,7 +16,7 @@ export interface GameDetailsModalProps {
 
 export function GameDetailsModal({ game, isFavorite, onToggleFavorite, onPlay, onClose }: GameDetailsModalProps): JSX.Element {
   const { t } = useTranslation();
-  const stores = (game.availableStores ?? []).map(getStoreDisplayName);
+  const stores = (game.availableStores ?? []).map((store) => getStoreDisplayName(store, t));
   const playerCount = [game.maxLocalPlayers, game.maxOnlinePlayers].filter((value): value is number => typeof value === "number" && value > 0);
   const description = getJapaneseGameDescription(game.longDescription, game.description, t("library.descriptionUnavailable"));
 
@@ -33,7 +34,7 @@ export function GameDetailsModal({ game, isFavorite, onToggleFavorite, onPlay, o
           )}
           <div className="game-details-hero-shade" />
           <div className="game-details-heading">
-            <span className="game-details-kicker">{game.playType || t("library.gameDetails")}</span>
+            <span className="game-details-kicker">{playTypeLabel(game.playType, t) ?? t("library.gameDetails")}</span>
             <h2 id="game-details-title">{game.title}</h2>
           </div>
         </div>

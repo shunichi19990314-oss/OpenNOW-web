@@ -3,6 +3,7 @@ import type { StreamDiagnostics } from "../platforms/gfn/webrtcClient";
 import type { JSX } from "react";
 import { useTranslation } from "../i18n";
 import { formatBitrate, getRttColor } from "../utils/streamDiagnosticsFormat";
+import { getLagReasonLabel } from "./streamStatsLabels";
 
 interface StatsOverlayProps {
   stats: StreamDiagnostics;
@@ -53,7 +54,7 @@ export function StatsOverlay({
         <div className="sovl-pill">
           <Activity size={13} className="sovl-icon" style={{ color: rttColor }} />
           <span className="sovl-val" style={{ color: rttColor }}>
-            {stats.rttMs > 0 ? `${stats.rttMs.toFixed(0)}ms` : "-- ms"}
+            {stats.rttMs > 0 ? `${stats.rttMs.toFixed(0)}ms` : t("stream.stats.notMeasured")}
           </span>
         </div>
 
@@ -76,7 +77,7 @@ export function StatsOverlay({
         {stats.lagReason !== "stable" && stats.lagReason !== "unknown" && (
           <div className="sovl-pill sovl-pill--warn" title={stats.lagReasonDetail}>
             <AlertTriangle size={13} className="sovl-icon" />
-            <span className="sovl-val">{stats.lagReason}</span>
+            <span className="sovl-val">{getLagReasonLabel(stats.lagReason, t)}</span>
           </div>
         )}
 

@@ -82,7 +82,8 @@
       "priority": "Priority",
       "softwareCpu": "Software (CPU)",
       "ultimate": "Ultimate",
-      "unlimited": "Unlimited"
+      "unlimited": "Unlimited",
+      "all": "All"
     }
   },
   "auth": {
@@ -282,7 +283,29 @@
     },
     "gameDetails": "Game details",
     "descriptionUnavailable": "A Japanese description for this game is not currently available.",
-    "totalPlaytime": "Total playtime"
+    "totalPlaytime": "Total playtime",
+    "playType": {
+      "freeToPlay": "Free to play",
+      "installToPlay": "Install to play",
+      "readyToPlay": "Ready to play",
+      "premium": "Premium",
+      "subscription": "Subscription"
+    },
+    "playability": {
+      "playable": "Playable",
+      "available": "Available",
+      "unavailable": "Unavailable",
+      "maintenance": "Under maintenance",
+      "comingSoon": "Coming soon"
+    },
+    "controlLabels": {
+      "keyboard": "Keyboard",
+      "mouse": "Mouse",
+      "keyboardMouse": "Keyboard and mouse",
+      "gamepad": "Controller",
+      "touch": "Touch"
+    },
+    "cloudStore": "Cloud"
   },
   "gameCard": {
     "selectGame": "Select {{title}}",
@@ -297,7 +320,8 @@
     },
     "addFavorite": "Add to favorites",
     "removeFavorite": "Remove from favorites",
-    "viewDetails": "View details for {{title}}"
+    "viewDetails": "View details for {{title}}",
+    "unknownStore": "Unknown"
   },
   "streamLoading": {
     "labels": {
@@ -482,7 +506,9 @@
       "advancedRequested": "requested {{value}}fps",
       "advancedPending": "pending {{value}}",
       "advancedFlush": "flush {{partial}}/{{complete}}",
-      "advancedStreamFeatures": "Stream features requested {{requested}} · finalized {{finalized}}"
+      "advancedStreamFeatures": "Stream features requested {{requested}} · finalized {{finalized}}",
+      "notAvailable": "N/A",
+      "notMeasured": "-- ms"
     },
     "controls": {
       "antiAfkEnabled": "Anti-AFK is enabled",
@@ -669,7 +695,8 @@
       "pushToTalkDesc": "Hold a key to talk",
       "voiceActivity": "Voice Activity",
       "voiceActivityDesc": "Always listen"
-    }
+    },
+    "untitledRecording": "Untitled recording"
   },
   "settings": {
     "title": "Settings",
@@ -1064,7 +1091,8 @@
       "noContributors": "No contributors could be shown right now.",
       "noSupporters": "No supporters could be shown right now.",
       "loadFailed": "Failed to load",
-      "contributions": "{{count}} contribution(s)"
+      "contributions": "{{count}} contribution(s)",
+      "privateSupporterName": "Private"
     },
     "connectionTest": {
       "title": "Connection Test",
@@ -1465,6 +1493,7 @@
     "visionUnavailableSwitch": "Pick an image-capable model (e.g. {{model}}) to send the screen",
     "statFramesHint": "Frames captured",
     "statDropped": "Rejected",
-    "modelSlowWarning": "This model responds slowly, so each round takes longer"
+    "modelSlowWarning": "This model responds slowly, so each round takes longer",
+    "statusUnavailableFallback": "Unavailable"
   }
 }

@@ -14,23 +14,7 @@ import {
 } from "../utils/streamDiagnosticsFormat";
 import { panelSpring, smoothEase, surfaceRevealTransition } from "./MotionProvider";
 import { useTranslation } from "../i18n";
-
-function getLagReasonLabel(reason: StreamLagReason): string {
-  switch (reason) {
-    case "network":
-      return "stream.stats.lagReasons.network";
-    case "decoder":
-      return "stream.stats.lagReasons.decode";
-    case "input_backpressure":
-      return "stream.stats.lagReasons.input";
-    case "render":
-      return "stream.stats.lagReasons.render";
-    case "stable":
-      return "stream.stats.lagReasons.stable";
-    default:
-      return "stream.stats.lagReasons.unknown";
-  }
-}
+import { getLagReasonLabel } from "./streamStatsLabels";
 
 function getLagReasonColor(reason: StreamLagReason): string {
   switch (reason) {
@@ -175,7 +159,7 @@ export function StreamStatsHud({
     const gpuRegion = [stats.gpuType, regionLabel].filter(Boolean).join(" · ");
     if (gpuRegion) lines.push(gpuRegion);
     if (hasLagIssue) {
-      lines.push(t("stream.stats.lagSourceLine", { reason: t(getLagReasonLabel(stats.lagReason)).toLowerCase(), detail: stats.lagReasonDetail }));
+      lines.push(t("stream.stats.lagSourceLine", { reason: getLagReasonLabel(stats.lagReason, t), detail: stats.lagReasonDetail }));
     }
     return lines;
   }, [
@@ -269,7 +253,7 @@ export function StreamStatsHud({
             )}
             {hasLagIssue && (
               <span className="sv-stats-warn-pill" title={stats.lagReasonDetail}>
-                {t(getLagReasonLabel(stats.lagReason))}
+                {getLagReasonLabel(stats.lagReason, t)}
               </span>
             )}
           </m.div>
@@ -289,7 +273,7 @@ export function StreamStatsHud({
             <div className="sv-stats-details-inner">
               <div className="sv-stats-sub">
                 <span className="sv-stats-sub-left">
-                  {hasCodec ? stats.codec : "N/A"}
+                  {hasCodec ? stats.codec : t("stream.stats.notAvailable")}
                   {stats.isHdr && <span className="sv-stats-hdr">HDR</span>}
                 </span>
                 {sessionTimeRemainingText && (
@@ -358,7 +342,7 @@ export function StreamStatsHud({
                   <span className="sv-stats-chip sv-stats-chip--warn" title={stats.lagReasonDetail}>
                     {t("stream.stats.lagShort")}{" "}
                     <span className="sv-stats-chip-val" style={{ color: getLagReasonColor(stats.lagReason) }}>
-                      {t(getLagReasonLabel(stats.lagReason))}
+                      {getLagReasonLabel(stats.lagReason, t)}
                     </span>
                   </span>
                 )}
