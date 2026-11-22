@@ -109,26 +109,26 @@ export function SettingsInterfaceSection({ settings, showAll, handleChange, onSa
 
           <div className="settings-row">
             <label className="settings-label" htmlFor="appTheme">
-              {t("settings.interface.theme") || "Theme"}
-              <span className="settings-hint">{t("settings.interface.themeHint") || "Choose a light, dark, or system-matching theme."}</span>
+              {t("settings.interface.theme")}
+              <span className="settings-hint">{t("settings.interface.themeHint")}</span>
             </label>
             <SelectDropdown
               id="appTheme"
               value={settings.appTheme}
               options={[
-                { value: "auto", label: t("settings.interface.themeAuto") || "Auto" },
-                { value: "light", label: t("settings.interface.themeLight") || "Light" },
-                { value: "dark", label: t("settings.interface.themeDark") || "Dark" },
+                { value: "auto", label: t("settings.interface.themeAuto") },
+                { value: "light", label: t("settings.interface.themeLight") },
+                { value: "dark", label: t("settings.interface.themeDark") },
               ]}
               onChange={(value) => handleChange("appTheme", value as any)}
-              ariaLabel={t("settings.interface.theme") || "Theme"}
+              ariaLabel={t("settings.interface.theme")}
             />
           </div>
 
           <div className="settings-row">
             <label className="settings-label">
-              {t("settings.interface.translucentUI") || "Translucent UI"}
-              <span className="settings-hint">{t("settings.interface.translucentUIHint") || "Enable glassmorphism and translucent overlays."}</span>
+              {t("settings.interface.translucentUI")}
+              <span className="settings-hint">{t("settings.interface.translucentUIHint")}</span>
             </label>
             <label className="settings-toggle">
               <input

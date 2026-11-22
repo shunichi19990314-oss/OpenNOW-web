@@ -393,7 +393,7 @@ export function StreamView({
   const sessionTimeRemainingText = formatSessionTimeRemaining(sessionTimeRemainingSeconds);
   const showSessionTimeRemainingInStats =
     sessionTimeRemainingText !== null && showSessionTimeRemainingInStatsOverlay;
-  const platformName = platformStore ? getStoreDisplayName(platformStore) : "";
+  const platformName = platformStore ? getStoreDisplayName(platformStore, t) : "";
   const PlatformIcon = platformStore ? getStoreIconComponent(platformStore) : null;
   const isMacClient = navigator.platform?.toLowerCase().includes("mac") || navigator.userAgent.includes("Macintosh");
 
@@ -1936,7 +1936,7 @@ export function StreamView({
                               </div>
                             )}
                             <div className="sidebar-rec-card-meta">
-                              <span className="sidebar-rec-card-title">{rec.gameTitle ?? "Untitled"}</span>
+                              <span className="sidebar-rec-card-title">{rec.gameTitle ?? t("sidebar.untitledRecording")}</span>
                               <span className="sidebar-rec-card-detail">
                                 {formatElapsed(Math.round(rec.durationMs / 1000))} · {formatFileSize(rec.sizeBytes)}
                               </span>

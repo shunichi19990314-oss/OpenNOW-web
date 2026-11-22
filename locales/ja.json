@@ -79,7 +79,8 @@
       "priority": "優先順位",
       "softwareCpu": "ソフトウェア（CPU）",
       "ultimate": "アルティメット",
-      "unlimited": "無制限"
+      "unlimited": "無制限",
+      "all": "すべて"
     }
   },
   "auth": {
@@ -279,7 +280,29 @@
     },
     "gameDetails": "ゲーム詳細",
     "descriptionUnavailable": "このゲームの日本語説明は現在利用できません。",
-    "totalPlaytime": "累計プレイ時間"
+    "totalPlaytime": "累計プレイ時間",
+    "playType": {
+      "freeToPlay": "無料でプレイ",
+      "installToPlay": "インストールしてプレイ",
+      "readyToPlay": "すぐにプレイ",
+      "premium": "プレミアム",
+      "subscription": "サブスクリプション"
+    },
+    "playability": {
+      "playable": "プレイ可能",
+      "available": "利用可能",
+      "unavailable": "利用不可",
+      "maintenance": "メンテナンス中",
+      "comingSoon": "近日公開"
+    },
+    "controlLabels": {
+      "keyboard": "キーボード",
+      "mouse": "マウス",
+      "keyboardMouse": "キーボードとマウス",
+      "gamepad": "コントローラー",
+      "touch": "タッチ"
+    },
+    "cloudStore": "クラウド"
   },
   "gameCard": {
     "selectGame": "{{title}}を選択します",
@@ -294,7 +317,8 @@
     },
     "addFavorite": "お気に入りに追加",
     "removeFavorite": "お気に入りから削除",
-    "viewDetails": "{{title}}の詳細を見る"
+    "viewDetails": "{{title}}の詳細を見る",
+    "unknownStore": "不明"
   },
   "streamLoading": {
     "labels": {
@@ -472,7 +496,9 @@
       "advancedRequested": "要求 {{value}}fps",
       "advancedPending": "保留 {{value}}",
       "advancedFlush": "フラッシュ {{partial}}/{{complete}}",
-      "advancedStreamFeatures": "要求したストリーム機能 {{requested}} · 確定 {{finalized}}"
+      "advancedStreamFeatures": "要求したストリーム機能 {{requested}} · 確定 {{finalized}}",
+      "notAvailable": "該当なし",
+      "notMeasured": "未測定"
     },
     "controls": {
       "antiAfkEnabled": "Anti-AFK が有効になっています",
@@ -666,7 +692,8 @@
       "pushToTalkDesc": "キーを押している間だけ送信します",
       "voiceActivity": "ボイスアクティビティ",
       "voiceActivityDesc": "常に音声を拾います"
-    }
+    },
+    "untitledRecording": "無題の録画"
   },
   "settings": {
     "title": "設定",
@@ -973,7 +1000,8 @@
       "projectSponsor": "プロジェクトスポンサー",
       "githubSponsors": "GitHub Sponsors",
       "loadFailed": "読み込みに失敗しました",
-      "contributions": "{{count}} 件のコントリビューション"
+      "contributions": "{{count}} 件のコントリビューション",
+      "privateSupporterName": "非公開"
     },
     "persistentStorage": {
       "title": "永続ストレージ",
@@ -1465,6 +1493,7 @@
     "visionUnavailableSwitch": "画像対応モデル(例: {{model}})を選ぶと画面を送れます",
     "statFramesHint": "取得した画面",
     "statDropped": "画面拒否",
-    "modelSlowWarning": "応答が遅いモデルのため、1 ラウンドに時間がかかります"
+    "modelSlowWarning": "応答が遅いモデルのため、1 ラウンドに時間がかかります",
+    "statusUnavailableFallback": "利用できません"
   }
 }

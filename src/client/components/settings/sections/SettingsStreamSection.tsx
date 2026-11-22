@@ -287,10 +287,10 @@ export function SettingsStreamSection({
         const found = group.resolutions.find(r => r.value === settings.resolution);
         if (found) return found.label;
       }
-      return settings.resolution || "Select";
+      return settings.resolution || t("app.actions.select");
     }
     const found = STATIC_RESOLUTION_PRESETS.find(r => r.value === settings.resolution);
-    return found ? found.label : settings.resolution || "Select";
+    return found ? found.label : settings.resolution || t("app.actions.select");
   }, [settings.resolution, t, useEntitledStreamOptions, resolutionGroups]);
 
   const handleResolutionChange = useCallback((resolution: string) => {
@@ -832,7 +832,7 @@ export function SettingsStreamSection({
                   <span>{t("app.labels.auto")}</span>
                   {settings.resolution === "auto" && <Check size={14} className="settings-dropdown-check" />}
                 </button>
-                {(useEntitledStreamOptions ? resolutionGroups : [{ category: "All", resolutions: STATIC_RESOLUTION_PRESETS.map(p => ({ ...p, width: 0, height: 0 })) }]).map(group => (
+                {(useEntitledStreamOptions ? resolutionGroups : [{ category: t("app.labels.all"), resolutions: STATIC_RESOLUTION_PRESETS.map(p => ({ ...p, width: 0, height: 0 })) }]).map(group => (
                   <div key={group.category} className="settings-dropdown-group">
                     <div className="settings-dropdown-group-label">{group.category}</div>
                     {group.resolutions.map(res => (

@@ -154,6 +154,18 @@ describe("Japanese UI has no hard-coded English", () => {
       "settings.audio.devicesUnavailable", "settings.nativeStreamer.autoBackendDescription",
       "settings.nativeStreamer.directx11Description", "settings.nativeStreamer.directx12Description",
       "settings.thanks.loadFailed", "app.units.lessThanMinute", "app.units.hoursMinutes",
+      // Raw GeForce NOW enums and the server's unknown-store placeholder.
+      "library.playType.freeToPlay", "library.playType.installToPlay",
+      "library.playType.readyToPlay", "library.playType.premium", "library.playType.subscription",
+      "library.playability.playable", "library.playability.available",
+      "library.playability.unavailable", "library.playability.maintenance",
+      "library.playability.comingSoon",
+      "library.controlLabels.keyboard", "library.controlLabels.mouse",
+      "library.controlLabels.keyboardMouse", "library.controlLabels.gamepad",
+      "library.controlLabels.touch",
+      "library.cloudStore", "gameCard.unknownStore",
+      "stream.stats.notAvailable", "stream.stats.notMeasured",
+      "sidebar.untitledRecording", "settings.thanks.privateSupporterName",
     ];
     const read = (tree: Record<string, unknown>, key: string): unknown =>
       key.split(".").reduce<unknown>(
@@ -163,6 +175,74 @@ describe("Japanese UI has no hard-coded English", () => {
 
     expect(required.filter((key) => typeof read(ja, key) !== "string")).toEqual([]);
     expect(required.filter((key) => typeof read(en, key) !== "string")).toEqual([]);
+  });
+
+  it("does not render an enum-shaped literal inside JSX", () => {
+    // `FREE_TO_PLAY`, `INSTALL_TO_PLAY`, `SYNC_SUCCESS` … are API tokens, not
+    // copy. Ternaries like `{status === "SYNC_SUCCESS" ? … }` are fine; what is
+    // not fine is a token that *is* the rendered value, e.g.
+    // `{game.playType ?? "FREE_TO_PLAY"}` or `{error.code || "UNKNOWN"}`.
+    const enumLiteral = /^[A-Z][A-Z0-9]*(?:_[A-Z0-9]+)+$/;
+    const problems: Problem[] = [];
+
+    for (const file of files) {
+      const source = readFileSync(file, "utf8");
+      const sourceFile = ts.createSourceFile(file, source, ts.ScriptTarget.Latest, true, ts.ScriptKind.TSX);
+
+      const checkRendered = (node: ts.Node): void => {
+        if (ts.isStringLiteral(node) && enumLiteral.test(node.text)) {
+          const { line } = sourceFile.getLineAndCharacterOfPosition(node.getStart(sourceFile));
+          problems.push({
+            file: `${relative(clientRoot, file)}:${line + 1}`,
+            detail: `rendered enum "${node.text}"`,
+          });
+        }
+      };
+
+      const visit = (node: ts.Node): void => {
+        if (ts.isJsxExpression(node) && node.expression) {
+          const expression = node.expression;
+          checkRendered(expression);
+          if (ts.isConditionalExpression(expression)) {
+            checkRendered(expression.whenTrue);
+            checkRendered(expression.whenFalse);
+          }
+          if (ts.isBinaryExpression(expression)) {
+            checkRendered(expression.left);
+            checkRendered(expression.right);
+          }
+          if (ts.isParenthesizedExpression(expression)) {
+            checkRendered(expression.expression);
+          }
+        }
+        ts.forEachChild(node, visit);
+      };
+
+      visit(sourceFile);
+    }
+
+    expect(problems).toEqual([]);
+  });
+
+  it("has no English-only prose left in the Japanese bundle", () => {
+    // Product names ("GitHub Sponsors") are fine; full English sentences are not.
+    const allowed = new Set(["settings.thanks.githubSponsors"]);
+    const flatten = (tree: Record<string, unknown>, prefix = ""): Array<[string, string]> =>
+      Object.entries(tree).flatMap(([key, value]) => {
+        const path = prefix ? `${prefix}.${key}` : key;
+        if (value && typeof value === "object") {
+          return flatten(value as Record<string, unknown>, path);
+        }
+        return typeof value === "string" ? [[path, value] as [string, string]] : [];
+      });
+
+    const japanese = /[\u3040-\u30ff\u4e00-\u9fff]/;
+    const offenders = flatten(ja as unknown as Record<string, unknown>)
+      .filter(([key, value]) => !allowed.has(key)
+        && !japanese.test(value)
+        && /[A-Za-z]{2,}\s+[A-Za-z]{2,}/.test(value));
+
+    expect(offenders).toEqual([]);
   });
 
   it("keeps the two locales key-for-key in sync", () => {

@@ -3,6 +3,7 @@ import { memo, useCallback, useMemo, useState } from "react";
 import type { JSX } from "react";
 import { m } from "motion/react";
 import { normalizeGameStore } from "@shared/gfn";
+import { isUnknownStore, unknownStoreLabel, type TranslateFn } from "../lib/gfnLabels";
 import type { GameInfo } from "@shared/gfn";
 import { getActiveGameAvailabilityBadge } from "../lib/gameCardStatus";
 import { getStoreOptions as getGameCardStoreOptions } from "../lib/gameCardStores";
@@ -120,9 +121,20 @@ function formatStoreFallbackName(storeKey: string): string {
     .replace(/\b\w/g, (match) => match.toUpperCase());
 }
 
-export function getStoreDisplayName(store: string): string {
+/**
+ * Human label for a store key.
+ *
+ * Brand names (Steam, GOG …) stay in Latin script, but the server's
+ * "we could not work it out" placeholder is the literal string `Unknown`, which
+ * used to surface as `Unknown ストア` under every unrecognised card. Callers pass
+ * the translator so that placeholder becomes Japanese instead of leaking English.
+ */
+export function getStoreDisplayName(store: string, t: TranslateFn): string {
   const key = normalizeStoreKey(store);
-  return STORE_DISPLAY_NAME[key] ?? formatStoreFallbackName(key);
+  const known = STORE_DISPLAY_NAME[key];
+  if (known) return known;
+  if (isUnknownStore(key)) return unknownStoreLabel(t);
+  return formatStoreFallbackName(key);
 }
 
 export function getStoreIconComponent(store: string): () => JSX.Element {
@@ -165,9 +177,9 @@ export const GameCard = memo(function GameCard({
   const storeOptions = useMemo(
     () => getGameCardStoreOptions(game, selectedVariantId).map((option) => ({
       ...option,
-      displayName: getStoreDisplayName(option.store),
+      displayName: getStoreDisplayName(option.store, t),
     })),
-    [game, selectedVariantId],
+    [game, selectedVariantId, t],
   );
   const activeStoreOption = storeOptions.find((option) => option.isActive) ?? storeOptions[0];
   const availabilityBadge = useMemo(
@@ -274,7 +286,7 @@ export const GameCard = memo(function GameCard({
 
         <div className="game-card-info">
           {availabilityBadge && (
-            <span className={`game-card-status-badge ${availabilityBadge.kind}`} title={availabilityBadge.status}>
+            <span className={`game-card-status-badge ${availabilityBadge.kind}`} title={t(availabilityBadge.labelKey)}>
               {t(availabilityBadge.labelKey)}
             </span>
           )}

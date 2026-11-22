@@ -140,7 +140,7 @@ export function StreamLoading({
   const [elapsedSeconds, setElapsedSeconds] = useState(0);
   const hasError = Boolean(error);
   const statusMessage = getStatusMessage(t, status, queuePosition, adState, hasError);
-  const platformName = platformStore ? getStoreDisplayName(platformStore) : "";
+  const platformName = platformStore ? getStoreDisplayName(platformStore, t) : "";
   const PlatformIcon = platformStore ? getStoreIconComponent(platformStore) : null;
   const adSummary = getAdSummary(t, adState);
   const cachedAdMediaUrl = activeAdMediaUrl ?? getPreferredSessionAdMediaUrl(activeAd);

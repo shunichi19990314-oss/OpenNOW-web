@@ -71,12 +71,14 @@ export function mergeNativeStreamStats(
   const sinkRendered = stats.sinkRendered ?? stats.framesRendered;
   const totalSinkFrames = sinkRendered + sinkDropped;
   const dropPercent = totalSinkFrames > 0 ? (sinkDropped / totalSinkFrames) * 100 : 0;
+  // The stats HUD shows this line verbatim under "高度な診断", so the whole
+  // sentence stays Japanese; decoder/API names (D3D12, VAAPI …) are kept.
   const hardwareAcceleration = [
-    stats.hardwareAcceleration || "GStreamer native decode",
-    stats.zeroCopy && stats.memoryMode ? `${stats.memoryMode} zero-copy` : "",
+    stats.hardwareAcceleration || "GStreamer ネイティブ デコード",
+    stats.zeroCopy && stats.memoryMode ? `${stats.memoryMode} ゼロコピー` : "",
     !stats.zeroCopy && stats.memoryMode ? stats.memoryMode : "",
-    !stats.memoryMode && stats.zeroCopyD3D12 ? "D3D12 zero-copy" : "",
-    !stats.memoryMode && stats.zeroCopyD3D11 ? "D3D11 zero-copy" : "",
+    !stats.memoryMode && stats.zeroCopyD3D12 ? "D3D12 ゼロコピー" : "",
+    !stats.memoryMode && stats.zeroCopyD3D11 ? "D3D11 ゼロコピー" : "",
   ].filter(Boolean).join(" · ");
 
   return {

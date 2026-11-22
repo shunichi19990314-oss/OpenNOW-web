@@ -42,7 +42,7 @@ export async function api<T>(path: string, init: RequestInit = {}): Promise<T> {
     // instead of the sentence explaining what to do, so the message wins and
     // the code stays available on the error for callers that switch on it.
     const error = new Error(
-      payload?.message ?? payload?.error ?? `Request failed (${response.status})`,
+      payload?.message ?? payload?.error ?? `リクエストに失敗しました (${response.status})`,
     ) as Error & {
       upstreamCode?: number;
       httpStatus?: number;
@@ -106,7 +106,7 @@ function emitSignaling(event: MainToRendererSignalingEvent): void {
 
 function sendSignal(type: string, payload?: unknown): Promise<void> {
   if (!socket || socket.readyState !== WebSocket.OPEN) {
-    return Promise.reject(new Error("The signaling bridge is not connected."));
+    return Promise.reject(new Error("シグナリングブリッジに接続されていません。"));
   }
   socket.send(JSON.stringify({ type, ...(payload === undefined ? {} : { payload }) }));
   return Promise.resolve();
@@ -118,12 +118,12 @@ async function connectSignaling(payload: SignalingConnectRequest): Promise<void>
   socket = new WebSocket(`${protocol}//${location.host}/api/signaling`);
   await new Promise<void>((resolve, reject) => {
     const activeSocket = socket;
-    if (!activeSocket) return reject(new Error("Unable to create signaling connection."));
+    if (!activeSocket) return reject(new Error("シグナリング接続を作成できません。"));
     activeSocket.onopen = () => {
       activeSocket.send(JSON.stringify({ type: "connect", payload: { ...payload, nativeStreamer: undefined } }));
       resolve();
     };
-    activeSocket.onerror = () => reject(new Error("Unable to open the signaling bridge."));
+    activeSocket.onerror = () => reject(new Error("シグナリングブリッジを開けません。"));
     activeSocket.onmessage = (message) => {
       if (socket !== activeSocket) return; // superseded connection
       try {
@@ -168,7 +168,7 @@ async function measureRegionLatency(url: string): Promise<PingResult> {
   try {
     const target = new URL(url);
     if (target.protocol !== "https:") {
-      throw new Error("Region latency checks require HTTPS.");
+      throw new Error("リージョンの遅延測定には HTTPS が必要です。");
     }
 
     const startedAt = performance.now();
@@ -228,13 +228,13 @@ const bridge: OpenNowApi = {
         attempted: false,
         forced: false,
         outcome: "not_attempted",
-        message: "Server-managed web session.",
+        message: "サーバー管理の Web セッションです。",
       },
     };
   },
   getLoginProviders: () => api("/api/providers"),
   getRegions: () => api("/api/regions"),
-  login: async () => { throw new Error("OpenNOW Web uses QR-code sign in."); },
+  login: async () => { throw new Error("OpenNOW Web は QR コードでのサインインを使用します。"); },
   startDeviceLogin: async (input) => {
     const challenge = await api<QrChallenge>("/api/auth/qr/start", { method: "POST", body: JSON.stringify(input) });
     return { ...challenge, deviceCode: challenge.attemptId } satisfies AuthDeviceLoginChallenge;
@@ -245,7 +245,7 @@ const bridge: OpenNowApi = {
   },
   completeDeviceLogin: async () => {
     const result = await api<{ session: BrowserSession | null }>("/api/session");
-    if (!result.session) throw new Error("QR sign-in did not complete.");
+    if (!result.session) throw new Error("QR コードでのサインインが完了しませんでした。");
     return toAuthSession(result.session);
   },
   cancelDeviceLogin: (input) => api("/api/auth/qr/cancel", { method: "POST", body: JSON.stringify(input) }),
@@ -264,7 +264,7 @@ const bridge: OpenNowApi = {
   },
   switchAccount: async () => {
     const result = await api<{ session: BrowserSession | null }>("/api/session");
-    if (!result.session) throw new Error("Saved account not found.");
+    if (!result.session) throw new Error("保存されたアカウントが見つかりません。");
     return toAuthSession(result.session);
   },
   removeAccount: () => api("/api/logout", { method: "POST" }),
@@ -272,13 +272,13 @@ const bridge: OpenNowApi = {
   fetchPersistentStorageLocations: async () => ({ locations: [] }),
   resetPersistentStorage: async (input = {}) => ({ ok: true, storageRegion: input.storageRegion ?? null }),
   fetchGameAccountConnections: async () => ({ accounts: [], fetchedAt: Date.now() }),
-  linkGameAccount: async () => { throw new Error("Account linking must be completed on the GeForce NOW website."); },
-  unlinkGameAccount: async () => { throw new Error("Account unlinking must be completed on the GeForce NOW website."); },
-  resyncGameAccount: async () => { throw new Error("Account syncing must be completed on the GeForce NOW website."); },
+  linkGameAccount: async () => { throw new Error("アカウントの連携は GeForce NOW の Web サイトで行ってください。"); },
+  unlinkGameAccount: async () => { throw new Error("アカウントの連携解除は GeForce NOW の Web サイトで行ってください。"); },
+  resyncGameAccount: async () => { throw new Error("アカウントの同期は GeForce NOW の Web サイトで行ってください。"); },
   fetchMainGames: async () => (await api<{ games: GameInfo[] }>("/api/catalog")).games,
   fetchStorePanels: async () => {
     const games = (await api<{ games: GameInfo[] }>("/api/catalog")).games;
-    return [{ id: "web-catalog", title: "Featured", sections: [{ id: "featured", title: "Featured", games }] }];
+    return [{ id: "web-catalog", title: "注目", sections: [{ id: "featured", title: "注目", games }] }];
   },
   fetchFeaturedGames: async () => (await api<{ games: GameInfo[] }>("/api/catalog")).games.slice(0, 20),
   fetchLibraryGames: async () => (await api<{ games: GameInfo[] }>("/api/library")).games,
@@ -326,7 +326,7 @@ const bridge: OpenNowApi = {
   resetSettings: async () => { const settings = { ...WEB_DEFAULT_SETTINGS }; writeSettings(settings); return settings; },
   selectNativeStreamerExecutable: async () => null,
   getMicrophonePermission: async () => ({ platform: "linux", isMacOs: false, status: "not-applicable", granted: false, canRequest: true, shouldUseBrowserApi: true }),
-  exportLogs: async () => "OpenNOW Web logs are available in the browser developer console.",
+  exportLogs: async () => "OpenNOW Web のログはブラウザの開発者コンソールで確認できます。",
   pingRegions: pingRegionsInBrowser,
   saveScreenshot: async (input) => {
     const id = crypto.randomUUID();
@@ -339,10 +339,10 @@ const bridge: OpenNowApi = {
   saveScreenshotAs: async (input) => { const item = screenshots.find((entry) => entry.id === input.id); if (!item) return { saved: false }; const anchor = document.createElement("a"); anchor.href = item.dataUrl; anchor.download = item.fileName; anchor.click(); return { saved: true, filePath: item.fileName }; },
   onTriggerScreenshot: () => () => {},
   onExternalEscape: () => () => {},
-  openExternalUrl: async (url) => { const parsed = new URL(url); if (!["http:", "https:"].includes(parsed.protocol)) throw new Error("Unsupported external URL."); window.open(parsed.toString(), "_blank", "noopener,noreferrer"); },
+  openExternalUrl: async (url) => { const parsed = new URL(url); if (!["http:", "https:"].includes(parsed.protocol)) throw new Error("サポートされていない外部 URL です。"); window.open(parsed.toString(), "_blank", "noopener,noreferrer"); },
   beginRecording: async (input) => { const recordingId = crypto.randomUUID(); recordingChunks.set(recordingId, { mimeType: input.mimeType, chunks: [] }); return { recordingId }; },
   sendRecordingChunk: async (input) => { recordingChunks.get(input.recordingId)?.chunks.push(input.chunk); },
-  finishRecording: async (input) => { const pending = recordingChunks.get(input.recordingId); if (!pending) throw new Error("Recording not found."); const blob = new Blob(pending.chunks, { type: pending.mimeType }); const entry: RecordingEntry = { id: input.recordingId, fileName: `${input.gameTitle ?? "OpenNOW"}-${Date.now()}.webm`, filePath: URL.createObjectURL(blob), createdAtMs: Date.now(), sizeBytes: blob.size, durationMs: input.durationMs, gameTitle: input.gameTitle, thumbnailDataUrl: input.thumbnailDataUrl }; recordings.unshift(entry); recordingChunks.delete(input.recordingId); return entry; },
+  finishRecording: async (input) => { const pending = recordingChunks.get(input.recordingId); if (!pending) throw new Error("録画が見つかりません。"); const blob = new Blob(pending.chunks, { type: pending.mimeType }); const entry: RecordingEntry = { id: input.recordingId, fileName: `${input.gameTitle ?? "OpenNOW"}-${Date.now()}.webm`, filePath: URL.createObjectURL(blob), createdAtMs: Date.now(), sizeBytes: blob.size, durationMs: input.durationMs, gameTitle: input.gameTitle, thumbnailDataUrl: input.thumbnailDataUrl }; recordings.unshift(entry); recordingChunks.delete(input.recordingId); return entry; },
   abortRecording: async (input) => { recordingChunks.delete(input.recordingId); },
   listRecordings: async () => recordings,
   deleteRecording: async (input) => { const index = recordings.findIndex((item) => item.id === input.id); if (index >= 0) { URL.revokeObjectURL(recordings[index].filePath); recordings.splice(index, 1); } },
@@ -357,10 +357,10 @@ const bridge: OpenNowApi = {
   fetchPrintedWasteQueue: async () => ({}),
   fetchPrintedWasteServerMapping: async () => ({}),
   getThanksData: async () => ({ contributors: [], supporters: [], contributorsError: "この Web 版ではコミュニティ情報を取得できません。" }),
-  provisionZortosCommunityProxy: async () => { throw new Error("Community proxy provisioning is unavailable in the hosted web app."); },
+  provisionZortosCommunityProxy: async () => { throw new Error("コミュニティプロキシの有効化は、ホスト版 Web アプリでは利用できません。"); },
   setDiscordActivity: async () => {},
   clearDiscordActivity: async () => {},
-  getReleaseHighlights: async (version = "0.5.1-web") => ({ version, title: `OpenNOW ${version}`, bodyMarkdown: "OpenNOW is now available in your browser.", source: "fallback" }),
+  getReleaseHighlights: async (version = "0.5.1-web") => ({ version, title: `OpenNOW ${version}`, bodyMarkdown: "OpenNOW がブラウザで使えるようになりました。", source: "fallback" }),
   ackReleaseHighlights: async () => {},
   onReleaseHighlightsShow: () => () => {},
 };

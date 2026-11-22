@@ -5,6 +5,7 @@ import { AnimatePresence, m } from "motion/react";
 import { isOwnedLibraryStatus } from "@shared/gfn";
 import type { CatalogFilterGroup, CatalogSortOption, GameInfo, GamePanelResult, GameVariant } from "@shared/gfn";
 import { getStoreDisplayName, getStoreIconComponent } from "./GameCard";
+import { playTypeLabel, type TranslateFn } from "../lib/gfnLabels";
 import { formatCatalogLastPlayed } from "../utils/lastPlayedFormat";
 import { GameCardListItem, useCatalogCardActionsRef } from "./GameCardListItem";
 import { GameDetailsModal } from "./GameDetailsModal";
@@ -117,8 +118,8 @@ function storeVariantIsOwned(variant: GameVariant | undefined): boolean {
   return Boolean(variant?.inLibrary || variant?.librarySelected || isOwnedLibraryStatus(variant?.libraryStatus));
 }
 
-function getVariantDisplayName(variant: GameVariant | undefined, fallback: string): string {
-  return variant?.store ? getStoreDisplayName(variant.store) : fallback;
+function getVariantDisplayName(variant: GameVariant | undefined, fallback: string, t: TranslateFn): string {
+  return variant?.store ? getStoreDisplayName(variant.store, t) : fallback;
 }
 
 function getPurchaseUrl(game: GameInfo, selectedVariantId?: string): string | undefined {
@@ -139,12 +140,19 @@ function getNextVariantId(game: GameInfo, selectedVariantId?: string): string | 
   return game.variants[(activeIndex + 1) % game.variants.length]?.id;
 }
 
-function getPrimaryGenre(game: GameInfo): string {
-  return game.genres?.[0] ?? game.playType ?? "Cloud Game";
+/**
+ * Genre chip for the hero.
+ *
+ * `playType` is a machine enum (`FREE_TO_PLAY`), so it is translated rather than
+ * printed; when the catalog has neither a genre nor a recognisable play type we
+ * say nothing instead of inventing an English label.
+ */
+function getPrimaryGenre(game: GameInfo, t: TranslateFn): string | null {
+  return game.genres?.[0] ?? playTypeLabel(game.playType, t);
 }
 
-function getPrimaryStoreName(game: GameInfo, selectedVariantId?: string): string {
-  const store = getSelectedVariant(game, selectedVariantId)?.store ?? game.availableStores?.[0] ?? "Cloud";
+function getPrimaryStoreName(game: GameInfo, t: TranslateFn, selectedVariantId?: string): string {
+  const store = getSelectedVariant(game, selectedVariantId)?.store ?? game.availableStores?.[0] ?? t("library.cloudStore");
   const upper = store.toUpperCase();
   if (upper.includes("STEAM")) return "Steam";
   if (upper.includes("BATTLE")) return "Battle.net";
@@ -152,7 +160,7 @@ function getPrimaryStoreName(game: GameInfo, selectedVariantId?: string): string
   if (upper.includes("XBOX")) return "Xbox";
   if (upper.includes("EPIC")) return "Epic";
   if (upper.includes("EA")) return "EA";
-  return getStoreDisplayName(store);
+  return getStoreDisplayName(store, t);
 }
 
 function ControllerStoreTile({
@@ -175,7 +183,7 @@ function ControllerStoreTile({
   const { t } = useTranslation();
   const imageUrl = getControllerStoreImageCandidates(game, false)[0];
   const selectedVariant = getSelectedVariant(game, selectedVariantId);
-  const storeName = getPrimaryStoreName(game, selectedVariantId);
+  const storeName = getPrimaryStoreName(game, t, selectedVariantId);
   const StoreIcon = getStoreIconComponent(selectedVariant?.store ?? storeName);
   const needsPurchase = gameNeedsPurchase(game, selectedVariantId);
 
@@ -212,7 +220,7 @@ function ControllerStoreTile({
       </span>
       {!needsPurchase && (
         <span className="controller-store-tile-variant">
-          {t("home.controller.variant", { variant: getVariantDisplayName(selectedVariant, storeName) })}
+          {t("home.controller.variant", { variant: getVariantDisplayName(selectedVariant, storeName, t) })}
         </span>
       )}
       <button
@@ -677,7 +685,13 @@ export const HomePage = memo(function HomePage({
                     transition={pageTransition}
                   >
                     {heroLogoUrl ? <img src={heroLogoUrl} alt={heroGame.title} className="controller-hero-logo" /> : <h1>{heroGame.title}</h1>}
-                    <p className="controller-store-hero-meta">{getPrimaryStoreName(heroGame, heroSelectedVariantId)} / {getPrimaryGenre(heroGame)}</p>
+                    <p className="controller-store-hero-meta">
+                      {getPrimaryStoreName(heroGame, t, heroSelectedVariantId)}
+                      {(() => {
+                        const genre = getPrimaryGenre(heroGame, t);
+                        return genre ? <>{` / ${genre}`}</> : null;
+                      })()}
+                    </p>
                     <div className="controller-hero-actions">
                       <button
                         type="button"
@@ -695,7 +709,7 @@ export const HomePage = memo(function HomePage({
                           ? (heroMarkingOwned ? t("app.status.markingOwned") : t("app.actions.markAsOwned"))
                           : t("app.actions.play")}
                       </button>
-                      <span className="controller-store-hero-pill">{getPrimaryStoreName(heroGame, heroSelectedVariantId)}</span>
+                      <span className="controller-store-hero-pill">{getPrimaryStoreName(heroGame, t, heroSelectedVariantId)}</span>
                     </div>
                   </m.div>
                 </AnimatePresence>
@@ -945,7 +959,7 @@ export const HomePage = memo(function HomePage({
           if (!slide) return null;
           const heroImage = getControllerStoreImageCandidates(slide.game, true)[0] ?? slide.game.imageUrl;
           const heroLogo = getControllerStoreLogoUrl(slide.game);
-          const heroStore = getPrimaryStoreName(slide.game, selectedVariantByGameId[slide.game.id]);
+          const heroStore = getPrimaryStoreName(slide.game, t, selectedVariantByGameId[slide.game.id]);
           return (
             <section
               className="home-hero"
@@ -1001,7 +1015,10 @@ export const HomePage = memo(function HomePage({
                       <h1 className="home-hero-title">{slide.game.title}</h1>
                     )}
                     <div className="home-hero-meta">
-                      <span className="home-hero-chip">{getPrimaryGenre(slide.game)}</span>
+                      {(() => {
+                        const genre = getPrimaryGenre(slide.game, t);
+                        return genre ? <span className="home-hero-chip">{genre}</span> : null;
+                      })()}
                       <span className="home-hero-chip">{heroStore}</span>
                       {slide.isResume && (() => {
                         const lastPlayedMs = gameActivityTimestamp(slide.game, playtimeData);

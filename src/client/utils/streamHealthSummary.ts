@@ -22,23 +22,23 @@ function tierFromRttLoss(rttMs: number, packetLossPercent: number): StreamHealth
 export function getStreamHealthSummary(d: StreamDiagnostics): StreamHealthSummary {
   const lag = d.lagReason;
   if (lag === "decoder" || lag === "input_backpressure") {
-    return { label: "Local strain", tier: "fair" };
+    return { label: "ローカル負荷", tier: "fair" };
   }
   if (lag === "network") {
-    return { label: "Network", tier: "poor" };
+    return { label: "ネットワーク", tier: "poor" };
   }
 
   const hasVideo = Boolean(d.resolution && d.resolution.length > 0);
   if (!hasVideo && d.rttMs <= 0) {
-    return { label: "Connecting…", tier: "connecting" };
+    return { label: "接続中…", tier: "connecting" };
   }
 
   const tier = tierFromRttLoss(d.rttMs, d.packetLossPercent);
   const labels: Record<StreamHealthTier, string> = {
-    good: "Good",
-    fair: "Fair",
-    poor: "Poor",
-    connecting: "Connecting…",
+    good: "良好",
+    fair: "普通",
+    poor: "不良",
+    connecting: "接続中…",
   };
   return { label: labels[tier], tier };
 }

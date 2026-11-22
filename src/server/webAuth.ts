@@ -535,7 +535,7 @@ export class WebAuthSession {
     if (!attempt || attempt.expiresAt <= Date.now()) {
       this.attempts.delete(attemptId);
       this.dirty = true;
-      return { status: "expired", error: "The QR code expired. Start again to get a new one." };
+      return { status: "expired", error: "QR コードの有効期限が切れました。もう一度開始して新しいコードを取得してください。" };
     }
 
     const result = await exchangeDeviceCode(attempt.deviceCode);
