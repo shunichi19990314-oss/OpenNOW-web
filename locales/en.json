@@ -164,7 +164,10 @@
   "navigation": {
     "home": "Store",
     "library": "Library",
-    "settings": "Settings"
+    "settings": "Settings",
+    "railLabel": "Main navigation",
+    "commandPalette": "Command palette",
+    "themePack": "Theme pack"
   },
   "home": {
     "searchPlaceholder": "Search games...",
@@ -217,7 +220,8 @@
     "search": {
       "clear": "Clear search"
     },
-    "favorites": "Favorites"
+    "favorites": "Favorites",
+    "gamesAvailable": "{{count}} games"
   },
   "library": {
     "title": "My Library",
@@ -252,7 +256,8 @@
       "playType": "Play Type",
       "platform": "Platform",
       "controls": "Controls",
-      "activity": "Activity"
+      "activity": "Activity",
+      "quick": "Quick filters"
     },
     "filterOptions": {
       "installToPlay": "Install to Play",
@@ -262,7 +267,10 @@
       "touch": "Touch",
       "played": "Played",
       "neverPlayed": "Never Played",
-      "favorite": "Favorites"
+      "favorite": "Favorites",
+      "all": "All",
+      "readyToPlay": "Ready to play",
+      "rtx": "RTX"
     },
     "lastPlayed": {
       "never": "Never played",
@@ -984,7 +992,21 @@
       "sessionTimerVisibleTimeHint": "How long the session timer stays visible each time it appears.",
       "sessionTimerDisabledHint": "Disabling the session elapsed counter stops the live elapsed timer from rendering at all. Remaining playtime indicators stay unchanged.",
       "off": "Off",
-      "everyMinutes": "Every {{count}} min"
+      "everyMinutes": "Every {{count}} min",
+      "themePack": "Theme Pack",
+      "themePackHint": "Switches the shell, panel, and accent colours.",
+      "themePackDetailNocturne": "Sky Glass",
+      "themePackDetailAurora": "Mint Aurora",
+      "themePackDetailKraft": "Warm Brass",
+      "themePackDetailPhosphor": "CRT Glow",
+      "themePackDetailBone": "Warm Minimal",
+      "themePackDetailCobalt": "Cobalt Paper",
+      "themePackDetailHibiscus": "Rose Glass",
+      "themePackDetailChapel": "Gold Glass",
+      "accentOverride": "Override Pack Accent",
+      "accentOverrideHint": "Use the accent colour above instead of the pack accent.",
+      "accentColorCoral": "Coral",
+      "accentColorWhite": "White"
     },
     "about": {
       "applicationUpdates": "Application Updates",

@@ -71,6 +71,11 @@ export interface HomePageProps {
   markOwnedInFlightByVariantId?: Record<string, boolean>;
   onPreviousControllerPage?: () => void;
   onNextControllerPage?: () => void;
+  /**
+   * The desktop shell puts the search field in the page header, so the toolbar
+   * copy is hidden there to avoid two inputs bound to one query.
+   */
+  showInlineSearch?: boolean;
   /** Local playtime + activity data, used by the "Continue playing" rail. */
   playtimeData?: PlaytimeData;
   /**
@@ -275,6 +280,7 @@ export const HomePage = memo(function HomePage({
   onNextControllerPage,
   playtimeData = {},
   isHeroPending = false,
+  showInlineSearch = true,
 }: HomePageProps): JSX.Element {
   const { t } = useTranslation();
   const [detailsGame, setDetailsGame] = useState<GameInfo | null>(null);
@@ -856,6 +862,7 @@ export const HomePage = memo(function HomePage({
         </div>
       )}
       <header className="home-toolbar">
+        {showInlineSearch && (
         <div className="home-search">
           <Search className="home-search-icon" size={16} />
           <input
@@ -877,6 +884,7 @@ export const HomePage = memo(function HomePage({
             </button>
           )}
         </div>
+        )}
 
         {visibleFilterGroups.length > 0 && (
           <details className="home-filter-dropdown">

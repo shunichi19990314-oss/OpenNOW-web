@@ -1,6 +1,6 @@
 import type { ActiveSessionInfo, AuthUser, SavedAccount, SubscriptionInfo } from "@shared/gfn";
 import { House, Library, Settings, User, Timer, HardDrive, X, PlayCircle, Square, ChevronDown, Check, Plus, Store as StoreIcon } from "lucide-react";
-import { useEffect, useRef, useState, type JSX } from "react";
+import { useEffect, useRef, useState, type JSX, type ReactNode } from "react";
 import { createPortal } from "react-dom";
 import { useTranslation } from "../i18n";
 import { membershipTierLabel, subscriptionValueLabel } from "../lib/gfnLabels";
@@ -24,6 +24,15 @@ interface NavbarProps {
   onAddAccount: () => void;
   onLogoutAll: () => void;
   controllerMode?: boolean;
+  /**
+   * The desktop shell navigates from the vertical rail, so the header only
+   * shows the brand, the current page and the account/session chips.
+   */
+  railNavigation?: boolean;
+  pageTitle?: string;
+  pageMeta?: string;
+  /** Header search field rendered left of the account chips. */
+  headerSearchSlot?: ReactNode;
 }
 
 type NavbarModalType = "time" | "storage" | null;
@@ -52,6 +61,10 @@ export function Navbar({
   onAddAccount,
   onLogoutAll,
   controllerMode = false,
+  railNavigation = false,
+  pageTitle,
+  pageMeta,
+  headerSearchSlot,
 }: NavbarProps): JSX.Element {
   const { t } = useTranslation();
   const [modalType, setModalType] = useState<NavbarModalType>(null);
@@ -296,15 +309,22 @@ export function Navbar({
     : null;
 
   return (
-    <nav className={`navbar${controllerMode ? " navbar--controller" : ""}`}>
+    <nav className={`navbar${controllerMode ? " navbar--controller" : ""}${railNavigation ? " navbar--rail" : ""}`}>
       <div className="navbar-left">
         <div className="navbar-brand">
           <OpenNowLogoMark className="opennow-logo-mark" />
         </div>
-        <span className="navbar-logo-text">OpenNOW</span>
+        {railNavigation && pageTitle ? (
+          <div className="navbar-page-title">
+            <span className="navbar-page-name">{pageTitle}</span>
+            {pageMeta && <span className="navbar-page-meta">{pageMeta}</span>}
+          </div>
+        ) : (
+          <span className="navbar-logo-text">OpenNOW</span>
+        )}
       </div>
 
-      <div className="navbar-nav">
+      <div className={`navbar-nav${railNavigation ? " navbar-nav--hidden" : ""}`}>
         {navItems.map((item) => {
           const Icon = item.icon;
           const isActive = controllerMode
@@ -325,6 +345,7 @@ export function Navbar({
       </div>
 
       <div className="navbar-right">
+        {headerSearchSlot}
         {activeSession && !controllerMode && (
           <div className="navbar-session-actions">
             <button

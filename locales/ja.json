@@ -161,7 +161,10 @@
   "navigation": {
     "home": "ストア",
     "library": "ライブラリ",
-    "settings": "設定"
+    "settings": "設定",
+    "railLabel": "メインナビゲーション",
+    "commandPalette": "コマンドパレット",
+    "themePack": "テーマパック"
   },
   "home": {
     "searchPlaceholder": "ゲームを検索...",
@@ -214,7 +217,8 @@
     "search": {
       "clear": "検索をクリア"
     },
-    "favorites": "お気に入り"
+    "favorites": "お気に入り",
+    "gamesAvailable": "{{count}}件のゲーム"
   },
   "library": {
     "title": "私のライブラリ",
@@ -266,7 +270,8 @@
       "playType": "プレイタイプ",
       "platform": "プラットフォーム",
       "controls": "操作",
-      "activity": "プレイ状況"
+      "activity": "プレイ状況",
+      "quick": "クイックフィルター"
     },
     "filterOptions": {
       "installToPlay": "インストールしてプレイ",
@@ -276,7 +281,10 @@
       "touch": "タッチ",
       "played": "プレイ済み",
       "neverPlayed": "未プレイ",
-      "favorite": "お気に入り"
+      "favorite": "お気に入り",
+      "all": "すべて",
+      "readyToPlay": "今すぐプレイ可能",
+      "rtx": "RTX"
     },
     "gameDetails": "ゲーム詳細",
     "descriptionUnavailable": "このゲームの日本語説明は現在利用できません。",
@@ -888,12 +896,26 @@
       "off": "オフ",
       "everyMinutes": "{{count}} 分ごと",
       "theme": "テーマ",
-      "themeHint": "ライト、ダーク、またはシステムに合わせたテーマを選択します。",
+      "themeHint": "明るいテーマ・暗いテーマ・システム連動から選択します。",
       "themeAuto": "システム自動",
       "themeLight": "ライト",
       "themeDark": "ダーク",
       "translucentUI": "半透明 UI",
-      "translucentUIHint": "グラスモーフィズムと半透明オーバーレイを有効にします。"
+      "translucentUIHint": "グラスモーフィズムと半透明オーバーレイを有効にします。",
+      "themePack": "テーマパック",
+      "themePackHint": "シェル・パネル・アクセントの配色を切り替えます。",
+      "themePackDetailNocturne": "スカイグラス",
+      "themePackDetailAurora": "ミントオーロラ",
+      "themePackDetailKraft": "ウォームブラス",
+      "themePackDetailPhosphor": "CRTグロー",
+      "themePackDetailBone": "ウォームミニマル",
+      "themePackDetailCobalt": "コバルトペーパー",
+      "themePackDetailHibiscus": "ローズグラス",
+      "themePackDetailChapel": "ゴールドグラス",
+      "accentOverride": "パックのアクセントを上書き",
+      "accentOverrideHint": "上のアクセントカラーをテーマパックのアクセントより優先します。",
+      "accentColorCoral": "コーラル",
+      "accentColorWhite": "ホワイト"
     },
     "about": {
       "applicationUpdates": "アプリケーションのアップデート",

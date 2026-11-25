@@ -1,7 +1,7 @@
 import { Check } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState, type JSX } from "react";
 import type { Settings } from "@shared/gfn";
-import { getAccentColorOption } from "../../../lib/uiCustomization";
+import { getAccentColorSwatch } from "../../../lib/uiCustomization";
 import { useTranslation } from "../../../i18n";
 import { SelectDropdown } from "../../ui/SelectDropdown";
 import {
@@ -11,6 +11,11 @@ import {
   POSTER_SIZE_MIN,
   POSTER_SIZE_STEP,
 } from "../settingsFormatters";
+import {
+  getThemePack,
+  resolveThemePackPalette,
+  THEME_PACKS,
+} from "../../../lib/themePacks";
 
 export interface SettingsInterfaceSectionProps {
   settings: Settings;
@@ -40,7 +45,14 @@ export function SettingsInterfaceSection({ settings, showAll, handleChange, onSa
     return appLanguageOptions.find((option) => option.value === locale)?.label ?? getAppLanguageLabel(locale);
   }, [appLanguageOptions, locale]);
 
-  const selectedAccentColor = useMemo(() => getAccentColorOption(settings.appAccentColor), [settings.appAccentColor]);
+  const selectedThemePack = useMemo(() => getThemePack(settings.themePack), [settings.themePack]);
+  const selectedAccentColor = useMemo(
+    () => getAccentColorSwatch(settings.appAccentColor, settings.appTheme === "light"),
+    [settings.appAccentColor, settings.appTheme],
+  );
+  // Swatches are painted against the appearance the visitor is looking at, so a
+  // light-mode picker does not advertise the neon dark-mode accents.
+  const appearanceIsLight = typeof document !== "undefined" && document.documentElement.dataset.theme === "light";
 
   const handleAppLanguageChange = useCallback((nextLocale: string): void => {
     setAppLanguageDropdownOpen(false);
@@ -140,6 +152,60 @@ export function SettingsInterfaceSection({ settings, showAll, handleChange, onSa
             </label>
           </div>
 
+          <div className="settings-row settings-row--stacked">
+            <label className="settings-label">
+              {t("settings.interface.themePack")}
+              <span className="settings-hint">{t("settings.interface.themePackHint")}</span>
+            </label>
+            <div className="theme-pack-grid" role="radiogroup" aria-label={t("settings.interface.themePack")}>
+              {THEME_PACKS.map((pack) => {
+                const palette = resolveThemePackPalette(pack, appearanceIsLight);
+                const active = selectedThemePack.id === pack.id;
+                return (
+                  <button
+                    key={pack.id}
+                    type="button"
+                    role="radio"
+                    aria-checked={active}
+                    className={`theme-pack-card${active ? " theme-pack-card--active" : ""}`}
+                    onClick={() => handleChange("themePack", pack.id)}
+                    title={pack.name}
+                  >
+                    <span
+                      className="theme-pack-swatch"
+                      aria-hidden="true"
+                      style={{
+                        background: `linear-gradient(135deg, ${palette.shell} 0%, ${pack.mid} 62%, ${palette.accent} 100%)`,
+                      }}
+                    >
+                      <span className="theme-pack-swatch-dot" style={{ background: palette.accent }} />
+                    </span>
+                    <span className="theme-pack-meta">
+                      <span className="theme-pack-name">{pack.name}</span>
+                      <span className="theme-pack-detail">{t(pack.detailKey)}</span>
+                    </span>
+                    {active && <Check size={14} className="theme-pack-check" />}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          <div className="settings-row">
+            <label className="settings-label">
+              {t("settings.interface.accentOverride")}
+              <span className="settings-hint">{t("settings.interface.accentOverrideHint")}</span>
+            </label>
+            <label className="settings-toggle">
+              <input
+                type="checkbox"
+                checked={settings.themeAccentOverride}
+                onChange={(e) => handleChange("themeAccentOverride", e.target.checked)}
+              />
+              <span className="settings-toggle-track" />
+            </label>
+          </div>
+
           <div className="settings-row">
             <label className="settings-label">
               {t("settings.interface.accentColor")}
@@ -170,7 +236,9 @@ export function SettingsInterfaceSection({ settings, showAll, handleChange, onSa
               </button>
               {accentColorDropdownOpen && (
                 <div className="settings-dropdown-menu">
-                  {accentColorOptions.map((option) => (
+                  {accentColorOptions.map((packOption) => {
+                    const option = getAccentColorSwatch(packOption.value, appearanceIsLight);
+                    return (
                     <button
                       key={option.value}
                       type="button"
@@ -199,7 +267,8 @@ export function SettingsInterfaceSection({ settings, showAll, handleChange, onSa
                       </span>
                       {settings.appAccentColor === option.value && <Check size={14} className="settings-dropdown-check" />}
                     </button>
-                  ))}
+                    );
+                  })}
                 </div>
               )}
             </div>

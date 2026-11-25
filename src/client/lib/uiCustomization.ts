@@ -1,22 +1,29 @@
-import type { AppAccentColor, AppTheme } from "@shared/gfn";
+import type { AppAccentColor, AppTheme, ThemePackId } from "@shared/gfn";
 
-export interface AccentColorOption {
+import {
+  ACCENT_COLOR_OPTIONS,
+  accentHexForMode,
+  getThemePack,
+  resolveThemePackPalette,
+  type AccentColorOption,
+  type ThemePackDefinition,
+} from "./themePacks";
+
+export type { AccentColorOption, ThemePackCategory, ThemePackDefinition } from "./themePacks";
+export {
+  ACCENT_COLOR_OPTIONS,
+  DEFAULT_THEME_PACK,
+  THEME_PACKS,
+  getThemePack,
+  isKnownThemePackId,
+  resolveThemePackPalette,
+} from "./themePacks";
+
+export interface AccentColorSwatch {
   value: AppAccentColor;
   labelKey: string;
   hex: `#${string}`;
 }
-
-const ACCENT_COLOR_OPTIONS: readonly AccentColorOption[] = [
-  { value: "green", labelKey: "settings.interface.accentColorGreen", hex: "#58d98a" },
-  { value: "blue", labelKey: "settings.interface.accentColorBlue", hex: "#4f8cff" },
-  { value: "violet", labelKey: "settings.interface.accentColorViolet", hex: "#8b6cff" },
-  { value: "amber", labelKey: "settings.interface.accentColorAmber", hex: "#f5b942" },
-  { value: "rose", labelKey: "settings.interface.accentColorRose", hex: "#ff6b9a" },
-] as const;
-
-const ACCENT_COLOR_MAP = new Map<AppAccentColor, AccentColorOption>(
-  ACCENT_COLOR_OPTIONS.map((option) => [option.value, option]),
-);
 
 interface RgbColor {
   r: number;
@@ -56,6 +63,10 @@ function mixColors(base: RgbColor, target: RgbColor, amount: number): RgbColor {
   };
 }
 
+function withAlpha({ r, g, b }: RgbColor, alpha: number): string {
+  return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+}
+
 function getContrastRatio(fg: RgbColor, bg: RgbColor): number {
   const relativeLuminance = (rgb: RgbColor): number => {
     const [rs, gs, bs] = [rgb.r / 255, rgb.g / 255, rgb.b / 255].map((channel) =>
@@ -83,24 +94,80 @@ export function getAccentColorOptions(): readonly AccentColorOption[] {
 }
 
 export function getAccentColorOption(accentColor: AppAccentColor): AccentColorOption {
-  return ACCENT_COLOR_MAP.get(accentColor) ?? ACCENT_COLOR_OPTIONS[0];
+  return ACCENT_COLOR_OPTIONS.find((option) => option.value === accentColor) ?? ACCENT_COLOR_OPTIONS[0];
+}
+
+/** Swatch shown in the settings picker, using the current appearance. */
+export function getAccentColorSwatch(accentColor: AppAccentColor, light: boolean): AccentColorSwatch {
+  const option = getAccentColorOption(accentColor);
+  return { value: option.value, labelKey: option.labelKey, hex: light ? option.lightHex : option.hex };
+}
+
+function applyAccent(accentHex: string, target: HTMLElement): void {
+  const baseRgb = hexToRgb(accentHex);
+  const hoverRgb = mixColors(baseRgb, { r: 255, g: 255, b: 255 }, 0.12);
+  const pressRgb = mixColors(baseRgb, { r: 0, g: 0, b: 0 }, 0.12);
+
+  target.style.setProperty("--accent", accentHex);
+  target.style.setProperty("--accent-hover", rgbToHex(hoverRgb));
+  target.style.setProperty("--accent-press", rgbToHex(pressRgb));
+  target.style.setProperty("--accent-rgb", `${baseRgb.r}, ${baseRgb.g}, ${baseRgb.b}`);
+  target.style.setProperty("--accent-glow", withAlpha(baseRgb, 0.25));
+  target.style.setProperty("--accent-surface", withAlpha(baseRgb, 0.08));
+  target.style.setProperty("--accent-surface-strong", withAlpha(baseRgb, 0.14));
+  target.style.setProperty("--accent-on", getContrastColor(baseRgb));
 }
 
 export function applyAccentColor(accentColor: AppAccentColor, root: HTMLElement | null = null): void {
   const target = root ?? document.documentElement;
-  const option = getAccentColorOption(accentColor);
-  const baseRgb = hexToRgb(option.hex);
-  const hoverRgb = mixColors(baseRgb, { r: 255, g: 255, b: 255 }, 0.12);
-  const pressRgb = mixColors(baseRgb, { r: 0, g: 0, b: 0 }, 0.12);
+  const light = target.dataset.theme === "light";
+  applyAccent(accentHexForMode(accentColor, light), target);
+}
 
-  target.style.setProperty("--accent", option.hex);
-  target.style.setProperty("--accent-hover", rgbToHex(hoverRgb));
-  target.style.setProperty("--accent-press", rgbToHex(pressRgb));
-  target.style.setProperty("--accent-rgb", `${baseRgb.r}, ${baseRgb.g}, ${baseRgb.b}`);
-  target.style.setProperty("--accent-glow", `rgba(${baseRgb.r}, ${baseRgb.g}, ${baseRgb.b}, 0.25)`);
-  target.style.setProperty("--accent-surface", `rgba(${baseRgb.r}, ${baseRgb.g}, ${baseRgb.b}, 0.08)`);
-  target.style.setProperty("--accent-surface-strong", `rgba(${baseRgb.r}, ${baseRgb.g}, ${baseRgb.b}, 0.14)`);
-  target.style.setProperty("--accent-on", getContrastColor(baseRgb));
+/**
+ * Paint the shell, panels and ink derived from a colour pack.
+ *
+ * The pack owns the palette (the desktop build does the same in
+ * `Theme.qml`): the shell colour is the backdrop, `mid` lifts panels/cards off
+ * it, and the accent either comes from the pack or from the accent preset when
+ * the user overrides it. Writing the tokens here keeps `styles.css` free of a
+ * per-pack rule set.
+ */
+export function applyThemePack(
+  themePack: ThemePackId | undefined,
+  options: {
+    theme?: AppTheme;
+    accentColor?: AppAccentColor;
+    accentOverride?: boolean;
+  } = {},
+  root: HTMLElement | null = null,
+): void {
+  const target = root ?? document.documentElement;
+  const pack: ThemePackDefinition = getThemePack(themePack);
+  const light = target.dataset.theme === "light";
+  const palette = resolveThemePackPalette(pack, light);
+  const shell = hexToRgb(palette.shell);
+  const mid = hexToRgb(palette.mid);
+
+  target.style.setProperty("--bg-a", palette.shell);
+  target.style.setProperty("--bg-b", rgbToHex(mixColors(shell, mid, 0.32)));
+  target.style.setProperty("--bg-c", rgbToHex(mixColors(shell, mid, 0.58)));
+  target.style.setProperty("--panel", rgbToHex(mixColors(shell, mid, 0.26)));
+  target.style.setProperty("--card", rgbToHex(mixColors(shell, mid, 0.2)));
+  target.style.setProperty("--card-hover", rgbToHex(mixColors(shell, mid, 0.34)));
+  target.style.setProperty("--chip", rgbToHex(mixColors(shell, mid, 0.42)));
+  target.style.setProperty("--panel-border-solid", rgbToHex(mixColors(shell, mid, 0.7)));
+
+  const ink = light ? { r: 17, g: 24, b: 39 } : { r: 255, g: 255, b: 255 };
+  target.style.setProperty("--ink", rgbToHex(ink));
+  target.style.setProperty("--ink-soft", withAlpha(ink, light ? 0.72 : 0.68));
+  target.style.setProperty("--ink-muted", withAlpha(ink, light ? 0.55 : 0.5));
+  target.style.setProperty("--panel-border", withAlpha(ink, 0.1));
+
+  const accentHex = options.accentOverride && options.accentColor
+    ? accentHexForMode(options.accentColor, light)
+    : palette.accent;
+  applyAccent(accentHex, target);
 }
 
 export function applyTheme(theme: AppTheme, root: HTMLElement | null = null): void {

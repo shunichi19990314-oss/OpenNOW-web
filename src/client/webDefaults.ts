@@ -235,6 +235,8 @@ export const WEB_DEFAULT_SETTINGS: Settings = {
   showStatsOnLaunch: false,
   hideServerSelector: false,
   appAccentColor: "green",
+  themePack: "nocturne",
+  themeAccentOverride: false,
   appTheme: "auto",
   translucentUI: false,
   controllerMode: false,

@@ -16,8 +16,22 @@ import type { VideoShaderSettings } from "./videoShader";
 import type { UpdateChannel } from "./updater";
 import { normalizeStreamPreferences } from "./stream";
 
-export type AppAccentColor = "green" | "blue" | "violet" | "amber" | "rose";
+export type AppAccentColor = "green" | "blue" | "violet" | "rose" | "coral" | "amber" | "white";
 export type AppTheme = "light" | "dark" | "auto";
+/**
+ * Colour packs from the desktop build's Paper design: the pack supplies the
+ * shell, panel and accent colours, and the accent preset above can override
+ * the pack accent when `themeAccentOverride` is on.
+ */
+export type ThemePackId =
+  | "nocturne"
+  | "aurora"
+  | "kraft"
+  | "phosphor"
+  | "bone"
+  | "cobalt"
+  | "hibiscus"
+  | "chapel";
 export type MicrophoneMode = "disabled" | "push-to-talk" | "voice-activity";
 export type AspectRatio = "16:9" | "16:10" | "21:9" | "32:9";
 export type VideoCodecPreference = VideoCodec | "AUTO";
@@ -97,6 +111,10 @@ export interface Settings {
   hideServerSelector: boolean;
   /** Desktop UI accent preset */
   appAccentColor: AppAccentColor;
+  /** Colour pack applied to the shell, panels and accent */
+  themePack: ThemePackId;
+  /** Let the accent preset override the pack accent */
+  themeAccentOverride: boolean;
   /** UI Theme */
   appTheme: AppTheme;
   /** Use translucent overlays for settings and navbars */
