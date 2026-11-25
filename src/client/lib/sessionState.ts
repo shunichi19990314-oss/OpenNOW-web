@@ -93,11 +93,14 @@ export function isStreamVideoReady(
 
 export function toCodeLabel(code: number | undefined): string | undefined {
   if (code === undefined) return undefined;
-  if (code === GFN_SESSION_LIMIT_EXCEEDED_CODE) return `SessionLimitExceeded (${code})`;
-  if (code === GFN_INSUFFICIENT_PLAYABILITY_CODE) return `SessionInsufficientPlayabilityLevel (${code})`;
-  if (code === GFN_USER_STORAGE_NOT_AVAILABLE_CODE) return `UserStorageNotAvailable (${code})`;
-  if (code === GFN_STORAGE_NOT_AVAILABLE_CODE) return `GfnStorageNotAvailable (${code})`;
-  return `GFN Error ${code}`;
+  // Printed under the launch error title. These used to be the raw camel-case
+  // identifiers (`SessionLimitExceeded`), which read as untranslated English;
+  // the machine code stays so support can match it against GFN docs.
+  if (code === GFN_SESSION_LIMIT_EXCEEDED_CODE) return `セッション数の上限 (コード: ${code})`;
+  if (code === GFN_INSUFFICIENT_PLAYABILITY_CODE) return `このプランではプレイできません (コード: ${code})`;
+  if (code === GFN_USER_STORAGE_NOT_AVAILABLE_CODE) return `ユーザーストレージを利用できません (コード: ${code})`;
+  if (code === GFN_STORAGE_NOT_AVAILABLE_CODE) return `サービスのストレージを利用できません (コード: ${code})`;
+  return `GFN エラー ${code}`;
 }
 
 export function extractLaunchErrorCode(error: unknown): number | undefined {

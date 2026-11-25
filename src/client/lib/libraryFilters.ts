@@ -262,7 +262,11 @@ export function gameMatchesStoreFilter(game: GameInfo, filterId: string): boolea
   return (game.variants ?? []).some((variant) => variant.store === store) || (game.availableStores ?? []).includes(store);
 }
 
-export function getControllerStoreFilterItems(games: GameInfo[], allStoresLabel: string): ControllerStoreFilterItem[] {
+export function getControllerStoreFilterItems(
+  games: GameInfo[],
+  allStoresLabel: string,
+  t: LibraryTranslation,
+): ControllerStoreFilterItem[] {
   const stores = new Set<string>();
   for (const game of games) {
     for (const store of game.availableStores ?? []) {
@@ -275,6 +279,10 @@ export function getControllerStoreFilterItems(games: GameInfo[], allStoresLabel:
 
   return [
     { id: "library", title: allStoresLabel },
-    ...[...stores].sort((left, right) => left.localeCompare(right)).map((store) => ({ id: `store:${store}`, title: store })),
+    // The chips used to print the raw store key, so an unrecognised store showed
+    // as `Unknown` here too.
+    ...[...stores]
+      .sort((left, right) => left.localeCompare(right))
+      .map((store) => ({ id: `store:${store}`, title: getStoreDisplayName(store, t) })),
   ];
 }

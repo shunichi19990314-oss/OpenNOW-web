@@ -451,7 +451,7 @@ export function formatStorageGb(value: number | undefined): string | null {
 export function formatUpdaterTimestamp(value?: number): string | null {
   if (!value) return null;
   try {
-    return new Date(value).toLocaleString();
+    return new Date(value).toLocaleString("ja-JP");
   } catch {
     return null;
   }
@@ -484,7 +484,7 @@ export function formatGameAccountSyncDate(value: string | undefined): string | n
   if (!value) return null;
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) return null;
-  return date.toLocaleString();
+  return date.toLocaleString("ja-JP");
 }
 
 export function saveCachedEntitledResolutions(cache: EntitledResolutionsCache): void {

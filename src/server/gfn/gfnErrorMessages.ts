@@ -7,56 +7,56 @@ export interface ErrorMessageEntry {
 /** User-friendly error messages map */
 export const ERROR_MESSAGES: Map<number, ErrorMessageEntry> = new Map([
   // Success
-  [15859712, { title: "Success", description: "Session started successfully." }],
+  [15859712, { title: "成功", description: "セッションを開始しました。" }],
 
   // Client errors
   [
     3237085186,
     {
-      title: "Invalid Operation",
-      description: "The requested operation is not valid at this time.",
+      title: "不正な操作",
+      description: "この操作は現在行えません。",
     },
   ],
   [
     3237089282,
     {
-      title: "Network Error",
-      description: "A network error occurred. Please check your internet connection.",
+      title: "ネットワークエラー",
+      description: "ネットワークエラーが発生しました。インターネット接続を確認してください。",
     },
   ],
   [
     3237093377,
     {
-      title: "Authentication Required",
-      description: "Your session has expired. Please log in again.",
+      title: "認証が必要です",
+      description: "セッションの有効期限が切れました。もう一度ログインしてください。",
     },
   ],
   [
     3237093379,
     {
-      title: "Server Response Error",
-      description: "Failed to parse server response. Please try again.",
+      title: "サーバー応答のエラー",
+      description: "サーバーの応答を解析できませんでした。もう一度お試しください。",
     },
   ],
   [
     3237093381,
     {
-      title: "Invalid Server Response",
-      description: "The server returned an invalid response.",
+      title: "サーバー応答が不正です",
+      description: "サーバーから不正な応答が返されました。",
     },
   ],
   [
     3237093384,
     {
-      title: "Session Error",
-      description: "An error occurred during session setup.",
+      title: "セッションエラー",
+      description: "セッションの準備中にエラーが発生しました。",
     },
   ],
   [
     3237093387,
     {
-      title: "Authentication Timeout",
-      description: "Authentication token update timed out. Please log in again.",
+      title: "認証がタイムアウトしました",
+      description: "認証トークンの更新がタイムアウトしました。もう一度ログインしてください。",
     },
   ],
 
@@ -64,345 +64,345 @@ export const ERROR_MESSAGES: Map<number, ErrorMessageEntry> = new Map([
   [
     3237093634,
     {
-      title: "Access Forbidden",
-      description: "Access to this service is forbidden.",
+      title: "アクセスが拒否されました",
+      description: "このサービスへのアクセスは禁止されています。",
     },
   ],
   [
     3237093635,
     {
-      title: "Server Timeout",
-      description: "The server timed out. Please try again.",
+      title: "サーバーがタイムアウトしました",
+      description: "サーバーがタイムアウトしました。もう一度お試しください。",
     },
   ],
   [
     3237093636,
     {
-      title: "Server Error",
-      description: "An internal server error occurred. Please try again later.",
+      title: "サーバーエラー",
+      description: "サーバー内部でエラーが発生しました。しばらくしてからもう一度お試しください。",
     },
   ],
   [
     3237093637,
     {
-      title: "Invalid Request",
-      description: "The request was invalid.",
+      title: "不正なリクエスト",
+      description: "リクエストが不正でした。",
     },
   ],
   [
     3237093639,
     {
-      title: "Too Many Sessions",
-      description: "You have too many active sessions. Please close some sessions and try again.",
+      title: "セッションが多すぎます",
+      description: "有効なセッションが多すぎます。いくつか終了してからもう一度お試しください。",
     },
   ],
   [
     3237093643,
     {
-      title: "Session Limit Exceeded",
-      description: "You have reached your session limit. Another session may already be running on your account.",
+      title: "セッション数の上限を超えました",
+      description: "セッションの上限に達しました。すでに別のセッションが実行中の可能性があります。",
     },
   ],
   [
     3237093645,
     {
-      title: "Session Time Exceeded",
-      description: "Your session time has been exceeded.",
+      title: "セッション時間を超えました",
+      description: "セッション時間を超過しました。",
     },
   ],
   [
     3237093646,
     {
-      title: "Authentication Failed",
-      description: "Authentication failed. Please log in again.",
+      title: "認証に失敗しました",
+      description: "認証に失敗しました。もう一度ログインしてください。",
     },
   ],
   [
     3237093648,
     {
-      title: "Session Expired",
-      description: "Your authentication has expired. Please log in again.",
+      title: "セッションの有効期限が切れました",
+      description: "認証の有効期限が切れました。もう一度ログインしてください。",
     },
   ],
   [
     3237093650,
     {
-      title: "Entitlement Error",
-      description: "You don't have access to this game or service.",
+      title: "利用権のエラー",
+      description: "このゲームまたはサービスへのアクセス権がありません。",
     },
   ],
   [
     3237093651,
     {
-      title: "Game Not Available",
-      description: "This game is not currently available.",
+      title: "ゲームを利用できません",
+      description: "このゲームは現在利用できません。",
     },
   ],
   [
     3237093652,
     {
-      title: "Game Not Found",
-      description: "This game was not found in the library.",
+      title: "ゲームが見つかりません",
+      description: "このゲームはライブラリに見つかりませんでした。",
     },
   ],
   [
     3237093655,
     {
-      title: "EULA Required",
-      description: "You must accept the End User License Agreement to continue.",
+      title: "使用許諾契約への同意が必要です",
+      description: "続行するには使用許諾契約に同意する必要があります。",
     },
   ],
   [
     3237093656,
     {
-      title: "Under Maintenance",
-      description: "The service is currently under maintenance. Please try again later.",
+      title: "メンテナンス中",
+      description: "サービスは現在メンテナンス中です。しばらくしてからもう一度お試しください。",
     },
   ],
   [
     3237093657,
     {
-      title: "Service Unavailable",
-      description: "The service is temporarily unavailable. Please try again later.",
+      title: "サービスを利用できません",
+      description: "サービスは一時的に利用できません。しばらくしてからもう一度お試しください。",
     },
   ],
   [
     3237093658,
     {
-      title: "Steam Guard Required",
-      description: "Steam Guard authentication is required. Please complete Steam Guard verification.",
+      title: "Steam ガードの認証が必要です",
+      description: "Steam ガードの認証が必要です。Steam ガードの確認を完了してください。",
     },
   ],
   [
     3237093659,
     {
-      title: "Steam Login Required",
-      description: "You need to link your Steam account to play this game.",
+      title: "Steam へのログインが必要です",
+      description: "このゲームをプレイするには Steam アカウントの連携が必要です。",
     },
   ],
   [
     3237093660,
     {
-      title: "Steam Guard Invalid",
-      description: "Steam Guard code is invalid. Please try again.",
+      title: "Steam ガードのコードが正しくありません",
+      description: "Steam ガードのコードが正しくありません。もう一度お試しください。",
     },
   ],
   [
     3237093661,
     {
-      title: "Steam Profile Private",
-      description: "Your Steam profile is private. Please make it public or friends-only.",
+      title: "Steam プロフィールが非公開です",
+      description: "Steam プロフィールが非公開です。公開またはフレンド限定に変更してください。",
     },
   ],
   [
     3237093667,
     {
-      title: "Email Not Verified",
-      description: "Please verify your email address to continue.",
+      title: "メールアドレスが未確認です",
+      description: "続行するにはメールアドレスを確認してください。",
     },
   ],
   [
     3237093673,
     {
-      title: "Game Updating",
-      description: "This game is currently being updated. Please try again later.",
+      title: "ゲームを更新中です",
+      description: "このゲームは現在更新中です。しばらくしてからもう一度お試しください。",
     },
   ],
   [
     3237093674,
     {
-      title: "Game Not Found",
-      description: "This game was not found.",
+      title: "ゲームが見つかりません",
+      description: "このゲームは見つかりませんでした。",
     },
   ],
   [
     3237093675,
     {
-      title: "Insufficient Credits",
-      description: "You don't have enough credits for this session.",
+      title: "クレジットが不足しています",
+      description: "このセッションに必要なクレジットが足りません。",
     },
   ],
   [
     3237093678,
     {
-      title: "Session Taken Over",
-      description: "Your session was taken over by another device.",
+      title: "セッションが他のデバイスに引き継がれました",
+      description: "セッションが別のデバイスに引き継がれました。",
     },
   ],
   [
     3237093681,
     {
-      title: "Session Expired",
-      description: "Your session has expired.",
+      title: "セッションの有効期限が切れました",
+      description: "セッションの有効期限が切れました。",
     },
   ],
   [
     3237093682,
     {
-      title: "Device Limit Reached",
-      description: "You have reached the session limit for this device.",
+      title: "デバイス数の上限に達しました",
+      description: "このデバイスのセッション上限に達しました。",
     },
   ],
   [
     3237093683,
     {
-      title: "Region At Capacity",
-      description: "Your region is currently at capacity. Please try again later.",
+      title: "リージョンが混雑しています",
+      description: "お住まいのリージョンが混雑しています。しばらくしてからもう一度お試しください。",
     },
   ],
   [
     3237093684,
     {
-      title: "Region Not Supported",
-      description: "The service is not available in your region.",
+      title: "お住まいの地域では利用できません",
+      description: "お住まいの地域ではこのサービスを利用できません。",
     },
   ],
   [
     3237093685,
     {
-      title: "Region Banned",
-      description: "The service is not available in your region.",
+      title: "お住まいの地域では利用できません",
+      description: "お住まいの地域ではこのサービスを利用できません。",
     },
   ],
   [
     3237093686,
     {
-      title: "Free Tier On Hold",
-      description: "Free tier is temporarily unavailable in your region.",
+      title: "無料プランが一時停止中です",
+      description: "お住まいの地域では無料プランが一時的に利用できません。",
     },
   ],
   [
     3237093687,
     {
-      title: "Paid Tier On Hold",
-      description: "Paid tier is temporarily unavailable in your region.",
+      title: "有料プランが一時停止中です",
+      description: "お住まいの地域では有料プランが一時的に利用できません。",
     },
   ],
   [
     3237093688,
     {
-      title: "Game Maintenance",
-      description: "This game is currently under maintenance.",
+      title: "ゲームのメンテナンス中",
+      description: "このゲームは現在メンテナンス中です。",
     },
   ],
   [
     3237093690,
     {
-      title: "No Capacity",
-      description: "No gaming rigs are available right now. Please try again later or join the queue.",
+      title: "空きがありません",
+      description: "現在利用できるゲーミングリグがありません。しばらくしてからもう一度お試しいただくか、キューに参加してください。",
     },
   ],
   [
     3237093694,
     {
-      title: "Queue Full",
-      description: "The queue is currently full. Please try again later.",
+      title: "キューが満杯です",
+      description: "現在キューが満杯です。しばらくしてからもう一度お試しください。",
     },
   ],
   [
     3237093695,
     {
-      title: "GeForce NOW Unavailable in Your Region",
+      title: "お住まいの地域では GeForce NOW を利用できません",
       description:
-        "GeForce NOW has restricted streaming in your region. This is not an OpenNOW issue — NVIDIA has blocked access from your location. You may need to use a VPN or check GeForce NOW's supported countries list.",
+        "お住まいの地域では GeForce NOW のストリーミングが制限されています。これは OpenNOW 側の問題ではなく、NVIDIA がお住まいの地域からのアクセスを遮断しています。VPN の利用、または GeForce NOW の対応国リストの確認が必要になる場合があります。",
     },
   ],
   [
     3237093698,
     {
-      title: "Game Not Available",
-      description: "This game is not available in your region.",
+      title: "ゲームを利用できません",
+      description: "このゲームはお住まいの地域では利用できません。",
     },
   ],
   [
     3237093701,
     {
-      title: "Queue Abandoned",
-      description: "Your session in queue was abandoned.",
+      title: "キューから外れました",
+      description: "キュー内のセッションが破棄されました。",
     },
   ],
   [
     3237093702,
     {
-      title: "Account Terminated",
-      description: "Your account has been terminated.",
+      title: "アカウントが停止されています",
+      description: "アカウントが停止されました。",
     },
   ],
   [
     3237093703,
     {
-      title: "Queue Maintenance",
-      description: "The queue was cleared due to maintenance.",
+      title: "キューのメンテナンス中",
+      description: "メンテナンスのためキューがクリアされました。",
     },
   ],
   [
     3237093704,
     {
-      title: "Zone Maintenance",
-      description: "This server zone is under maintenance.",
+      title: "ゾーンのメンテナンス中",
+      description: "このサーバーゾーンはメンテナンス中です。",
     },
   ],
   [
     3237093711,
     {
-      title: "Ads Timeout",
-      description: "Session expired while waiting for ads. Free tier users must watch ads to play. Please start a new session.",
+      title: "広告の待機中にタイムアウトしました",
+      description: "広告の待機中にセッションの有効期限が切れました。無料プランではプレイ前に広告の視聴が必要です。新しいセッションを開始してください。",
     },
   ],
   [
     3237093712,
     {
-      title: "Ads Cancelled",
-      description: "Session cancelled because ads were skipped. Free tier users must watch ads to play.",
+      title: "広告がスキップされたため中止しました",
+      description: "広告がスキップされたためセッションを中止しました。無料プランではプレイ前に広告の視聴が必要です。",
     },
   ],
   [
     3237093713,
     {
-      title: "Limited Mode",
-      description: "Streaming is not allowed in limited mode.",
+      title: "制限モード",
+      description: "制限モードではストリーミングできません。",
     },
   ],
   [
     3237093715,
     {
-      title: "Session Limit",
-      description: "Maximum number of sessions reached.",
+      title: "セッション数の上限",
+      description: "セッション数の上限に達しました。",
     },
   ],
   [
     3237093717,
     {
-      title: "No Capacity",
-      description: "No gaming rigs are available. Please try again later.",
+      title: "空きがありません",
+      description: "利用できるゲーミングリグがありません。しばらくしてからもう一度お試しください。",
     },
   ],
   [
     3237093718,
     {
-      title: "Membership Upgrade Required",
-      description: "Your current GeForce NOW membership is not high enough to play this game. Upgrade to a higher tier and try again.",
+      title: "メンバーシップのアップグレードが必要です",
+      description: "現在の GeForce NOW メンバーシップではこのゲームをプレイできません。上のティアにアップグレードしてからもう一度お試しください。",
     },
   ],
   [
     3237093721,
     {
-      title: "Storage Unavailable",
-      description: "User storage is not available.",
+      title: "ストレージを利用できません",
+      description: "ユーザーストレージを利用できません。",
     },
   ],
   [
     3237093722,
     {
-      title: "Storage Error",
-      description: "Service storage is not available.",
+      title: "ストレージエラー",
+      description: "サービスのストレージを利用できません。",
     },
   ],
   [
     3237093723,
     {
-      title: "Streaming Not Allowed",
-      description: "This app is not allowed to stream on your current GeForce NOW account or region.",
+      title: "ストリーミングが許可されていません",
+      description: "このアプリは現在の GeForce NOW アカウントまたは地域ではストリーミングできません。",
     },
   ],
 
@@ -410,36 +410,36 @@ export const ERROR_MESSAGES: Map<number, ErrorMessageEntry> = new Map([
   [
     15867905,
     {
-      title: "Session Cancelled",
-      description: "Session setup was cancelled.",
+      title: "セッションがキャンセルされました",
+      description: "セッションの準備がキャンセルされました。",
     },
   ],
   [
     15867906,
     {
-      title: "Queue Cancelled",
-      description: "You left the queue.",
+      title: "キューをキャンセルしました",
+      description: "キューから離脱しました。",
     },
   ],
   [
     15867907,
     {
-      title: "Request Cancelled",
-      description: "The request was cancelled.",
+      title: "リクエストがキャンセルされました",
+      description: "リクエストがキャンセルされました。",
     },
   ],
   [
     15867909,
     {
-      title: "System Sleep",
-      description: "Session setup was interrupted by system sleep.",
+      title: "システムスリープ",
+      description: "システムスリープによりセッションの準備が中断されました。",
     },
   ],
   [
     15868417,
     {
-      title: "No Internet",
-      description: "No internet connection during session setup.",
+      title: "インターネットに接続されていません",
+      description: "セッションの準備中にインターネット接続がありませんでした。",
     },
   ],
 
@@ -447,57 +447,57 @@ export const ERROR_MESSAGES: Map<number, ErrorMessageEntry> = new Map([
   [
     3237101580,
     {
-      title: "Socket Error",
-      description: "A socket error occurred. Please check your network.",
+      title: "ソケットエラー",
+      description: "ソケットエラーが発生しました。ネットワークを確認してください。",
     },
   ],
   [
     3237101581,
     {
-      title: "DNS Error",
-      description: "Failed to resolve server address. Please check your network.",
+      title: "DNS エラー",
+      description: "サーバーアドレスを解決できませんでした。ネットワークを確認してください。",
     },
   ],
   [
     3237101582,
     {
-      title: "Connection Failed",
-      description: "Failed to connect to the server. Please check your network.",
+      title: "接続に失敗しました",
+      description: "サーバーに接続できませんでした。ネットワークを確認してください。",
     },
   ],
   [
     3237101583,
     {
-      title: "SSL Error",
-      description: "A secure connection error occurred.",
+      title: "SSL エラー",
+      description: "安全な接続でエラーが発生しました。",
     },
   ],
   [
     3237101584,
     {
-      title: "Connection Timeout",
-      description: "Connection timed out. Please check your network.",
+      title: "接続がタイムアウトしました",
+      description: "接続がタイムアウトしました。ネットワークを確認してください。",
     },
   ],
   [
     3237101585,
     {
-      title: "Receive Timeout",
-      description: "Data receive timed out. Please check your network.",
+      title: "受信がタイムアウトしました",
+      description: "データの受信がタイムアウトしました。ネットワークを確認してください。",
     },
   ],
   [
     3237101586,
     {
-      title: "No Response",
-      description: "Server not responding. Please try again.",
+      title: "応答がありません",
+      description: "サーバーが応答していません。もう一度お試しください。",
     },
   ],
   [
     3237101590,
     {
-      title: "Certificate Error",
-      description: "Server certificate was rejected.",
+      title: "証明書エラー",
+      description: "サーバー証明書が拒否されました。",
     },
   ],
 ]);

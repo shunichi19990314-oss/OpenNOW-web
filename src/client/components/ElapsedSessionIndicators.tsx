@@ -51,7 +51,7 @@ export function CurrentClock({ className }: CurrentClockProps): JSX.Element {
   return (
     <span className={className}>
       <Clock size={16} />
-      <span>{new Date(nowMs).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}</span>
+      <span>{new Date(nowMs).toLocaleTimeString("ja-JP", { hour: "2-digit", minute: "2-digit" })}</span>
     </span>
   );
 }
