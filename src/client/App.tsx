@@ -139,6 +139,8 @@ import { useTranslation } from "./i18n";
 import { LoginScreen } from "./components/LoginScreen";
 import { AppHeaderSearch } from "./components/AppHeaderSearch";
 import { AppRail } from "./components/AppRail";
+import { ShortcutsOverlay, type ShortcutRow } from "./components/ShortcutsOverlay";
+import { MediaPage } from "./components/MediaPage";
 import { CollectionDialog, type CollectionDialogMode } from "./components/CollectionDialog";
 import { GameDetailsModal } from "./components/GameDetailsModal";
 import {
@@ -189,7 +191,7 @@ const FREE_TIER_15_MIN_WARNING_SECONDS = 15 * 60;
 const FREE_TIER_FINAL_MINUTE_WARNING_SECONDS = 60;
 const STREAM_WARNING_VISIBILITY_MS = 15 * 1000;
 
-type AppPage = "home" | "library" | "settings";
+type AppPage = "home" | "library" | "captures" | "settings";
 type ExitPromptState = { open: boolean; gameTitle: string };
 
 const isMac = navigator.platform.toLowerCase().includes("mac");
@@ -358,6 +360,7 @@ export function App(): JSX.Element {
     gameId?: string;
   } | null>(null);
   const [gameMenu, setGameMenu] = useState<GameContextMenuState | null>(null);
+  const [shortcutsOpen, setShortcutsOpen] = useState(false);
   const [detailsRequestGame, setDetailsRequestGame] = useState<GameInfo | null>(null);
   /** Selected collection in the library; null = "All games". */
   const [activeCollectionId, setActiveCollectionId] = useState<string | null>(null);
@@ -3807,6 +3810,18 @@ export function App(): JSX.Element {
         return;
       }
 
+      // "?" opens the shortcut sheet from the desktop chrome's hint bar. It is
+      // checked after the typing guard so a literal "?" in a search box still
+      // types a question mark.
+      // Only outside a stream: while playing, "?" must reach the game.
+      if (e.key === "?" && !e.ctrlKey && !e.metaKey && !e.altKey && streamStatus === "idle") {
+        e.preventDefault();
+        e.stopPropagation();
+        e.stopImmediatePropagation();
+        setShortcutsOpen((open) => !open);
+        return;
+      }
+
       if (exitPrompt.open) {
         if (e.key === "Escape") {
           e.preventDefault();
@@ -3964,7 +3979,7 @@ export function App(): JSX.Element {
   // Command palette: available on every catalog page, never inside a launch
   // overlay or the login screen (both render an early return above).
   const commandPalettePages = useMemo(
-    () => ["home", "library", "settings"] as const,
+    () => ["home", "library", "captures", "settings"] as const,
     [],
   );
   const commandPaletteContext = useMemo(() => ({
@@ -4295,6 +4310,21 @@ export function App(): JSX.Element {
     return regions.find((region) => region.url === settings.region)?.name ?? t("settings.region.autoBest");
   })();
   const headerStatus = [headerRegionLabel, getThemePack(settings.themePack).name].join(" · ");
+  // Shortcut sheet rows: the same bindings the app listens for, formatted for
+  // the current platform (⌘ on macOS, Ctrl elsewhere).
+  const shortcutRows: ShortcutRow[] = [
+    { keys: "Ctrl/⌘ + K", label: t("shortcuts.commandPalette") },
+    { keys: "/", label: t("shortcuts.search") },
+    { keys: "?", label: t("shortcuts.thisSheet") },
+    { keys: formatShortcutForDisplay(settings.shortcutToggleStats, isMac), label: t("stream.toggleStats") },
+    { keys: formatShortcutForDisplay(settings.shortcutTogglePointerLock, isMac), label: t("stream.mouseLock") },
+    { keys: formatShortcutForDisplay(settings.shortcutToggleFullscreen, isMac), label: t("shortcuts.fullscreen") },
+    { keys: formatShortcutForDisplay(settings.shortcutToggleMicrophone, isMac), label: t("stream.toggleMicrophone") },
+    { keys: formatShortcutForDisplay(settings.shortcutToggleAntiAfk, isMac), label: t("shortcuts.antiAfk") },
+    { keys: formatShortcutForDisplay(settings.shortcutScreenshot, isMac), label: t("media.kindScreenshot") },
+    { keys: formatShortcutForDisplay(settings.shortcutToggleRecording, isMac), label: t("stream.record") },
+    { keys: formatShortcutForDisplay(settings.shortcutStopStream, isMac), label: t("stream.stopStream") },
+  ];
   return (
     <div className={`app-container${effectiveControllerMode ? " app-container--controller" : " app-container--rail"}${showCatalogAtmosphere ? " app-container--atmosphere" : ""}`} style={getAppStyle(settings.posterSizeScale)}>
       {showCatalogAtmosphere && <LazyShaderAtmosphere variant="controller" className="catalog-atmosphere" />}
@@ -4325,13 +4355,22 @@ export function App(): JSX.Element {
           currentPage={currentPage}
           onNavigate={handleNavigate}
           onOpenCommandPalette={() => setCommandPaletteOpen(true)}
+          onOpenShortcuts={() => setShortcutsOpen(true)}
         />
       )}
       <Navbar
         currentPage={currentPage}
         onNavigate={handleNavigate}
         railNavigation={!effectiveControllerMode}
-        pageTitle={currentPage === "library" ? t("navigation.library") : currentPage === "settings" ? t("navigation.settings") : t("navigation.home")}
+        pageTitle={
+          currentPage === "library"
+            ? t("navigation.library")
+            : currentPage === "captures"
+              ? t("navigation.captures")
+              : currentPage === "settings"
+                ? t("navigation.settings")
+                : t("navigation.home")
+        }
         pageMeta={currentPage === "library"
           ? t("library.gameCount", { count: libraryGames.length })
           : currentPage === "home"
@@ -4414,6 +4453,12 @@ export function App(): JSX.Element {
               />
             )}
 
+            {mainPage === "captures" && (
+              <PageErrorBoundary label="captures">
+                <MediaPage />
+              </PageErrorBoundary>
+            )}
+
             {mainPage === "library" && (
               <PageErrorBoundary label="library">
                 <LibraryPage
@@ -4475,6 +4520,11 @@ export function App(): JSX.Element {
         )}
       </SettingsModalHost>
       {commandPaletteElement}
+      <AnimatePresence>
+        {shortcutsOpen && (
+          <ShortcutsOverlay open onClose={() => setShortcutsOpen(false)} rows={shortcutRows} />
+        )}
+      </AnimatePresence>
       {gameMenu && (
         <GameContextMenu
           state={gameMenu}

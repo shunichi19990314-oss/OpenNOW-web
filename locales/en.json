@@ -167,7 +167,8 @@
     "settings": "Settings",
     "railLabel": "Main navigation",
     "commandPalette": "Command palette",
-    "themePack": "Theme pack"
+    "themePack": "Theme pack",
+    "captures": "Captures"
   },
   "home": {
     "searchPlaceholder": "Search games...",
@@ -1373,7 +1374,8 @@
     "pages": {
       "home": "Go to Home",
       "library": "Go to Library",
-      "settings": "Open Settings"
+      "settings": "Open Settings",
+      "captures": "Go to captures"
     },
     "stream": {
       "toggleStats": "Toggle performance stats",
@@ -1566,5 +1568,32 @@
   },
   "gameContext": {
     "menuLabel": "Menu for {{title}}"
+  },
+  "media": {
+    "title": "Captures",
+    "subtitle": "Screenshots and recordings from your streams",
+    "loading": "Loading captures...",
+    "loadFailed": "Captures could not be loaded",
+    "emptyTitle": "No captures yet",
+    "emptyBody": "Press F11 for a screenshot or F12 to record while streaming.",
+    "emptyFilterTitle": "No captures of this kind",
+    "emptyFilterBody": "Try another kind.",
+    "filterAll": "All",
+    "kindScreenshot": "Screenshot",
+    "kindRecording": "Recording",
+    "openCapture": "Open {{name}}",
+    "save": "Save",
+    "deleteTitle": "Delete capture",
+    "deleteConfirm": "Delete “{{name}}”? This cannot be undone.",
+    "deleteCapture": "Delete {{name}}"
+  },
+  "shortcuts": {
+    "title": "Keyboard shortcuts",
+    "commandPalette": "Command palette",
+    "search": "Search",
+    "thisSheet": "Show this list",
+    "fullscreen": "Toggle fullscreen",
+    "antiAfk": "Toggle Anti-AFK",
+    "button": "Show shortcuts"
   }
 }
