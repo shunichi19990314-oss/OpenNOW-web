@@ -86,7 +86,14 @@ if (process.env.NODE_ENV === "production") {
   app.get("/{*path}", (_request, response) => response.sendFile(resolve(staticDir, "index.html")));
 } else {
   const { createServer: createViteServer } = await import("vite");
-  const vite = await createViteServer({ server: { middlewareMode: true }, appType: "spa" });
+  // The Express app is reached through the sandbox preview proxy, whose host
+  // name is generated per session. Vite's dev-server host allowlist would 403
+  // those requests, so the middleware instance runs without the check; it never
+  // binds a port of its own.
+  const vite = await createViteServer({
+    server: { middlewareMode: true, allowedHosts: true },
+    appType: "spa",
+  });
   app.use(vite.middlewares);
 }
 

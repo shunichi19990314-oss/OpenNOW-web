@@ -13145,3 +13145,437 @@ body {
     flex-wrap: wrap;
   }
 }
+
+/* ======================================================
+   DESKTOP SHELL — vertical rail + page header
+
+   The desktop build replaced the top navigation bar with an icon rail
+   (`DesktopSidebar.qml`) and an in-page header that carries the page title,
+   a search field and the account chips. The web shell mirrors that: the rail
+   owns navigation, the header owns identity + status.
+   ====================================================== */
+:root {
+  --rail-w: 64px;
+}
+
+.app-rail {
+  position: fixed;
+  inset: 0 auto 0 0;
+  z-index: 1010;
+  width: var(--rail-w);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 12px 0 14px;
+  gap: 14px;
+  background: color-mix(in srgb, var(--bg-a) 82%, transparent);
+  border-right: 1px solid var(--panel-border);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+}
+
+.app-rail-brand {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  flex-shrink: 0;
+}
+
+.app-rail-mark {
+  width: 28px;
+  height: 18px;
+  border-radius: 6px 6px 6px 2px;
+  background: linear-gradient(135deg, var(--accent) 0%, color-mix(in srgb, var(--accent) 45%, var(--bg-a)) 100%);
+  box-shadow: 0 0 18px var(--accent-glow);
+}
+
+.app-rail-nav {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  width: 100%;
+}
+
+.app-rail-button {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border: none;
+  border-radius: 12px;
+  background: transparent;
+  color: var(--ink-muted);
+  cursor: pointer;
+  font-family: inherit;
+  transition: color var(--t-fast), background var(--t-fast);
+}
+
+.app-rail-button:hover {
+  color: var(--ink);
+  background: color-mix(in srgb, var(--ink) 7%, transparent);
+}
+
+.app-rail-button:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.app-rail-button--active {
+  color: var(--ink);
+  background: color-mix(in srgb, var(--ink) 10%, transparent);
+}
+
+.app-rail-button--active::before {
+  content: "";
+  position: absolute;
+  left: -12px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 3px;
+  height: 20px;
+  border-radius: 0 3px 3px 0;
+  background: var(--accent);
+}
+
+.app-rail-button--ghost {
+  color: var(--ink-muted);
+}
+
+.app-rail-footer {
+  margin-top: auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+}
+
+.app-rail-divider {
+  width: 24px;
+  height: 1px;
+  background: var(--panel-border);
+}
+
+.app-rail-badge {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  border: 1px solid var(--panel-border);
+  color: var(--ink-muted);
+  background: color-mix(in srgb, var(--ink) 4%, transparent);
+}
+
+/* The rail pushes the app shell right; the header no longer spans edge to edge
+   on the left, so the brand lockup there is redundant at this width. */
+.app-container--rail {
+  padding-left: var(--rail-w);
+}
+
+.app-container--rail .navbar {
+  left: var(--rail-w);
+}
+
+.navbar--rail {
+  border-bottom: 1px solid transparent;
+  background: linear-gradient(180deg, color-mix(in srgb, var(--bg-a) 92%, transparent), transparent);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  padding-inline: 24px;
+}
+
+.navbar--rail .navbar-brand {
+  display: none;
+}
+
+.navbar--rail .navbar-nav--hidden {
+  display: none;
+}
+
+.navbar-page-title {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  min-width: 0;
+}
+
+.navbar-page-name {
+  font-size: 1.02rem;
+  font-weight: 800;
+  letter-spacing: -0.01em;
+  color: var(--ink);
+}
+
+.navbar-page-meta {
+  font-size: 0.74rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  color: var(--ink-muted);
+  white-space: nowrap;
+}
+
+@media (max-width: 900px) {
+  :root {
+    --rail-w: 56px;
+  }
+
+  .navbar--rail {
+    padding-inline: 14px;
+  }
+
+  .navbar-page-meta {
+    display: none;
+  }
+}
+
+/* ======================================================
+   THEME PACK PICKER
+   ====================================================== */
+.settings-row--stacked {
+  flex-direction: column;
+  align-items: stretch;
+  gap: 10px;
+}
+
+.theme-pack-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 10px;
+  width: 100%;
+}
+
+.theme-pack-card {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 10px;
+  border-radius: 14px;
+  border: 1px solid var(--panel-border);
+  background: color-mix(in srgb, var(--ink) 3%, transparent);
+  color: var(--ink);
+  text-align: left;
+  font-family: inherit;
+  cursor: pointer;
+  transition: border-color var(--t-fast), background var(--t-fast), transform var(--t-fast);
+}
+
+.theme-pack-card:hover {
+  background: color-mix(in srgb, var(--ink) 6%, transparent);
+}
+
+.theme-pack-card:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.theme-pack-card--active {
+  border-color: color-mix(in srgb, var(--accent) 55%, var(--panel-border));
+  background: color-mix(in srgb, var(--accent) 10%, transparent);
+}
+
+.theme-pack-swatch {
+  position: relative;
+  width: 46px;
+  height: 34px;
+  flex: 0 0 46px;
+  border-radius: 9px;
+  border: 1px solid color-mix(in srgb, var(--ink) 18%, transparent);
+  overflow: hidden;
+}
+
+.theme-pack-swatch-dot {
+  position: absolute;
+  right: 6px;
+  bottom: 6px;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  box-shadow: 0 0 6px rgba(0, 0, 0, 0.35);
+}
+
+.theme-pack-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.theme-pack-name {
+  font-size: 0.84rem;
+  font-weight: 700;
+  line-height: 1.15;
+}
+
+.theme-pack-detail {
+  font-size: 0.66rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  color: var(--ink-muted);
+  text-transform: uppercase;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.theme-pack-check {
+  margin-left: auto;
+  color: var(--accent);
+  flex-shrink: 0;
+}
+
+/* ======================================================
+   HEADER SEARCH — desktop chrome style field
+   ====================================================== */
+.app-header-search {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 220px;
+  max-width: 320px;
+  height: 34px;
+  padding: 0 10px;
+  border-radius: var(--r-full);
+  border: 1px solid var(--panel-border);
+  background: color-mix(in srgb, var(--ink) 5%, transparent);
+  transition: border-color var(--t-fast), background var(--t-fast);
+}
+
+.app-header-search:focus-within {
+  border-color: color-mix(in srgb, var(--accent) 55%, var(--panel-border));
+  background: color-mix(in srgb, var(--ink) 8%, transparent);
+}
+
+.app-header-search-icon {
+  color: var(--ink-muted);
+  flex-shrink: 0;
+}
+
+.app-header-search-input {
+  flex: 1;
+  min-width: 0;
+  border: none;
+  outline: none;
+  background: transparent;
+  color: var(--ink);
+  font-family: inherit;
+  font-size: 0.8rem;
+}
+
+.app-header-search-input::placeholder {
+  color: var(--ink-muted);
+}
+
+.app-header-search-clear {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  border: none;
+  border-radius: 50%;
+  background: color-mix(in srgb, var(--ink) 10%, transparent);
+  color: var(--ink-soft);
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.app-header-search-clear:hover {
+  background: color-mix(in srgb, var(--ink) 18%, transparent);
+  color: var(--ink);
+}
+
+.app-header-search-kbd {
+  flex-shrink: 0;
+  min-width: 18px;
+  padding: 1px 5px;
+  border-radius: 5px;
+  border: 1px solid var(--panel-border);
+  background: color-mix(in srgb, var(--ink) 6%, transparent);
+  color: var(--ink-muted);
+  font-family: inherit;
+  font-size: 0.66rem;
+  font-weight: 700;
+  text-align: center;
+}
+
+.app-header-status {
+  flex-shrink: 0;
+  padding-left: 8px;
+  border-left: 1px solid var(--panel-border);
+  color: var(--ink-muted);
+  font-size: 0.68rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  white-space: nowrap;
+}
+
+@media (max-width: 1180px) {
+  .app-header-status {
+    display: none;
+  }
+}
+
+@media (max-width: 760px) {
+  .app-header-search {
+    min-width: 150px;
+    max-width: 200px;
+  }
+}
+
+/* ======================================================
+   LIBRARY QUICK FILTERS — desktop "All / Ready / RTX / store" row
+   ====================================================== */
+.library-quick-filters {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  min-width: 0;
+}
+
+.library-quick-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  height: 30px;
+  padding: 0 12px;
+  border-radius: var(--r-full);
+  border: 1px solid var(--panel-border);
+  background: color-mix(in srgb, var(--ink) 4%, transparent);
+  color: var(--ink-soft);
+  font-family: inherit;
+  font-size: 0.76rem;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: color var(--t-fast), background var(--t-fast), border-color var(--t-fast);
+}
+
+.library-quick-chip:hover {
+  color: var(--ink);
+  background: color-mix(in srgb, var(--ink) 9%, transparent);
+}
+
+.library-quick-chip:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.library-quick-chip--active {
+  color: var(--accent-on);
+  background: var(--accent);
+  border-color: var(--accent);
+}
+
+.library-quick-chip-count {
+  font-variant-numeric: tabular-nums;
+  opacity: 0.72;
+  font-weight: 700;
+}

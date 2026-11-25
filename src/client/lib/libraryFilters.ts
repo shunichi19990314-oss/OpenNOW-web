@@ -136,12 +136,49 @@ function gameHasLibraryActivity(game: GameInfo, playtimeData: PlaytimeData): boo
 }
 
 export const FAVORITE_ACTIVITY_FILTER_ID = "activity:favorite";
+/** Matches every game: the desktop Library's "All" chip. */
+export const QUICK_ALL_FILTER_ID = "quick:all";
+export const CONTROLLER_QUICK_FILTER_ID = "controls:controller";
+export const READY_TO_PLAY_FILTER_ID = "ready:ready";
+export const RTX_FILTER_ID = "feature:rtx";
+
+/**
+ * "Ready to play" mirrors the desktop Library's filter: the game itself is
+ * playable and at least one variant can actually be launched right now.
+ * `playabilityState` alone is not enough — a game can be PLAYABLE while every
+ * variant is in maintenance.
+ */
+export function isGameReadyToPlay(game: GameInfo): boolean {
+  if (game.playabilityState && game.playabilityState.toUpperCase() !== "PLAYABLE") return false;
+  // `gfnStatus` is the only per-variant availability signal the catalog ships;
+  // an empty list counts as "assume launchable" so a sparse payload does not
+  // hide the whole library.
+  const variants = game.variants ?? [];
+  if (variants.length === 0) return true;
+  return variants.some((variant) => (variant.gfnStatus ?? "").toUpperCase() === "AVAILABLE");
+}
+
+/** RTX support comes from NVIDIA's own tech tags, not from a store string. */
+export function gameSupportsRtx(game: GameInfo): boolean {
+  const tags = [...(game.nvidiaTech ?? []), ...(game.featureLabels ?? [])].map((tag) => tag.toUpperCase());
+  return tags.some((tag) => tag.includes("RTX"));
+}
+
+export function gameSupportsController(game: GameInfo): boolean {
+  const controls = [
+    ...(game.supportedControls ?? []),
+    ...(game.variants ?? []).flatMap((variant) => variant.supportedControls ?? []),
+  ].join(" ").toLowerCase();
+  return controls.includes("gamepad") || controls.includes("controller");
+}
 
 export function getLibraryFilterGroups(
   games: GameInfo[],
   playtimeData: PlaytimeData,
   t: LibraryTranslation,
   favoriteIds: readonly string[] = [],
+  /** games.length is the total library size; `games` may already be filtered. */
+  totalLibraryCount?: number,
 ): LibraryFilterGroup[] {
   const playTypeOptions = new Map<string, LibraryFilterOption>();
   const platformOptions = new Map<string, LibraryFilterOption>();
@@ -180,7 +217,38 @@ export function getLibraryFilterGroups(
     );
   }
 
+  // Quick filters from the desktop Library: the first row is a flat set of
+  // counts (All / Ready to play / RTX / Controller / stores) rather than a
+  // dropdown, so the most common cuts are one click away.
+  const quickOptions: LibraryFilterOption[] = [
+    {
+      id: QUICK_ALL_FILTER_ID,
+      label: t("library.filterOptions.all"),
+      count: totalLibraryCount ?? games.length,
+    },
+  ];
+  const readyCount = games.filter((game) => isGameReadyToPlay(game)).length;
+  if (readyCount > 0) {
+    quickOptions.push({ id: READY_TO_PLAY_FILTER_ID, label: t("library.filterOptions.readyToPlay"), count: readyCount });
+  }
+  const rtxCount = games.filter((game) => gameSupportsRtx(game)).length;
+  if (rtxCount > 0) {
+    quickOptions.push({ id: RTX_FILTER_ID, label: t("library.filterOptions.rtx"), count: rtxCount });
+  }
+  const controllerCount = games.filter((game) => gameSupportsController(game)).length;
+  if (controllerCount > 0) {
+    quickOptions.push({
+      id: CONTROLLER_QUICK_FILTER_ID,
+      label: t("library.filterOptions.controller"),
+      count: controllerCount,
+    });
+  }
+  for (const option of mapLibraryFilterOptions(platformOptions)) {
+    quickOptions.push(option);
+  }
+
   return [
+    { id: "quick", label: t("library.filterGroups.quick"), options: quickOptions },
     { id: "play", label: t("library.filterGroups.playType"), options: mapLibraryFilterOptions(playTypeOptions) },
     { id: "platform", label: t("library.filterGroups.platform"), options: mapLibraryFilterOptions(platformOptions) },
     { id: "controls", label: t("library.filterGroups.controls"), options: mapLibraryFilterOptions(controlOptions) },
@@ -202,6 +270,19 @@ export function gameMatchesLibraryFilter(
 ): boolean {
   const [groupId, value] = filterId.split(":");
   if (!value) return true;
+
+  if (groupId === "quick") {
+    // `all` is the neutral chip: it never narrows the grid.
+    return true;
+  }
+
+  if (filterId === READY_TO_PLAY_FILTER_ID) {
+    return isGameReadyToPlay(game);
+  }
+
+  if (filterId === RTX_FILTER_ID) {
+    return gameSupportsRtx(game);
+  }
 
   if (groupId === "play") {
     return getGamePlayTypeFilter(game, t)?.id === filterId;

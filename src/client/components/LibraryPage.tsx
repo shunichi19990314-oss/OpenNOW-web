@@ -54,6 +54,8 @@ export interface LibraryPageProps {
   activeSessionAppIds?: number[];
   onPreviousControllerPage?: () => void;
   onNextControllerPage?: () => void;
+  /** False when the page header already owns the search field. */
+  showInlineSearch?: boolean;
 }
 
 export const LibraryPage = memo(function LibraryPage({
@@ -80,6 +82,7 @@ export const LibraryPage = memo(function LibraryPage({
   activeSessionAppIds = [],
   onPreviousControllerPage,
   onNextControllerPage,
+  showInlineSearch = true,
 }: LibraryPageProps): JSX.Element {
   const { t } = useTranslation();
   const [detailsGame, setDetailsGame] = useState<GameInfo | null>(null);
@@ -143,8 +146,18 @@ export const LibraryPage = memo(function LibraryPage({
   const librarySearchHasQuery = searchQuery.trim().length > 0;
   const favoriteIdSet = useMemo(() => toFavoriteSet(favoriteGameIds), [favoriteGameIds]);
   const libraryFilterGroups = useMemo(
-    () => getLibraryFilterGroups(allGames, playtimeData, t, favoriteGameIds),
-    [allGames, favoriteGameIds, playtimeData, t],
+    () => getLibraryFilterGroups(allGames, playtimeData, t, favoriteGameIds, libraryCount),
+    [allGames, favoriteGameIds, libraryCount, playtimeData, t],
+  );
+  // The first group is the desktop-style quick row (All / Ready / RTX /
+  // Controller / stores); the rest stay in the dropdown.
+  const quickFilterOptions = useMemo(
+    () => libraryFilterGroups.find((group) => group.id === "quick")?.options ?? [],
+    [libraryFilterGroups],
+  );
+  const secondaryFilterGroups = useMemo(
+    () => libraryFilterGroups.filter((group) => group.id !== "quick"),
+    [libraryFilterGroups],
   );
   const visibleLibraryGames = useMemo(
     () => games.filter((game) => gameMatchesLibraryFilters(game, selectedLibraryFilterIds, playtimeData, t, favoriteGameIds)),
@@ -569,6 +582,7 @@ export const LibraryPage = memo(function LibraryPage({
           <h1>{t("library.title")}</h1>
         </div>
 
+        {showInlineSearch && (
         <div className="library-search">
           <Search className="library-search-icon" size={16} />
           <input
@@ -580,8 +594,29 @@ export const LibraryPage = memo(function LibraryPage({
             className="library-search-input"
           />
         </div>
+        )}
 
-        {libraryFilterGroups.length > 0 && (
+        {quickFilterOptions.length > 1 && (
+          <div className="library-quick-filters" role="group" aria-label={t("library.filterGroups.quick")}>
+            {quickFilterOptions.map((option) => {
+              const active = selectedLibraryFilterIds.includes(option.id);
+              return (
+                <button
+                  key={option.id}
+                  type="button"
+                  className={`library-quick-chip${active ? " library-quick-chip--active" : ""}`}
+                  onClick={() => toggleLibraryFilter(option.id)}
+                  aria-pressed={active}
+                >
+                  <span>{option.label}</span>
+                  <span className="library-quick-chip-count">{option.count}</span>
+                </button>
+              );
+            })}
+          </div>
+        )}
+
+        {secondaryFilterGroups.length > 0 && (
           <details className="library-filter-dropdown">
             <summary className="library-filter-dropdown-trigger">
               <span className="library-filter-dropdown-label">
@@ -592,7 +627,7 @@ export const LibraryPage = memo(function LibraryPage({
               <ChevronDown size={14} className="library-filter-dropdown-chevron" />
             </summary>
             <div className="library-filter-dropdown-menu">
-              {libraryFilterGroups.map((group) => (
+              {secondaryFilterGroups.map((group) => (
                 <div key={group.id} className="library-filter-dropdown-group">
                   <div className="library-filter-group-label">{group.label}</div>
                   <div className="library-filter-chips">

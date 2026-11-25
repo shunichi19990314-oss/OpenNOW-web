@@ -122,11 +122,13 @@ import {
   toLoadingStatus,
 } from "./lib/sessionState";
 import { defaultDiagnostics, mergeNativeStreamStats } from "./lib/streamDiagnostics";
-import { applyAccentColor, applyTheme, applyTranslucentUI } from "./lib/uiCustomization";
+import { applyTheme, applyThemePack, applyTranslucentUI, getThemePack } from "./lib/uiCustomization";
 import { useTranslation } from "./i18n";
 
 // UI Components
 import { LoginScreen } from "./components/LoginScreen";
+import { AppHeaderSearch } from "./components/AppHeaderSearch";
+import { AppRail } from "./components/AppRail";
 import { Navbar } from "./components/Navbar";
 import { HomePage } from "./components/HomePage";
 import { LibraryPage } from "./components/LibraryPage";
@@ -251,6 +253,8 @@ export function App(): JSX.Element {
     showStatsOnLaunch: false,
     hideServerSelector: false,
     appAccentColor: "green",
+    themePack: "nocturne",
+    themeAccentOverride: false,
     appTheme: "auto",
     translucentUI: false,
     controllerMode: false,
@@ -1704,20 +1708,27 @@ export function App(): JSX.Element {
     return () => window.clearTimeout(timer);
   }, [remoteStreamWarning]);
 
+  // The colour pack paints the shell/panel/accent tokens, so it has to run
+  // after the light/dark attribute is set: resolving "auto" first and then
+  // painting keeps a single pass over the CSS variables.
   useEffect(() => {
-    applyAccentColor(settings.appAccentColor);
-  }, [settings.appAccentColor]);
-
-  useEffect(() => {
-    applyTheme(settings.appTheme);
+    const paint = (): void => {
+      applyTheme(settings.appTheme);
+      applyThemePack(settings.themePack, {
+        theme: settings.appTheme,
+        accentColor: settings.appAccentColor,
+        accentOverride: settings.themeAccentOverride,
+      });
+    };
+    paint();
 
     if (settings.appTheme === "auto") {
       const mediaQuery = window.matchMedia("(prefers-color-scheme: dark)");
-      const handler = () => applyTheme("auto");
-      mediaQuery.addEventListener("change", handler);
-      return () => mediaQuery.removeEventListener("change", handler);
+      mediaQuery.addEventListener("change", paint);
+      return () => mediaQuery.removeEventListener("change", paint);
     }
-  }, [settings.appTheme]);
+    return undefined;
+  }, [settings.appAccentColor, settings.appTheme, settings.themeAccentOverride, settings.themePack]);
 
   useEffect(() => {
     applyTranslucentUI(settings.translucentUI);
@@ -4211,8 +4222,15 @@ export function App(): JSX.Element {
 
   // Main app layout
   const showCatalogAtmosphere = currentPage === "home" || currentPage === "library";
+  // Right-hand header status, mirroring the desktop chrome's "region · theme"
+  // strip. The pack name is a product word and stays as-is.
+  const headerRegionLabel = (() => {
+    if (!settings.region) return t("settings.region.autoBest");
+    return regions.find((region) => region.url === settings.region)?.name ?? t("settings.region.autoBest");
+  })();
+  const headerStatus = [headerRegionLabel, getThemePack(settings.themePack).name].join(" · ");
   return (
-    <div className={`app-container${effectiveControllerMode ? " app-container--controller" : ""}${showCatalogAtmosphere ? " app-container--atmosphere" : ""}`} style={getAppStyle(settings.posterSizeScale)}>
+    <div className={`app-container${effectiveControllerMode ? " app-container--controller" : " app-container--rail"}${showCatalogAtmosphere ? " app-container--atmosphere" : ""}`} style={getAppStyle(settings.posterSizeScale)}>
       {showCatalogAtmosphere && <LazyShaderAtmosphere variant="controller" className="catalog-atmosphere" />}
       <AnimatePresence>
         {startupRefreshNotice && (
@@ -4236,9 +4254,30 @@ export function App(): JSX.Element {
           </m.div>
         )}
       </AnimatePresence>
+      {!effectiveControllerMode && (
+        <AppRail
+          currentPage={currentPage}
+          onNavigate={handleNavigate}
+          onOpenCommandPalette={() => setCommandPaletteOpen(true)}
+        />
+      )}
       <Navbar
         currentPage={currentPage}
         onNavigate={handleNavigate}
+        railNavigation={!effectiveControllerMode}
+        pageTitle={currentPage === "library" ? t("navigation.library") : currentPage === "settings" ? t("navigation.settings") : t("navigation.home")}
+        pageMeta={currentPage === "library"
+          ? t("library.gameCount", { count: libraryGames.length })
+          : currentPage === "home"
+            ? t("home.gamesAvailable", { count: catalogTotalCount })
+            : undefined}
+        headerSearchSlot={currentPage === "settings" ? undefined : (
+          <AppHeaderSearch
+            value={searchQuery}
+            onChange={setSearchQuery}
+            status={headerStatus}
+          />
+        )}
         user={authSession.user}
         subscription={subscriptionInfo}
         activeSession={navbarActiveSession}
@@ -4305,6 +4344,7 @@ export function App(): JSX.Element {
                 markOwnedInFlightByVariantId={markOwnedInFlightByVariantId}
                 onPreviousControllerPage={() => navigateControllerPage(-1)}
                 onNextControllerPage={() => navigateControllerPage(1)}
+                showInlineSearch={effectiveControllerMode}
               />
             )}
 
@@ -4334,6 +4374,7 @@ export function App(): JSX.Element {
                   onBuyGame={handleBuyGame}
                   onPreviousControllerPage={() => navigateControllerPage(-1)}
                   onNextControllerPage={() => navigateControllerPage(1)}
+                  showInlineSearch={effectiveControllerMode}
                 />
               </PageErrorBoundary>
             )}
