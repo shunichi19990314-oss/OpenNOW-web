@@ -81,7 +81,7 @@ export function SettingsAudioSection({ settings, showAll, handleChange }: Settin
           const audioInputs = devices.filter((device) => device.kind === "audioinput");
           if (audioInputs.length > 0) {
             setMicrophoneDevices(audioInputs);
-            setMicrophonePermissionError("Microphone access is required to show device names and use voice chat. Allow access and try again.");
+            setMicrophonePermissionError(t("settings.audio.deviceNamesNeedPermission"));
             if (
               latestMicrophoneDeviceIdRef.current
               && !audioInputs.some((device) => device.deviceId === latestMicrophoneDeviceIdRef.current)

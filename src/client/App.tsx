@@ -1875,7 +1875,7 @@ export function App(): JSX.Element {
     if (persistedAppId && Number.isFinite(persistedAppId)) {
       return String(persistedAppId);
     }
-    throw new Error("Active session is missing app metadata required for resume.");
+    throw new Error("再開に必要なアプリ情報が進行中のセッションにありません。");
   }, []);
 
   const resolveResumeIdentity = useCallback((sessionId: string): { clientId?: string; deviceId?: string } => {
@@ -1985,10 +1985,10 @@ export function App(): JSX.Element {
       try {
         const token = authSession?.tokens.idToken ?? authSession?.tokens.accessToken;
         if (!token) {
-          throw new Error("Missing token for session resume");
+          throw new Error("セッション再開に必要なトークンがありません。");
         }
         if (!existingSession.serverIp) {
-          throw new Error("Active session is missing server address. Start the game again to create a new session.");
+          throw new Error("進行中のセッションにサーバーアドレスがありません。ゲームをもう一度起動して新しいセッションを作成してください。");
         }
         warmNativeStreamerForLaunch();
 
@@ -2060,7 +2060,7 @@ export function App(): JSX.Element {
 
     const token = authSession?.tokens.idToken ?? authSession?.tokens.accessToken;
     if (!token) {
-      throw new Error("Connection to the running session was lost and your login token is no longer available for resume.");
+      throw new Error("実行中のセッションとの接続が切れ、再開に使えるログイントークンも残っていません。");
     }
 
     if (recoveryState.attemptCount >= SIGNALING_RECOVERY_ATTEMPT_DELAYS_MS.length) {
@@ -2163,13 +2163,13 @@ export function App(): JSX.Element {
           if (!candidate) {
             const hasQueueOnlyMatch = activeSessions.some((entry) => entry.sessionId === currentSessionId && entry.status === 1);
             if (hasQueueOnlyMatch) {
-              throw new Error("The session is still queued and cannot be reclaimed until the server marks it ready again.");
+              throw new Error("セッションはまだキュー待ちのため、サーバーが準備完了にするまで引き継ぎできません。");
             }
-            throw new Error("The running session could not be found anymore, so resume was not possible.");
+            throw new Error("実行中のセッションが見つからないため再開できませんでした。");
           }
 
           if (!candidate.serverIp) {
-            throw new Error("The running session is missing a server address, so resume was not possible.");
+            throw new Error("実行中のセッションにサーバーアドレスがないため再開できませんでした。");
           }
 
           const recoverySubscription = await resolveSubscriptionInfoForLaunch();
@@ -2779,7 +2779,7 @@ export function App(): JSX.Element {
       }
 
       if (!appId) {
-        throw new Error("Could not resolve numeric appId for this game");
+        throw new Error("このゲームの数値の appId を解決できませんでした。");
       }
 
       const numericAppId = Number(appId);

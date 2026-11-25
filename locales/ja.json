@@ -807,7 +807,8 @@
       "permissionUnknown": "マイクの許可ステータスを判断できません。OpenNOW の macOS マイクのプライバシー設定を確認してください。",
       "permissionUnavailable": "マイクを利用できません。",
       "permissionDeniedRetry": "マイクへのアクセスが拒否されました。OpenNOW に許可してから再試行してください。",
-      "devicesUnavailable": "現在マイクデバイスにアクセスできません。"
+      "devicesUnavailable": "現在マイクデバイスにアクセスできません。",
+      "deviceNamesNeedPermission": "マイクのデバイス名を表示してボイスチャットを使うには、マイクへのアクセスが必要です。許可してからもう一度お試しください。"
     },
     "input": {
       "title": "入力",
@@ -1148,6 +1149,12 @@
       "keyWarning": "キーはアカウント全体の残高に紐づきます。絶対にこのアプリの画面やチャットに貼り付けないでください。",
       "usageLabel": "使用量の制御",
       "usageHint": "AI_PLAYER_DAILY_REQUESTS で 1 アカウントあたりの 1 日のリクエスト上限を設定できます(0 で無制限)。"
+    },
+    "nav": {
+      "groupAccount": "アカウント",
+      "groupStreaming": "ストリーミング",
+      "groupControls": "操作",
+      "groupApp": "アプリ"
     }
   },
   "navbar": {
@@ -1188,6 +1195,19 @@
       "storageRegionCode": "ストレージ地域コード",
       "serverRegionVpc": "サーバーリージョン (VPC)",
       "notAvailable": "該当なし"
+    },
+    "subscriptionValue": {
+      "membership": "メンバーシップ",
+      "subscription": "サブスクリプション",
+      "timeBased": "時間制",
+      "active": "有効",
+      "inactive": "無効",
+      "expired": "期限切れ",
+      "suspended": "停止中",
+      "cancelled": "解約済み",
+      "pending": "保留中",
+      "gracePeriod": "猶予期間",
+      "unknown": "不明"
     }
   },
   "errors": {

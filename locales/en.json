@@ -898,7 +898,8 @@
       "permissionUnknown": "Unable to determine microphone permission status. Check macOS microphone privacy settings for OpenNOW.",
       "permissionUnavailable": "Microphone access is not available.",
       "permissionDeniedRetry": "Microphone access was denied. Allow access for OpenNOW and try again.",
-      "devicesUnavailable": "Unable to access microphone devices right now."
+      "devicesUnavailable": "Unable to access microphone devices right now.",
+      "deviceNamesNeedPermission": "Microphone access is required to show device names and use voice chat. Allow access and try again."
     },
     "input": {
       "title": "Input",
@@ -1151,6 +1152,12 @@
       "keyWarning": "The key is tied to your whole account balance. Never paste it into this app's UI or into chat.",
       "usageLabel": "Usage limits",
       "usageHint": "AI_PLAYER_DAILY_REQUESTS caps requests per account per day (0 means unlimited)."
+    },
+    "nav": {
+      "groupAccount": "Account",
+      "groupStreaming": "Streaming",
+      "groupControls": "Controls",
+      "groupApp": "App"
     }
   },
   "navbar": {
@@ -1191,6 +1198,19 @@
       "storageRegionCode": "Storage Region Code",
       "serverRegionVpc": "Server Region (VPC)",
       "notAvailable": "N/A"
+    },
+    "subscriptionValue": {
+      "membership": "Membership",
+      "subscription": "Subscription",
+      "timeBased": "Time-based",
+      "active": "Active",
+      "inactive": "Inactive",
+      "expired": "Expired",
+      "suspended": "Suspended",
+      "cancelled": "Cancelled",
+      "pending": "Pending",
+      "gracePeriod": "Grace period",
+      "unknown": "Unknown"
     }
   },
   "games": {

@@ -115,3 +115,49 @@ export function isUnknownStore(store: string | undefined): boolean {
   const key = store.trim().toUpperCase().replace(/[^A-Z0-9]+/g, "_");
   return key === "UNKNOWN" || key === "UNRECOGNIZED" || key === "";
 }
+
+/** Known `membershipTier` values (GeForce NOW plan names are product names). */
+const MEMBERSHIP_TIER_KEYS: Record<string, string> = {
+  free: "app.labels.free",
+  priority: "app.labels.priority",
+  performance: "app.labels.priority",
+  ultimate: "app.labels.ultimate",
+};
+
+/** `membershipTier` as a display label; unknown tiers stay readable, not shouting. */
+export function membershipTierLabel(tier: string | undefined, t: TranslateFn): string | null {
+  if (!tier?.trim()) return null;
+  const key = MEMBERSHIP_TIER_KEYS[words(tier)];
+  if (key) return t(key);
+  return readableWords(tier) || null;
+}
+
+/**
+ * `subscriptionType` / `subscriptionSubType` / `state` as a display label.
+ *
+ * The playtime modal printed these raw (`MEMBERSHIP`, `UNLIMITED`, `INACTIVE`),
+ * which is the same class of leak as `FREE_TO_PLAY`. Values not in the table fall
+ * back to a lowercase phrase so an unknown token never arrives in caps.
+ */
+const SUBSCRIPTION_FIELD_KEYS: Record<string, string> = {
+  membership: "navbar.subscriptionValue.membership",
+  "membership_plan": "navbar.subscriptionValue.membership",
+  subscription: "navbar.subscriptionValue.subscription",
+  time_based: "navbar.subscriptionValue.timeBased",
+  unlimited: "app.labels.unlimited",
+  active: "navbar.subscriptionValue.active",
+  inactive: "navbar.subscriptionValue.inactive",
+  expired: "navbar.subscriptionValue.expired",
+  suspended: "navbar.subscriptionValue.suspended",
+  cancelled: "navbar.subscriptionValue.cancelled",
+  canceled: "navbar.subscriptionValue.cancelled",
+  pending: "navbar.subscriptionValue.pending",
+  grace_period: "navbar.subscriptionValue.gracePeriod",
+};
+
+export function subscriptionValueLabel(value: string | undefined, t: TranslateFn): string | null {
+  if (!value?.trim()) return null;
+  const key = SUBSCRIPTION_FIELD_KEYS[words(value)];
+  if (key) return t(key);
+  return readableWords(value) || null;
+}

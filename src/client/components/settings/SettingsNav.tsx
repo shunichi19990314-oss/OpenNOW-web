@@ -22,19 +22,19 @@ export function SettingsNav({
 
   const settingsNavGroups = useMemo<SettingsNavGroup[]>(() => [
     {
-      label: "Account",
+      label: t("settings.nav.groupAccount"),
       items: [
         { id: "account", label: t("settings.sections.account"), icon: <Users size={15} /> },
       ],
     },
     {
-      label: "Streaming",
+      label: t("settings.nav.groupStreaming"),
       items: [
         { id: "stream", label: t("settings.sections.stream"), icon: <Wifi size={15} /> },
       ],
     },
     {
-      label: "Controls",
+      label: t("settings.nav.groupControls"),
       items: [
         { id: "game", label: t("settings.sections.game"), icon: <Globe size={15} /> },
         { id: "audio", label: t("settings.sections.audio"), icon: <Mic size={15} /> },
@@ -42,7 +42,7 @@ export function SettingsNav({
       ],
     },
     {
-      label: "App",
+      label: t("settings.nav.groupApp"),
       items: [
         { id: "interface", label: t("settings.sections.interface"), icon: <Monitor size={15} /> },
         { id: "ai", label: t("settings.sections.ai"), icon: <Sparkles size={15} /> },
@@ -50,7 +50,7 @@ export function SettingsNav({
         { id: "thanks", label: t("settings.sections.thanks"), icon: <Heart size={15} /> },
       ],
     },
-  ], [t, locale]);
+  ], [locale, t]);
 
   return (
     <nav className="settings-sidebar">

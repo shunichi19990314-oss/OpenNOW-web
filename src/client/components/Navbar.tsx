@@ -3,6 +3,7 @@ import { House, Library, Settings, User, Timer, HardDrive, X, PlayCircle, Square
 import { useEffect, useRef, useState, type JSX } from "react";
 import { createPortal } from "react-dom";
 import { useTranslation } from "../i18n";
+import { membershipTierLabel, subscriptionValueLabel } from "../lib/gfnLabels";
 import { OpenNowLogoMark } from "./OpenNowLogoMark";
 import { MotionSpinner } from "./MotionSpinner";
 
@@ -100,7 +101,7 @@ export function Navbar({
     if (!value) return null;
     const parsed = new Date(value);
     if (Number.isNaN(parsed.getTime())) return null;
-    return parsed.toLocaleString();
+    return parsed.toLocaleString("ja-JP");
   };
   const clamp = (value: number): number => Math.min(1, Math.max(0, value));
   const toneByLeftRatio = (ratio: number): "good" | "warn" | "critical" => {
@@ -223,12 +224,12 @@ export function Navbar({
                     </div>
                   </div>
                 )}
-                <div className="navbar-modal-row"><span>{t("navbar.time.tier")}</span><strong>{subscription.membershipTier}</strong></div>
+                <div className="navbar-modal-row"><span>{t("navbar.time.tier")}</span><strong>{membershipTierLabel(subscription.membershipTier, t) ?? t("navbar.subscriptionValue.unknown")}</strong></div>
                 {subscription.subscriptionType && (
-                  <div className="navbar-modal-row"><span>{t("navbar.time.type")}</span><strong>{subscription.subscriptionType}</strong></div>
+                  <div className="navbar-modal-row"><span>{t("navbar.time.type")}</span><strong>{subscriptionValueLabel(subscription.subscriptionType, t)}</strong></div>
                 )}
                 {subscription.subscriptionSubType && (
-                  <div className="navbar-modal-row"><span>{t("navbar.time.subType")}</span><strong>{subscription.subscriptionSubType}</strong></div>
+                  <div className="navbar-modal-row"><span>{t("navbar.time.subType")}</span><strong>{subscriptionValueLabel(subscription.subscriptionSubType, t)}</strong></div>
                 )}
                 <div className="navbar-modal-row"><span>{t("navbar.time.timeLeft")}</span><strong>{subscription.isUnlimited ? t("app.labels.unlimited") : formatHoursAndMinutes(timeLeft)}</strong></div>
                 <div className="navbar-modal-row"><span>{t("navbar.time.totalTime")}</span><strong>{subscription.isUnlimited ? t("app.labels.unlimited") : t("app.units.hours", { value: formatHours(timeTotal) })}</strong></div>
@@ -247,7 +248,7 @@ export function Navbar({
                 {subscription.notifyUserOnSessionWhenRemainingTimeInMinutes !== undefined && (
                   <div className="navbar-modal-row"><span>{t("navbar.time.notifyAtInSession")}</span><strong>{t("app.units.minutes", { value: subscription.notifyUserOnSessionWhenRemainingTimeInMinutes })}</strong></div>
                 )}
-                {subscription.state && <div className="navbar-modal-row"><span>{t("navbar.time.planState")}</span><strong>{subscription.state}</strong></div>}
+                {subscription.state && <div className="navbar-modal-row"><span>{t("navbar.time.planState")}</span><strong>{subscriptionValueLabel(subscription.state, t)}</strong></div>}
                 {subscription.isGamePlayAllowed !== undefined && (
                   <div className="navbar-modal-row"><span>{t("navbar.time.gameplayAllowed")}</span><strong>{subscription.isGamePlayAllowed ? t("navbar.time.yes") : t("navbar.time.no")}</strong></div>
                 )}

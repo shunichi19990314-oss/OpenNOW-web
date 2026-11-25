@@ -188,7 +188,7 @@ export const LibraryPage = memo(function LibraryPage({
   };
 
   const controllerStoreFilterItems = useMemo(
-    () => getControllerStoreFilterItems(games, t("library.allStores")),
+    () => getControllerStoreFilterItems(games, t("library.allStores"), t),
     [games, t],
   );
   const controllerGames = useMemo(

@@ -40,7 +40,7 @@ export function SettingsThanksSection(): JSX.Element {
     } catch (error) {
       console.error("[SettingsPage] Failed to start thanks data request:", error);
       setThanksData(null);
-      setThanksFetchError("Unable to load community acknowledgements right now.");
+      setThanksFetchError(t("settings.thanks.loadFailed"));
       setThanksLoadState("error");
       return;
     }
@@ -62,11 +62,11 @@ export function SettingsThanksSection(): JSX.Element {
           return;
         }
         setThanksData(null);
-        setThanksFetchError("Unable to load community acknowledgements right now.");
+        setThanksFetchError(t("settings.thanks.loadFailed"));
         setThanksLoadState("error");
       },
     );
-  }, [thanksData, thanksLoadState]);
+  }, [t, thanksData, thanksLoadState]);
 
   const renderPersonLink = useCallback((person: ThankYouContributor | ThankYouSupporter, content: JSX.Element) => {
     if (!person.profileUrl) {

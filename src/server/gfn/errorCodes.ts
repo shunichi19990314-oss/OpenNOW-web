@@ -161,44 +161,44 @@ export class SessionError extends Error {
 
       if (descUpper.includes("INSUFFICIENT_PLAYABILITY")) {
         return {
-          title: "Membership Upgrade Required",
+          title: "メンバーシップのアップグレードが必要です",
           description:
-            "Your current GeForce NOW membership is not high enough to play this game. Upgrade to a higher tier and try again.",
+            "現在の GeForce NOW メンバーシップではこのゲームをプレイできません。上のティアにアップグレードしてからもう一度お試しください。",
         };
       }
 
       if (descUpper.includes("SESSION_LIMIT")) {
         return {
-          title: "Session Limit Exceeded",
-          description: "You have reached your maximum number of concurrent sessions.",
+          title: "セッション数の上限を超えました",
+          description: "同時に実行できるセッション数の上限に達しました。",
         };
       }
 
       if (descUpper.includes("MAINTENANCE")) {
         return {
-          title: "Under Maintenance",
-          description: "The service is currently under maintenance. Please try again later.",
+          title: "メンテナンス中",
+          description: "サービスは現在メンテナンス中です。しばらくしてからもう一度お試しください。",
         };
       }
 
       if (descUpper.includes("CAPACITY") || descUpper.includes("QUEUE")) {
         return {
-          title: "No Capacity Available",
-          description: "All gaming rigs are currently in use. Please try again later.",
+          title: "空きがありません",
+          description: "すべてのゲーミングリグが使用中です。しばらくしてからもう一度お試しください。",
         };
       }
 
       if (descUpper.includes("AUTH") || descUpper.includes("TOKEN")) {
         return {
-          title: "Authentication Error",
-          description: "Please log in again.",
+          title: "認証エラー",
+          description: "もう一度ログインしてください。",
         };
       }
 
       if (descUpper.includes("ENTITLEMENT")) {
         return {
-          title: "Access Denied",
-          description: "You don't have access to this game or service.",
+          title: "アクセスが拒否されました",
+          description: "このゲームまたはサービスへのアクセス権がありません。",
         };
       }
     }
@@ -207,36 +207,36 @@ export class SessionError extends Error {
     switch (httpStatus) {
       case 401:
         return {
-          title: "Unauthorized",
-          description: "Please log in again.",
+          title: "認証が必要です",
+          description: "もう一度ログインしてください。",
         };
       case 403:
         return {
-          title: "Access Denied",
-          description: "Access to this resource was denied.",
+          title: "アクセスが拒否されました",
+          description: "このリソースへのアクセスが拒否されました。",
         };
       case 404:
         return {
-          title: "Not Found",
-          description: "The requested resource was not found.",
+          title: "見つかりません",
+          description: "要求されたリソースが見つかりませんでした。",
         };
       case 429:
         return {
-          title: "Too Many Requests",
-          description: "Please wait a moment and try again.",
+          title: "リクエストが多すぎます",
+          description: "少し待ってからもう一度お試しください。",
         };
     }
 
     if (httpStatus >= 500 && httpStatus < 600) {
       return {
-        title: "Server Error",
-        description: "A server error occurred. Please try again later.",
+        title: "サーバーエラー",
+        description: "サーバーでエラーが発生しました。しばらくしてからもう一度お試しください。",
       };
     }
 
     return {
-      title: "Error",
-      description: `An error occurred (HTTP ${httpStatus}).`,
+      title: "エラー",
+      description: `エラーが発生しました (HTTP ${httpStatus})。`,
     };
   }
 

@@ -1858,7 +1858,7 @@ export function StreamView({
                           type="button"
                           className="sidebar-gallery-item"
                           onClick={() => setSelectedScreenshotId(shot.id)}
-                          title={new Date(shot.createdAtMs).toLocaleString()}
+                          title={new Date(shot.createdAtMs).toLocaleString("ja-JP")}
                         >
                           <img src={shot.dataUrl} alt={`Screenshot ${shot.fileName}`} />
                         </button>
