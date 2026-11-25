@@ -310,7 +310,8 @@
       "gamepad": "コントローラー",
       "touch": "タッチ"
     },
-    "cloudStore": "クラウド"
+    "cloudStore": "クラウド",
+    "rightClickHint": "ゲームを右クリックするとメニューが開きます"
   },
   "gameCard": {
     "selectGame": "{{title}}を選択します",
@@ -1537,5 +1538,33 @@
     "statDropped": "画面拒否",
     "modelSlowWarning": "応答が遅いモデルのため、1 ラウンドに時間がかかります",
     "statusUnavailableFallback": "利用できません"
+  },
+  "collections": {
+    "menuLabel": "コレクションメニュー",
+    "newCollection": "新しいコレクション",
+    "addToCollection": "コレクションに追加",
+    "emptyHint": "右クリックのメニューから新しいコレクションを作成できます。",
+    "description": "ゲームを自分だけのフォルダにまとめておけます。",
+    "name": "コレクション名",
+    "nameHint": "{{count}}文字以内で入力してください。",
+    "confirmDelete": "「{{name}}」を削除しますか？ゲームはライブラリに残ります。",
+    "deleteTitle": "コレクションを削除",
+    "renameTitle": "コレクション名を変更",
+    "delete": "コレクションを削除",
+    "rename": "名前を変更",
+    "save": "保存",
+    "allGames": "すべてのゲーム",
+    "emptyView": "このコレクションにゲームがありません",
+    "addHint": "ゲームを右クリックして「コレクションに追加」を選ぶと、このコレクションに入ります。",
+    "searchHint": "検索語やフィルターを変えてみてください。",
+    "errors": {
+      "missing": "コレクション名を入力してください。",
+      "tooLong": "80文字以内で入力してください。",
+      "duplicate": "同じ名前のコレクションが既にあります。",
+      "limit": "コレクションは100個まで作成できます。"
+    }
+  },
+  "gameContext": {
+    "menuLabel": "{{title}} のメニュー"
   }
 }

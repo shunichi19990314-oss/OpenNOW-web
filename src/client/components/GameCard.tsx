@@ -19,6 +19,8 @@ interface GameCardProps {
   isFavorite?: boolean;
   onToggleFavorite?: () => void;
   onDetails?: () => void;
+  /** Right-click menu (desktop build: details, collections, hide). */
+  onContextMenu?: (event: React.MouseEvent) => void;
 }
 
 /* ── Official store brand icons (Simple Icons / MDI, viewBox 0 0 24 24) ── */
@@ -159,6 +161,7 @@ function gameCardPropsAreEqual(prev: GameCardProps, next: GameCardProps): boolea
     && prev.isFavorite === next.isFavorite
     && prev.onToggleFavorite === next.onToggleFavorite
     && prev.onDetails === next.onDetails
+    && prev.onContextMenu === next.onContextMenu
   );
 }
 
@@ -172,6 +175,7 @@ export const GameCard = memo(function GameCard({
   isFavorite = false,
   onToggleFavorite,
   onDetails,
+  onContextMenu,
 }: GameCardProps): JSX.Element {
   const { t } = useTranslation();
   const storeOptions = useMemo(
@@ -214,6 +218,7 @@ export const GameCard = memo(function GameCard({
       whileHover={{ y: -2, scale: 1.01 }}
       whileTap={{ scale: 0.985 }}
       onClick={onSelect}
+      onContextMenu={onContextMenu}
       onKeyDown={(event) => {
         if (event.target !== event.currentTarget) {
           return;
