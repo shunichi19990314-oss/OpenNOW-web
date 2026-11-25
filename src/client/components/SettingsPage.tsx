@@ -14,7 +14,8 @@ import {
   saveCachedEntitledResolutions,
 } from "./settings/settingsFormatters";
 import type { SettingsSectionId, SettingsSearchScopeId } from "./settings/settingsTypes";
-import { SETTINGS_SCOPE_SEARCH_TERMS } from "./settings/settingsTypes";
+import { SETTINGS_SCOPE_LABEL_KEYS, SETTINGS_SCOPE_SEARCH_TERMS } from "./settings/settingsTypes";
+import { matchesSettingsQuery, tokenizeSettingsQuery } from "../lib/settingsSearch";
 import { SettingsNav } from "./settings/SettingsNav";
 import { SettingsAccountSection } from "./settings/sections/SettingsAccountSection";
 import { SettingsAboutSection } from "./settings/sections/SettingsAboutSection";
@@ -142,28 +143,21 @@ export function SettingsPage({
     return () => { cancelled = true; };
   }, [loadSubscriptionData]);
 
-  const normalizedSettingsSearch = settingsSearch.trim().toLowerCase();
   const showAll = settingsSearchShowsAll;
-  const tokenMatchesWord = (token: string, word: string): boolean => token === word || word.startsWith(token);
+  const searchNeedles = tokenizeSettingsQuery(settingsSearch);
   const scopeMatchesSearch = (scopeId: SettingsSearchScopeId): boolean => {
     if (!showAll) {
       return true;
     }
-    const terms = SETTINGS_SCOPE_SEARCH_TERMS[scopeId];
-    const searchTokens = normalizedSettingsSearch.split(/[^a-z0-9]+/).filter((token) => token.length > 0);
-    if (searchTokens.length === 0) {
-      return true;
-    }
-    const searchableWords = Array.from(
-      new Set(
-        terms
-          .join(" ")
-          .toLowerCase()
-          .split(/[^a-z0-9]+/)
-          .filter((word) => word.length > 0),
-      ),
-    );
-    return searchTokens.every((token) => searchableWords.some((word) => tokenMatchesWord(token, word)));
+    // The English term list alone never matched a Japanese query; the
+    // translated section heading and its label key are searched too, so
+    // 「マイク」「地域」「テーマ」 find the right sections.
+    const haystack = [
+      ...SETTINGS_SCOPE_SEARCH_TERMS[scopeId],
+      scopeId,
+      ...(SETTINGS_SCOPE_LABEL_KEYS[scopeId] ?? []).map((key) => t(key)),
+    ];
+    return matchesSettingsQuery(searchNeedles, haystack);
   };
 
   const showAccountStorage = showAll ? scopeMatchesSearch("account-storage") : activeSection === "account";

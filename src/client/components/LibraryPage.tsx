@@ -1,9 +1,10 @@
-import { Library, Search, Clock, Gamepad2, ArrowUpDown, Filter, ChevronDown, X } from "lucide-react";
+import { Library, Search, Clock, Gamepad2, ArrowUpDown, Filter, ChevronDown, X, Plus } from "lucide-react";
 import { memo, useEffect, useMemo, useRef, useState } from "react";
 import type { JSX } from "react";
 import { AnimatePresence, m } from "motion/react";
 import type { CatalogSortOption, GameInfo } from "@shared/gfn";
 import { GameCardListItem, useCatalogCardActionsRef } from "./GameCardListItem";
+import { filterGamesByCollection, type GameCollection } from "../lib/collections";
 import { GameDetailsModal } from "./GameDetailsModal";
 import type { PlaytimeData } from "../lib/gameCatalog";
 import { formatTotalPlaytime, playtimeUnits, toFavoriteSet } from "../lib/localPreferences";
@@ -56,6 +57,15 @@ export interface LibraryPageProps {
   onNextControllerPage?: () => void;
   /** False when the page header already owns the search field. */
   showInlineSearch?: boolean;
+  /** Local user collections and the one currently selected. */
+  collections?: readonly GameCollection[];
+  activeCollectionId?: string | null;
+  onSelectCollection?: (collectionId: string | null) => void;
+  onCreateCollection?: () => void;
+  onRenameCollection?: (collection: GameCollection) => void;
+  onDeleteCollection?: (collection: GameCollection) => void;
+  /** Opens the tile context menu (details, collections, favourite). */
+  onOpenGameMenu?: (game: GameInfo, event: { clientX: number; clientY: number }) => void;
 }
 
 export const LibraryPage = memo(function LibraryPage({
@@ -83,6 +93,13 @@ export const LibraryPage = memo(function LibraryPage({
   onPreviousControllerPage,
   onNextControllerPage,
   showInlineSearch = true,
+  collections = [],
+  activeCollectionId = null,
+  onSelectCollection,
+  onCreateCollection,
+  onRenameCollection,
+  onDeleteCollection,
+  onOpenGameMenu,
 }: LibraryPageProps): JSX.Element {
   const { t } = useTranslation();
   const [detailsGame, setDetailsGame] = useState<GameInfo | null>(null);
@@ -92,6 +109,7 @@ export const LibraryPage = memo(function LibraryPage({
     onViewGameDetails: setDetailsGame,
     onSelectGame,
     onSelectGameVariant,
+    onOpenGameMenu,
   });
   const [controllerHeroIndex, setControllerHeroIndex] = useState(0);
   const [controllerStoreFilterId, setControllerStoreFilterId] = useState("library");
@@ -159,9 +177,17 @@ export const LibraryPage = memo(function LibraryPage({
     () => libraryFilterGroups.filter((group) => group.id !== "quick"),
     [libraryFilterGroups],
   );
+  const activeCollection = useMemo(
+    () => collections.find((collection) => collection.id === activeCollectionId) ?? null,
+    [activeCollectionId, collections],
+  );
+  const collectionScopedGames = useMemo(
+    () => filterGamesByCollection(games, activeCollection),
+    [activeCollection, games],
+  );
   const visibleLibraryGames = useMemo(
-    () => games.filter((game) => gameMatchesLibraryFilters(game, selectedLibraryFilterIds, playtimeData, t, favoriteGameIds)),
-    [favoriteGameIds, games, playtimeData, selectedLibraryFilterIds, t],
+    () => collectionScopedGames.filter((game) => gameMatchesLibraryFilters(game, selectedLibraryFilterIds, playtimeData, t, favoriteGameIds)),
+    [collectionScopedGames, favoriteGameIds, playtimeData, selectedLibraryFilterIds, t],
   );
   const activeLibraryFilterOptions = useMemo(
     () => selectedLibraryFilterIds
@@ -668,6 +694,59 @@ export const LibraryPage = memo(function LibraryPage({
         <span className="library-count">{libraryCountLabel}</span>
       </header>
 
+      {(collections.length > 0 || onCreateCollection) && (
+        <div className="library-collection-bar">
+          <div className="library-collection-chips" role="group" aria-label={t("collections.menuLabel")}>
+            <button
+              type="button"
+              className={`library-collection-chip${activeCollectionId === null ? " library-collection-chip--active" : ""}`}
+              onClick={() => onSelectCollection?.(null)}
+              aria-pressed={activeCollectionId === null}
+            >
+              {t("collections.allGames")}
+            </button>
+            {collections.map((collection) => {
+              const active = collection.id === activeCollectionId;
+              return (
+                <button
+                  key={collection.id}
+                  type="button"
+                  className={`library-collection-chip${active ? " library-collection-chip--active" : ""}`}
+                  onClick={() => onSelectCollection?.(active ? null : collection.id)}
+                  onDoubleClick={() => onRenameCollection?.(collection)}
+                  aria-pressed={active}
+                  title={t("collections.rename")}
+                >
+                  {collection.name}
+                  <span className="library-collection-chip-count">{collection.gameIds.length}</span>
+                </button>
+              );
+            })}
+            {onCreateCollection && (
+              <button
+                type="button"
+                className="library-collection-add"
+                onClick={onCreateCollection}
+                title={t("collections.newCollection")}
+                aria-label={t("collections.newCollection")}
+              >
+                <Plus size={14} aria-hidden="true" />
+              </button>
+            )}
+          </div>
+          {activeCollection && (
+            <div className="library-collection-actions">
+              <button type="button" onClick={() => onRenameCollection?.(activeCollection)}>
+                {t("collections.rename")}
+              </button>
+              <button type="button" className="library-collection-delete" onClick={() => onDeleteCollection?.(activeCollection)}>
+                {t("collections.delete")}
+              </button>
+            </div>
+          )}
+        </div>
+      )}
+
       <AnimatePresence initial={false}>
         {activeLibraryFilterOptions.length > 0 && (
           <m.div
@@ -712,14 +791,23 @@ export const LibraryPage = memo(function LibraryPage({
         ) : visibleLibraryGames.length === 0 ? (
           <div className="library-empty-state">
             <Search className="library-empty-icon" size={44} />
-            <h3>{hasActiveLibraryFilters && !librarySearchHasQuery ? t("library.empty.noFilteredGames") : t("library.empty.noGamesFound")}</h3>
-            <p>
-              {librarySearchHasQuery
-                ? t("library.empty.noGamesMatch", { query: searchQuery })
-                : hasActiveLibraryFilters
-                  ? t("library.empty.tryAdjustingFilters")
-                : t("library.empty.noGamesMatch", { query: searchQuery })}
-            </p>
+            {activeCollection && !librarySearchHasQuery && !hasActiveLibraryFilters ? (
+              <>
+                <h3>{t("collections.emptyView")}</h3>
+                <p>{t("collections.addHint")}</p>
+              </>
+            ) : (
+              <>
+                <h3>{hasActiveLibraryFilters && !librarySearchHasQuery ? t("library.empty.noFilteredGames") : t("library.empty.noGamesFound")}</h3>
+                <p>
+                  {librarySearchHasQuery
+                    ? t("library.empty.noGamesMatch", { query: searchQuery })
+                    : hasActiveLibraryFilters
+                      ? t("library.empty.tryAdjustingFilters")
+                      : t("library.empty.noGamesMatch", { query: searchQuery })}
+                </p>
+              </>
+            )}
           </div>
         ) : (
           <div className="game-grid">

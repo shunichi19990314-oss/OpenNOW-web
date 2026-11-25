@@ -313,7 +313,8 @@
       "gamepad": "Controller",
       "touch": "Touch"
     },
-    "cloudStore": "Cloud"
+    "cloudStore": "Cloud",
+    "rightClickHint": "Right-click a game for actions"
   },
   "gameCard": {
     "selectGame": "Select {{title}}",
@@ -1537,5 +1538,33 @@
     "statDropped": "Rejected",
     "modelSlowWarning": "This model responds slowly, so each round takes longer",
     "statusUnavailableFallback": "Unavailable"
+  },
+  "collections": {
+    "menuLabel": "Collection menu",
+    "newCollection": "New collection",
+    "addToCollection": "Add to collection",
+    "emptyHint": "Create one from the right-click menu.",
+    "description": "Keep your games together in a folder of your own.",
+    "name": "Collection name",
+    "nameHint": "Use {{count}} characters or fewer.",
+    "confirmDelete": "Delete “{{name}}”? Your games will stay in your library.",
+    "deleteTitle": "Delete collection",
+    "renameTitle": "Rename collection",
+    "delete": "Delete collection",
+    "rename": "Rename",
+    "save": "Save",
+    "allGames": "All games",
+    "emptyView": "No games in this view",
+    "addHint": "Right-click a game and choose Add to collection.",
+    "searchHint": "Try a different search or filter.",
+    "errors": {
+      "missing": "Enter a collection name.",
+      "tooLong": "Use 80 characters or fewer.",
+      "duplicate": "A collection with this name already exists.",
+      "limit": "You can create up to 100 collections."
+    }
+  },
+  "gameContext": {
+    "menuLabel": "Menu for {{title}}"
   }
 }

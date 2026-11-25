@@ -55,6 +55,16 @@ import {
 } from "./hooks/useStreamSession";
 import { useQueueAdRuntime } from "./hooks/useQueueAdRuntime";
 import { usePlaytime } from "./utils/usePlaytime";
+import {
+  addGameToCollection,
+  createCollection as createCollectionEntry,
+  deleteCollection as deleteCollectionEntry,
+  loadCollections,
+  removeGameFromCollection,
+  renameCollection as renameCollectionEntry,
+  saveCollections,
+  type GameCollection,
+} from "./lib/collections";
 import { createStreamDiagnosticsStore, useStreamDiagnosticsSelector } from "./utils/streamDiagnosticsStore";
 import type {
   LaunchErrorState,
@@ -129,6 +139,12 @@ import { useTranslation } from "./i18n";
 import { LoginScreen } from "./components/LoginScreen";
 import { AppHeaderSearch } from "./components/AppHeaderSearch";
 import { AppRail } from "./components/AppRail";
+import { CollectionDialog, type CollectionDialogMode } from "./components/CollectionDialog";
+import { GameDetailsModal } from "./components/GameDetailsModal";
+import {
+  GameContextMenu,
+  type GameContextMenuState,
+} from "./components/GameContextMenu";
 import { Navbar } from "./components/Navbar";
 import { HomePage } from "./components/HomePage";
 import { LibraryPage } from "./components/LibraryPage";
@@ -331,6 +347,24 @@ export function App(): JSX.Element {
   const previousFreeTierRemainingSecondsRef = useRef<number | null>(null);
 
   const { playtime, startSession: startPlaytimeSession, endSession: endPlaytimeSession } = usePlaytime();
+
+  // User collections (desktop Library feature). Stored locally because the web
+  // client has no collection endpoint; see lib/collections.ts.
+  const [collections, setCollections] = useState<GameCollection[]>(() => loadCollections());
+  const [collectionDialog, setCollectionDialog] = useState<{
+    mode: CollectionDialogMode;
+    collection?: GameCollection;
+    /** Game to drop into a freshly created collection. */
+    gameId?: string;
+  } | null>(null);
+  const [gameMenu, setGameMenu] = useState<GameContextMenuState | null>(null);
+  const [detailsRequestGame, setDetailsRequestGame] = useState<GameInfo | null>(null);
+  /** Selected collection in the library; null = "All games". */
+  const [activeCollectionId, setActiveCollectionId] = useState<string | null>(null);
+
+  useEffect(() => {
+    saveCollections(collections);
+  }, [collections]);
   const sessionElapsedSeconds = useElapsedSeconds(sessionStartedAtMs, streamStatus === "streaming");
   const isStreaming = streamStatus === "streaming";
   // freeTier/session-limit derived state is computed after auth/catalog hooks
@@ -1839,6 +1873,38 @@ export function App(): JSX.Element {
   const handleMouseAccelerationChange = useCallback((value: number) => {
     void updateSetting("mouseAcceleration", value);
   }, [updateSetting]);
+
+  /* ── Collections ── */
+  const handleOpenGameMenu = useCallback((game: GameInfo, event: { clientX: number; clientY: number }): void => {
+    setGameMenu({ game, x: event.clientX, y: event.clientY });
+  }, []);
+
+  const handleToggleGameInCollection = useCallback((collectionId: string, gameId: string): void => {
+    setCollections((previous) => {
+      const collection = previous.find((entry) => entry.id === collectionId);
+      if (!collection) return previous;
+      return collection.gameIds.includes(gameId)
+        ? removeGameFromCollection(previous, collectionId, gameId)
+        : addGameToCollection(previous, collectionId, gameId);
+    });
+  }, []);
+
+  const handleSubmitCollection = useCallback((name: string): void => {
+    const dialog = collectionDialog;
+    if (!dialog) return;
+    setCollections((previous) => {
+      if (dialog.mode === "delete") {
+        return dialog.collection ? deleteCollectionEntry(previous, dialog.collection.id) : previous;
+      }
+      if (dialog.mode === "rename") {
+        if (!dialog.collection) return previous;
+        return renameCollectionEntry(previous, dialog.collection.id, name) ?? previous;
+      }
+      const created = createCollectionEntry(name, previous, { gameId: dialog.gameId });
+      return created ? [...previous, created] : previous;
+    });
+    setCollectionDialog(null);
+  }, [collectionDialog]);
 
   const handleVideoShaderChange = useCallback((value: VideoShaderSettings) => {
     void updateSetting("videoShader", value);
@@ -4375,6 +4441,13 @@ export function App(): JSX.Element {
                   onPreviousControllerPage={() => navigateControllerPage(-1)}
                   onNextControllerPage={() => navigateControllerPage(1)}
                   showInlineSearch={effectiveControllerMode}
+                  collections={collections}
+                  activeCollectionId={activeCollectionId}
+                  onSelectCollection={setActiveCollectionId}
+                  onCreateCollection={() => setCollectionDialog({ mode: "create" })}
+                  onRenameCollection={(collection) => setCollectionDialog({ mode: "rename", collection })}
+                  onDeleteCollection={(collection) => setCollectionDialog({ mode: "delete", collection })}
+                  onOpenGameMenu={handleOpenGameMenu}
                 />
               </PageErrorBoundary>
             )}
@@ -4402,6 +4475,60 @@ export function App(): JSX.Element {
         )}
       </SettingsModalHost>
       {commandPaletteElement}
+      {gameMenu && (
+        <GameContextMenu
+          state={gameMenu}
+          collections={collections}
+          isFavorite={settings.favoriteGameIds.includes(gameMenu.game.id)}
+          onClose={() => setGameMenu(null)}
+          onPlay={() => {
+            const target = gameMenu.game;
+            setGameMenu(null);
+            void handleInitiatePlay(target);
+          }}
+          onDetails={() => {
+            const target = gameMenu.game;
+            setGameMenu(null);
+            setSelectedGameId(target.id);
+            setDetailsRequestGame(target);
+          }}
+          onToggleFavorite={() => {
+            handleToggleFavorite(gameMenu.game);
+          }}
+          onToggleCollection={(collectionId) => {
+            handleToggleGameInCollection(collectionId, gameMenu.game.id);
+          }}
+          onCreateCollection={() => {
+            setCollectionDialog({ mode: "create", gameId: gameMenu.game.id });
+            setGameMenu(null);
+          }}
+        />
+      )}
+      {detailsRequestGame && (
+        <GameDetailsModal
+          game={detailsRequestGame}
+          isFavorite={settings.favoriteGameIds.includes(detailsRequestGame.id)}
+          onToggleFavorite={() => handleToggleFavorite(detailsRequestGame)}
+          onPlay={() => {
+            const target = detailsRequestGame;
+            setDetailsRequestGame(null);
+            void handleInitiatePlay(target);
+          }}
+          onClose={() => setDetailsRequestGame(null)}
+        />
+      )}
+      <AnimatePresence>
+        {collectionDialog && (
+          <CollectionDialog
+            key={`${collectionDialog.mode}-${collectionDialog.collection?.id ?? "new"}`}
+            mode={collectionDialog.mode}
+            collections={collections}
+            collection={collectionDialog.collection ?? null}
+            onCancel={() => setCollectionDialog(null)}
+            onSubmit={handleSubmitCollection}
+          />
+        )}
+      </AnimatePresence>
       {logoutConfirmModal}
       {removeAccountConfirmModal}
       {queueModalGame && streamStatus === "idle" && (

@@ -1,4 +1,4 @@
-import { memo, useCallback, useRef, type RefObject } from "react";
+import { memo, useCallback, useRef, type MouseEvent, type RefObject } from "react";
 import type { GameInfo } from "@shared/gfn";
 import { GameCard } from "./GameCard";
 
@@ -8,6 +8,8 @@ export interface CatalogCardActions {
   onViewGameDetails: (game: GameInfo) => void;
   onSelectGame: (gameId: string) => void;
   onSelectGameVariant: (gameId: string, variantId: string) => void;
+  /** Opens the card's context menu at the pointer position. */
+  onOpenGameMenu?: (game: GameInfo, event: { clientX: number; clientY: number }) => void;
 }
 
 export interface GameCardListItemProps {
@@ -58,6 +60,14 @@ export const GameCardListItem = memo(function GameCardListItem({
     actionsRef.current?.onViewGameDetails(game);
   }, [actionsRef, game]);
 
+  const handleContextMenu = useCallback((event: MouseEvent) => {
+    const openMenu = actionsRef.current?.onOpenGameMenu;
+    if (!openMenu) return;
+    event.preventDefault();
+    event.stopPropagation();
+    openMenu(game, event);
+  }, [actionsRef, game]);
+
   return (
     <GameCard
       game={game}
@@ -69,6 +79,7 @@ export const GameCardListItem = memo(function GameCardListItem({
       isFavorite={isFavorite}
       onToggleFavorite={handleToggleFavorite}
       onDetails={handleDetails}
+      onContextMenu={handleContextMenu}
     />
   );
 }, gameCardListItemPropsAreEqual);

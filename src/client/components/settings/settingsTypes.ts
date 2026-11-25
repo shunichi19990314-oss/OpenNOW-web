@@ -196,3 +196,25 @@ export const SETTINGS_SCOPE_SEARCH_TERMS: Record<SettingsSearchScopeId, readonly
   about: ["about", "what's new", "release notes", "logs", "cache", "export", "delete"],
   thanks: ["thanks", "contributors", "supporters", "sponsors", "community"],
 };
+
+/**
+ * Translated headings for each search scope.
+ *
+ * The English term lists above are what the desktop build's search knows; a
+ * Japanese visitor types 「通信」「マイク」「テーマ」, which never appear there.
+ * Searching the rendered section titles as well makes the search work in the
+ * language the UI is actually in.
+ */
+export const SETTINGS_SCOPE_LABEL_KEYS: Record<SettingsSearchScopeId, readonly string[]> = {
+  "account-storage": ["settings.sections.account", "settings.accountConnections.title", "settings.persistentStorage.title", "settings.region.title"],
+  "stream-region": ["settings.sections.stream", "settings.region.title", "settings.queueNotifications"],
+  "stream-video": ["settings.sections.stream", "settings.video.title", "settings.videoFilters.title", "settings.video.resolution", "settings.video.colorDepth"],
+  "stream-codec-diagnostics": ["settings.sections.stream", "settings.codecDiagnostics.title"],
+  game: ["settings.sections.game", "settings.game.title"],
+  audio: ["settings.sections.audio", "settings.audio.microphone"],
+  input: ["settings.sections.input"],
+  interface: ["settings.sections.interface", "settings.interface.appearance", "settings.interface.theme", "settings.interface.themePack", "settings.interface.accentColor"],
+  ai: ["settings.sections.ai"],
+  about: ["settings.sections.about"],
+  thanks: ["settings.sections.thanks"],
+};
