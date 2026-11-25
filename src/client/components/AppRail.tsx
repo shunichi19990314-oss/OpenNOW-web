@@ -1,16 +1,18 @@
-import { House, Library, Settings, Command, Palette } from "lucide-react";
+import { House, Library, Film, Settings, Command, Palette, Keyboard } from "lucide-react";
 import type { JSX } from "react";
 import { m } from "motion/react";
 
 import { useTranslation } from "../i18n";
 
-export type RailPage = "home" | "library" | "settings";
+export type RailPage = "home" | "library" | "captures" | "settings";
 
 interface AppRailProps {
   currentPage: RailPage;
   onNavigate: (page: RailPage) => void;
   /** Opens the command palette (Ctrl/⌘+K). */
   onOpenCommandPalette?: () => void;
+  /** Opens the keyboard shortcut sheet (also "?"). */
+  onOpenShortcuts?: () => void;
 }
 
 /**
@@ -21,12 +23,13 @@ interface AppRailProps {
  * available as tooltips and accessible names because the icons alone are not
  * self-describing at this size.
  */
-export function AppRail({ currentPage, onNavigate, onOpenCommandPalette }: AppRailProps): JSX.Element {
+export function AppRail({ currentPage, onNavigate, onOpenCommandPalette, onOpenShortcuts }: AppRailProps): JSX.Element {
   const { t } = useTranslation();
 
   const items: Array<{ id: RailPage; label: string; icon: typeof House }> = [
     { id: "home", label: t("navigation.home"), icon: House },
     { id: "library", label: t("navigation.library"), icon: Library },
+    { id: "captures", label: t("navigation.captures"), icon: Film },
     { id: "settings", label: t("navigation.settings"), icon: Settings },
   ];
 
@@ -58,6 +61,17 @@ export function AppRail({ currentPage, onNavigate, onOpenCommandPalette }: AppRa
       </div>
 
       <div className="app-rail-footer">
+        {onOpenShortcuts && (
+          <button
+            type="button"
+            className="app-rail-button app-rail-button--ghost"
+            onClick={onOpenShortcuts}
+            title={t("shortcuts.button")}
+            aria-label={t("shortcuts.button")}
+          >
+            <Keyboard size={17} aria-hidden="true" />
+          </button>
+        )}
         {onOpenCommandPalette && (
           <button
             type="button"

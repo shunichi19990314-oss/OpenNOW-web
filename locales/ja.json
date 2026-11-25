@@ -164,7 +164,8 @@
     "settings": "設定",
     "railLabel": "メインナビゲーション",
     "commandPalette": "コマンドパレット",
-    "themePack": "テーマパック"
+    "themePack": "テーマパック",
+    "captures": "キャプチャ"
   },
   "home": {
     "searchPlaceholder": "ゲームを検索...",
@@ -1373,7 +1374,8 @@
     "pages": {
       "home": "ホームへ移動",
       "library": "ライブラリへ移動",
-      "settings": "設定を開く"
+      "settings": "設定を開く",
+      "captures": "キャプチャへ移動"
     },
     "stream": {
       "toggleStats": "パフォーマンス統計を切り替え",
@@ -1566,5 +1568,32 @@
   },
   "gameContext": {
     "menuLabel": "{{title}} のメニュー"
+  },
+  "media": {
+    "title": "キャプチャ",
+    "subtitle": "ストリーム中のスクリーンショットと録画",
+    "loading": "キャプチャを読み込み中...",
+    "loadFailed": "キャプチャを読み込めませんでした",
+    "emptyTitle": "まだキャプチャがありません",
+    "emptyBody": "ストリーム中に F11 でスクリーンショット、F12 で録画を開始できます。",
+    "emptyFilterTitle": "この種類のキャプチャはありません",
+    "emptyFilterBody": "他の種類に切り替えてみてください。",
+    "filterAll": "すべて",
+    "kindScreenshot": "スクリーンショット",
+    "kindRecording": "録画",
+    "openCapture": "{{name}} を開く",
+    "save": "保存",
+    "deleteTitle": "キャプチャを削除",
+    "deleteConfirm": "「{{name}}」を削除しますか？この操作は元に戻せません。",
+    "deleteCapture": "{{name}} を削除"
+  },
+  "shortcuts": {
+    "title": "キーボードショートカット",
+    "commandPalette": "コマンドパレット",
+    "search": "検索",
+    "thisSheet": "この一覧を表示",
+    "fullscreen": "全画面の切り替え",
+    "antiAfk": "Anti-AFK の切り替え",
+    "button": "ショートカット一覧"
   }
 }

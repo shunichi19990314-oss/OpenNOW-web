@@ -99,7 +99,7 @@ export interface UseAuthSessionInput {
   onBootstrapSettings: (settings: Settings, sessionProxyUrl: string | undefined) => void;
   onBootstrapVariantSelections: (selections: Record<string, string>) => void;
   onBootstrapRuntimeSnapshot: (snapshot: RuntimeSnapshot | null) => void;
-  setCurrentPage: Dispatch<SetStateAction<"home" | "library" | "settings">>;
+  setCurrentPage: Dispatch<SetStateAction<"home" | "library" | "captures" | "settings">>;
   setNavbarActiveSession: Dispatch<SetStateAction<import("@shared/gfn").ActiveSessionInfo | null>>;
   setIsResumingNavbarSession: Dispatch<SetStateAction<boolean>>;
 }
