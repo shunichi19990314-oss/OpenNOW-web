@@ -771,7 +771,8 @@
       "ai": "AI プレイヤー",
       "updates": "アップデート",
       "stores": "ストア",
-      "subscription": "サブスクリプション"
+      "subscription": "サブスクリプション",
+      "recording": "録画"
     },
     "region": {
       "title": "地域",
@@ -1273,6 +1274,16 @@
       "manage": "プランの管理",
       "manageHint": "プランの変更や支払いは NVIDIA のアカウントページで行います。",
       "openAccount": "NVIDIA で管理"
+    },
+    "recording": {
+      "title": "録画とスクリーンショット",
+      "description": "キャプチャの画質と、撮影に使うキーをまとめて確認できます。",
+      "screenshotShortcut": "スクリーンショットのキー",
+      "screenshotShortcutHint": "ストリーム中に押すと 1 枚保存されます。",
+      "recordingShortcut": "録画の開始 / 停止キー",
+      "recordingShortcutHint": "もう一度押すと録画を終了します。",
+      "openCaptures": "キャプチャを開く",
+      "openCapturesHint": "保存したスクリーンショットと録画はキャプチャページで確認できます。"
     }
   },
   "navbar": {

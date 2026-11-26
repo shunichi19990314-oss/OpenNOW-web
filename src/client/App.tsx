@@ -1893,6 +1893,12 @@ export function App(): JSX.Element {
     setGameMenu({ game, x: event.clientX, y: event.clientY });
   }, []);
 
+  /** Leave settings for the Captures page (Recording section shortcut). */
+  const handleOpenCapturesFromSettings = useCallback((): void => {
+    setSettingsFocusSection(undefined);
+    setCurrentPage("captures");
+  }, []);
+
   /** Deep link into a settings section (e.g. Friends → controller settings). */
   const handleOpenSettingsSection = useCallback((section: SettingsSectionId): void => {
     setSettingsFocusSection(section);
@@ -4564,6 +4570,7 @@ export function App(): JSX.Element {
             onOpenWhatsNew={handleOpenWhatsNew}
             streamDiagnostics={diagnosticsStoreRef.current}
             onResetSettings={handleResetSettings}
+            onOpenCaptures={handleOpenCapturesFromSettings}
           />
         )}
       </SettingsModalHost>

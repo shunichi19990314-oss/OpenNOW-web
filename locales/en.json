@@ -774,7 +774,8 @@
       "ai": "AI",
       "updates": "Updates",
       "stores": "Stores",
-      "subscription": "Subscription"
+      "subscription": "Subscription",
+      "recording": "Recording"
     },
     "region": {
       "title": "Region",
@@ -1276,6 +1277,16 @@
       "manage": "Manage plan",
       "manageHint": "Changing or paying for a plan happens on your NVIDIA account page.",
       "openAccount": "Manage on NVIDIA"
+    },
+    "recording": {
+      "title": "Recording and screenshots",
+      "description": "Capture quality, plus the keys that take them.",
+      "screenshotShortcut": "Screenshot key",
+      "screenshotShortcutHint": "Press it during a stream to save one frame.",
+      "recordingShortcut": "Start / stop recording",
+      "recordingShortcutHint": "Press it again to finish the recording.",
+      "openCaptures": "Open Captures",
+      "openCapturesHint": "Saved screenshots and recordings are listed on the Captures page."
     }
   },
   "navbar": {

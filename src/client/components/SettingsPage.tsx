@@ -30,6 +30,7 @@ import { SettingsInterfaceSection } from "./settings/sections/SettingsInterfaceS
 import { SettingsStreamSection } from "./settings/sections/SettingsStreamSection";
 import { SettingsStoresSection } from "./settings/sections/SettingsStoresSection";
 import { SettingsSubscriptionSection } from "./settings/sections/SettingsSubscriptionSection";
+import { SettingsRecordingSection } from "./settings/sections/SettingsRecordingSection";
 import { SettingsThanksSection } from "./settings/sections/SettingsThanksSection";
 
 export type { SettingsSectionId } from "./settings/settingsTypes";
@@ -49,6 +50,8 @@ interface SettingsPageProps {
   streamDiagnostics?: StreamDiagnosticsStore | null;
   /** Restores default settings; returns false when the reset failed. */
   onResetSettings?: () => Promise<boolean>;
+  /** Opens the Captures page from the Recording section. */
+  onOpenCaptures?: () => void;
 }
 
 export function SettingsPage({
@@ -63,6 +66,7 @@ export function SettingsPage({
   onOpenWhatsNew,
   streamDiagnostics,
   onResetSettings,
+  onOpenCaptures,
 }: SettingsPageProps): JSX.Element {
   const { t } = useTranslation();
   const [savedIndicator, setSavedIndicator] = useState(false);
@@ -175,6 +179,7 @@ export function SettingsPage({
   const showAccount = showAccountStorage;
   const showStores = showAll ? scopeMatchesSearch("stores") : activeSection === "stores";
   const showSubscription = showAll ? scopeMatchesSearch("subscription") : activeSection === "subscription";
+  const showRecording = showAll ? scopeMatchesSearch("recording") : activeSection === "recording";
   const showStreamRegion = showAll ? scopeMatchesSearch("stream-region") : activeSection === "stream";
   const showStreamVideo = showAll ? scopeMatchesSearch("stream-video") : activeSection === "stream";
   const showStreamCodecDiagnostics = showAll ? scopeMatchesSearch("stream-codec-diagnostics") : activeSection === "stream";
@@ -187,7 +192,7 @@ export function SettingsPage({
   const showAi = showAll ? scopeMatchesSearch("ai") : activeSection === "ai";
   const showAbout = showAll ? scopeMatchesSearch("about") : activeSection === "about";
   const showThanks = showAll ? scopeMatchesSearch("thanks") : activeSection === "thanks";
-  const hasAnySearchMatches = showAccount || showStores || showSubscription || showStream || showGame || showAudio || showInput || showInterface || showUpdates || showAi || showAbout || showThanks;
+  const hasAnySearchMatches = showAccount || showStores || showSubscription || showRecording || showStream || showGame || showAudio || showInput || showInterface || showUpdates || showAi || showAbout || showThanks;
   const shouldRenderSettingsSections = showAll || activeSection !== "thanks";
 
   useEffect(() => {
@@ -292,6 +297,14 @@ export function SettingsPage({
                       settings={settings}
                       showAll={showAll}
                       handleChange={handleChange}
+                    />
+                  )}
+                  {showRecording && (
+                    <SettingsRecordingSection
+                      settings={settings}
+                      showAll={showAll}
+                      handleChange={handleChange}
+                      onOpenCaptures={onOpenCaptures}
                     />
                   )}
                   {showAudio && (
