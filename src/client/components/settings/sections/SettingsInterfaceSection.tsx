@@ -1,4 +1,4 @@
-import { Check } from "lucide-react";
+import { Check, Monitor } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState, type JSX } from "react";
 import type { Settings } from "@shared/gfn";
 import { getAccentColorSwatch } from "../../../lib/uiCustomization";
@@ -82,6 +82,7 @@ export function SettingsInterfaceSection({ settings, showAll, handleChange, onSa
       <section className="settings-section">
         {showAll && <div className="settings-section-context">{t("settings.sections.interface")}</div>}
         <div className="settings-section-header">
+          <Monitor size={18} />
           <h2>{t("settings.interface.appearance")}</h2>
         </div>
         <div className="settings-rows">

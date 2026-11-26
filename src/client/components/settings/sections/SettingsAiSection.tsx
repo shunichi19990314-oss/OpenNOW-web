@@ -1,4 +1,4 @@
-import { CheckCircle2, KeyRound, ShieldAlert } from "lucide-react";
+import { CheckCircle2, KeyRound, ShieldAlert, Sparkles } from "lucide-react";
 import { useEffect, useState, type JSX } from "react";
 
 import { useTranslation } from "../../../i18n";
@@ -53,6 +53,7 @@ export function SettingsAiSection({ showAll }: SettingsAiSectionProps): JSX.Elem
     <section className="settings-section">
       {showAll && <div className="settings-section-context">{t("settings.sections.ai")}</div>}
       <div className="settings-section-header">
+        <Sparkles size={18} />
         <h2>{t("settings.ai.title")}</h2>
         <p className="settings-hint">{t("settings.ai.description")}</p>
       </div>
