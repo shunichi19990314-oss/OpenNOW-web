@@ -767,7 +767,8 @@
       "about": "このアプリについて",
       "thanks": "謝辞",
       "account": "アカウント",
-      "ai": "AI プレイヤー"
+      "ai": "AI プレイヤー",
+      "updates": "アップデート"
     },
     "region": {
       "title": "地域",
@@ -1011,7 +1012,9 @@
       "resetSettingsConfirmAction": "リセットする",
       "resetSettingsCancel": "キャンセル",
       "resetSettingsDone": "設定をリセットしました。",
-      "resetSettingsFailed": "設定をリセットできませんでした。もう一度試してください。"
+      "resetSettingsFailed": "設定をリセットできませんでした。もう一度試してください。",
+      "openUpdates": "アップデートを開く",
+      "openUpdatesHint": "バージョン、更新チャンネル、リリースノートは「アップデート」にあります。"
     },
     "nativeStreamer": {
       "title": "ネイティブストリーマー",
@@ -1245,6 +1248,14 @@
       "copied": "診断レポートをクリップボードにコピーしました。",
       "downloaded": "診断レポートをファイルに保存しました。",
       "failed": "診断レポートを作成できませんでした。もう一度試してください。"
+    },
+    "updates": {
+      "title": "アップデート",
+      "currentVersion": "現在のバージョン: {{version}}",
+      "webManagedHint": "ブラウザ版はホスト側で更新されます。このページから新しいビルドをインストールすることはできません。",
+      "statusLabel": "状態: {{status}}",
+      "checkNow": "今すぐアップデートを確認",
+      "checkUnavailable": "このビルドでは手動チェックはできません。"
     }
   },
   "navbar": {
