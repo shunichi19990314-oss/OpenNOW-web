@@ -103,6 +103,28 @@ describe("catalogue enums never reach the rendered UI", () => {
     expect(markup).not.toContain("Unknown");
   });
 
+  it("renders catalogue genres and tech tags in Japanese", () => {
+    const markup = renderToStaticMarkup(
+      <GameDetailsModal
+        game={game("5", "Tagged Title", {
+          genres: ["Action", "アクション", "Whimsical Sandcastle Simulator"],
+          nvidiaTech: ["PHOTO_MODE"],
+          supportedControls: ["keyboard"],
+        })}
+        isFavorite={false}
+        onToggleFavorite={() => {}}
+        onPlay={() => {}}
+        onClose={() => {}}
+      />,
+    );
+    expect(markup).toContain("game-details-tags");
+    expect(markup).toContain("アクション");
+    expect(markup).toContain("フォトモード");
+    // An English genre would slip past the JSX scanner, so assert its absence.
+    expect(markup).not.toContain("Whimsical Sandcastle Simulator");
+    expect(markup).not.toContain("PHOTO_MODE");
+  });
+
   it("labels an unknown store on the card itself", () => {
     const markup = renderToStaticMarkup(
       <GameCard

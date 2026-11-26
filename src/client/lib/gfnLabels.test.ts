@@ -4,7 +4,9 @@ import ja from "../../../locales/ja.json";
 import { getStoreDisplayName } from "../components/GameCard";
 import {
   controlLabel,
+  genreLabel,
   isUnknownStore,
+  nvidiaTechLabel,
   playTypeLabel,
   playabilityStateLabel,
   unknownStoreLabel,
@@ -97,5 +99,34 @@ describe("raw GeForce NOW enums are never printed verbatim", () => {
     ] as const) {
       expect(getStoreDisplayName(store, t)).toBe(name);
     }
+  });
+});
+
+describe("catalogue genre and tech labels", () => {
+  it("translates English genres that the catalogue still sends", () => {
+    expect(genreLabel("Action", t)).toBe("アクション");
+    expect(genreLabel("ROLE_PLAYING_GAME", t)).toBe("RPG");
+    expect(genreLabel("first person shooter", t)).toBe("シューター");
+  });
+
+  it("passes already-localised genres through untouched", () => {
+    // The catalogue is requested with language ja_JP, so most values arrive in
+    // Japanese; translating them again would mangle them.
+    expect(genreLabel("アクション", t)).toBe("アクション");
+    expect(genreLabel("レース", t)).toBe("レース");
+  });
+
+  it("drops unknown English genres instead of showing an English chip", () => {
+    expect(genreLabel("Whimsical Sandcastle Simulator", t)).toBeNull();
+    expect(genreLabel("", t)).toBeNull();
+    expect(genreLabel(undefined, t)).toBeNull();
+  });
+
+  it("translates NVIDIA tech enums and keeps marketing names readable", () => {
+    expect(nvidiaTechLabel("PHOTO_MODE", t)).toBe("フォトモード");
+    expect(nvidiaTechLabel("HIGHLIGHTS", t)).toBe("ハイライト");
+    expect(nvidiaTechLabel("RTX", t)).toBe("RTX");
+    // Unknown tags are title-cased rather than shouted in caps.
+    expect(nvidiaTechLabel("ACE_UNKNOWN_FEATURE", t)).toBe("Ace Unknown Feature");
   });
 });

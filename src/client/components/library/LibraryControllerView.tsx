@@ -10,6 +10,7 @@ import {
   getSelectedVariantStoreLabel,
 } from "../../lib/controllerCatalogUi";
 import type { ControllerStoreFilterItem } from "../../lib/libraryFilters";
+import { controlLabel, genreLabel, nvidiaTechLabel } from "../../lib/gfnLabels";
 import { useTranslation } from "../../i18n";
 import { getJapaneseGameDescription } from "../../utils/localizedGameText";
 import { ControllerGameCard } from "./ControllerGameCard";
@@ -225,7 +226,23 @@ export function LibraryControllerView({
             </div>
           )}
 
-          {detailsGame && (
+          {detailsGame && (() => {
+            const controlsText = (detailsGame.supportedControls ?? [])
+              .map((control) => controlLabel(control, t))
+              .filter((label): label is string => Boolean(label))
+              .slice(0, 4)
+              .join(", ");
+            const techText = (detailsGame.nvidiaTech ?? [])
+              .map((tech) => nvidiaTechLabel(tech, t))
+              .filter((label): label is string => Boolean(label))
+              .slice(0, 4)
+              .join(", ");
+            const genresText = (detailsGame.genres ?? [])
+              .map((genre) => genreLabel(genre, t))
+              .filter((label): label is string => Boolean(label))
+              .slice(0, 4)
+              .join(", ");
+            return (
             <div className="controller-details-overlay" role="dialog" aria-modal="true" aria-label={detailsGame.title}>
               <div className="controller-details-panel">
                 <h3>{detailsGame.title}</h3>
@@ -235,9 +252,9 @@ export function LibraryControllerView({
                   {detailsGame.developerName && <span>{t("library.developer", { developer: detailsGame.developerName })}</span>}
                   {detailsGame.publisherName && <span>{t("library.publisher", { publisher: detailsGame.publisherName })}</span>}
                   {getPlayerSummary(detailsGame) && <span>{t("library.players", { players: getPlayerSummary(detailsGame) })}</span>}
-                  {detailsGame.supportedControls?.length ? <span>{t("library.controls", { controls: detailsGame.supportedControls.slice(0, 4).join(", ") })}</span> : null}
-                  {detailsGame.nvidiaTech?.length ? <span>{t("library.nvidiaTech", { tech: detailsGame.nvidiaTech.slice(0, 4).join(", ") })}</span> : null}
-                  {detailsGame.genres?.length ? <span>{t("library.genres", { genres: detailsGame.genres.slice(0, 4).join(", ") })}</span> : null}
+                  {controlsText ? <span>{t("library.controls", { controls: controlsText })}</span> : null}
+                  {techText ? <span>{t("library.nvidiaTech", { tech: techText })}</span> : null}
+                  {genresText ? <span>{t("library.genres", { genres: genresText })}</span> : null}
                   {detailsGame.contentRatings?.length ? <span>{t("library.rating", { rating: detailsGame.contentRatings.slice(0, 2).join(", ") })}</span> : null}
                 </div>
                 <div className="controller-details-actions">
@@ -246,7 +263,8 @@ export function LibraryControllerView({
                 </div>
               </div>
             </div>
-          )}
+            );
+          })()}
         </>
       )}
     </div>

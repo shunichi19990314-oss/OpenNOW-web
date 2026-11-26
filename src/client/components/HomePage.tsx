@@ -5,7 +5,7 @@ import { AnimatePresence, m } from "motion/react";
 import { isOwnedLibraryStatus } from "@shared/gfn";
 import type { CatalogFilterGroup, CatalogSortOption, GameInfo, GamePanelResult, GameVariant } from "@shared/gfn";
 import { getStoreDisplayName, getStoreIconComponent } from "./GameCard";
-import { playTypeLabel, type TranslateFn } from "../lib/gfnLabels";
+import { genreLabel, playTypeLabel, type TranslateFn } from "../lib/gfnLabels";
 import { formatCatalogLastPlayed } from "../utils/lastPlayedFormat";
 import { GameCardListItem, useCatalogCardActionsRef } from "./GameCardListItem";
 import { GameDetailsModal } from "./GameDetailsModal";
@@ -153,7 +153,8 @@ function getNextVariantId(game: GameInfo, selectedVariantId?: string): string | 
  * say nothing instead of inventing an English label.
  */
 function getPrimaryGenre(game: GameInfo, t: TranslateFn): string | null {
-  return game.genres?.[0] ?? playTypeLabel(game.playType, t);
+  const genre = game.genres?.length ? genreLabel(game.genres[0], t) : null;
+  return genre ?? playTypeLabel(game.playType, t);
 }
 
 function getPrimaryStoreName(game: GameInfo, t: TranslateFn, selectedVariantId?: string): string {
