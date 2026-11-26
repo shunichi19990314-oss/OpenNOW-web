@@ -772,7 +772,8 @@
       "updates": "アップデート",
       "stores": "ストア",
       "subscription": "サブスクリプション",
-      "recording": "録画"
+      "recording": "録画",
+      "console": "コンソールモード"
     },
     "region": {
       "title": "地域",
@@ -1284,6 +1285,17 @@
       "recordingShortcutHint": "もう一度押すと録画を終了します。",
       "openCaptures": "キャプチャを開く",
       "openCapturesHint": "保存したスクリーンショットと録画はキャプチャページで確認できます。"
+    },
+    "console": {
+      "title": "コンソールモード",
+      "description": "ゲームパッド主体の大画面シェルです。ストリームを再起動せずに切り替えられます。",
+      "switchNow": "今すぐ切り替える",
+      "switchHint": "同じセッション・設定・テーマのまま切り替わります。",
+      "startInConsole": "コンソールモードで起動",
+      "startInConsoleHint": "次回の起動時もこの選択を記憶します。",
+      "shellMode": "シェル",
+      "shellDesktop": "デスクトップ",
+      "shellConsole": "コンソール"
     }
   },
   "navbar": {

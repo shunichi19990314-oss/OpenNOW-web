@@ -775,7 +775,8 @@
       "updates": "Updates",
       "stores": "Stores",
       "subscription": "Subscription",
-      "recording": "Recording"
+      "recording": "Recording",
+      "console": "Console mode"
     },
     "region": {
       "title": "Region",
@@ -1287,6 +1288,17 @@
       "recordingShortcutHint": "Press it again to finish the recording.",
       "openCaptures": "Open Captures",
       "openCapturesHint": "Saved screenshots and recordings are listed on the Captures page."
+    },
+    "console": {
+      "title": "Console mode",
+      "description": "The gamepad-first, big-screen shell. Switching does not restart the stream.",
+      "switchNow": "Switch now",
+      "switchHint": "Same session, settings and themes.",
+      "startInConsole": "Start in console mode",
+      "startInConsoleHint": "Remember this choice for the next launch.",
+      "shellMode": "Shell",
+      "shellDesktop": "Desktop",
+      "shellConsole": "Console"
     }
   },
   "navbar": {

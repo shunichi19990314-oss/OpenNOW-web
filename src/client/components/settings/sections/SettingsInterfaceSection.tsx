@@ -353,21 +353,6 @@ export function SettingsInterfaceSection({ settings, showAll, handleChange, onSa
 
             <div className="settings-row">
               <label className="settings-label">
-                {t("settings.interface.controllerMode")}
-                <span className="settings-hint">{t("settings.interface.controllerModeHint")}</span>
-              </label>
-              <label className="settings-toggle">
-                <input
-                  type="checkbox"
-                  checked={settings.controllerMode}
-                  onChange={(e) => handleChange("controllerMode", e.target.checked)}
-                />
-                <span className="settings-toggle-track" />
-              </label>
-            </div>
-
-            <div className="settings-row">
-              <label className="settings-label">
                 {t("settings.interface.escapeExitsFullscreen")}
                 <span className="settings-hint">{t("settings.interface.escapeExitsFullscreenHint")}</span>
               </label>
