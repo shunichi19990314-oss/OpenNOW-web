@@ -44,6 +44,8 @@ interface SettingsPageProps {
   onOpenWhatsNew?: () => void;
   /** Live/last stream stats store, used by the diagnostics report */
   streamDiagnostics?: StreamDiagnosticsStore | null;
+  /** Restores default settings; returns false when the reset failed. */
+  onResetSettings?: () => Promise<boolean>;
 }
 
 export function SettingsPage({
@@ -57,6 +59,7 @@ export function SettingsPage({
   focusSection,
   onOpenWhatsNew,
   streamDiagnostics,
+  onResetSettings,
 }: SettingsPageProps): JSX.Element {
   const { t } = useTranslation();
   const [savedIndicator, setSavedIndicator] = useState(false);
@@ -302,6 +305,8 @@ export function SettingsPage({
                       <SettingsAboutSection
                         showAll={showAll}
                         onOpenWhatsNew={onOpenWhatsNew}
+                        onResetSettings={onResetSettings}
+                        resetDisabled={streamOverlayBlocking}
                       />
                       <DiagnosticsSection
                         showAll={showAll}

@@ -14309,3 +14309,45 @@ body {
 .settings-diagnostics-status--failed {
   color: var(--danger, #ff6b6b);
 }
+
+/* LEGAL + INLINE CONFIRM (About) */
+.settings-inline-confirm {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.settings-inline-confirm-text {
+  flex: 1 1 220px;
+  font-size: 0.85rem;
+  color: var(--ink-soft);
+  text-align: right;
+}
+
+.settings-legal {
+  margin-top: 18px;
+  padding: 14px 16px;
+  border: 1px solid var(--panel-border-solid);
+  border-radius: var(--r-sm);
+  background: var(--bg-c);
+}
+
+.settings-legal-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ink-soft);
+}
+
+.settings-legal-body {
+  margin: 8px 0 0;
+  font-size: 0.82rem;
+  line-height: 1.7;
+  color: var(--ink-soft);
+}
