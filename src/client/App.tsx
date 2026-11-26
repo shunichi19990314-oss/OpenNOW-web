@@ -65,6 +65,7 @@ import {
   saveCollections,
   type GameCollection,
 } from "./lib/collections";
+import { toggleHiddenGameId } from "./lib/hiddenGames";
 import { createStreamDiagnosticsStore, useStreamDiagnosticsSelector } from "./utils/streamDiagnosticsStore";
 import type {
   LaunchErrorState,
@@ -279,6 +280,7 @@ export function App(): JSX.Element {
     launchInConsoleMode: false,
     autoFullScreen: false,
     favoriteGameIds: [],
+    hiddenGameIds: [],
     sessionCounterEnabled: false,
     showSessionTimeRemainingInStatsOverlay: false,
     sessionClockShowEveryMinutes: 60,
@@ -1872,6 +1874,13 @@ export function App(): JSX.Element {
   const handleToggleFavorite = useCallback((game: GameInfo): void => {
     handleToggleFavoriteGame(game.id);
   }, [handleToggleFavoriteGame]);
+
+  // "Hide from library" / "Unhide": the desktop build keeps the ids in
+  // settings, so the state survives a reload and the command palette can skip
+  // them too.
+  const handleToggleHidden = useCallback((game: GameInfo): void => {
+    void updateSetting("hiddenGameIds", toggleHiddenGameId(settings.hiddenGameIds, game.id));
+  }, [settings.hiddenGameIds, updateSetting]);
 
   const handleMouseAccelerationChange = useCallback((value: number) => {
     void updateSetting("mouseAcceleration", value);
@@ -3983,7 +3992,9 @@ export function App(): JSX.Element {
     [],
   );
   const commandPaletteContext = useMemo(() => ({
-    games: allKnownGames,
+    // Hidden games stay out of the palette, like the desktop shell; the Library's
+    // "Hidden" chip is where they can be restored.
+    games: allKnownGames.filter((game) => !settings.hiddenGameIds.includes(game.id)),
     playtime,
     favoriteIds: settings.favoriteGameIds,
     canStream: streamStatus === "connecting" || streamStatus === "streaming",
@@ -3994,6 +4005,7 @@ export function App(): JSX.Element {
     commandPalettePages,
     playtime,
     settings.favoriteGameIds,
+    settings.hiddenGameIds,
     streamStatus,
   ]);
 
@@ -4508,6 +4520,8 @@ export function App(): JSX.Element {
                   onRenameCollection={(collection) => setCollectionDialog({ mode: "rename", collection })}
                   onDeleteCollection={(collection) => setCollectionDialog({ mode: "delete", collection })}
                   onOpenGameMenu={handleOpenGameMenu}
+                  hiddenGameIds={settings.hiddenGameIds}
+                  onToggleHidden={handleToggleHidden}
                 />
               </PageErrorBoundary>
             )}
@@ -4547,6 +4561,12 @@ export function App(): JSX.Element {
           state={gameMenu}
           collections={collections}
           isFavorite={settings.favoriteGameIds.includes(gameMenu.game.id)}
+          isHidden={settings.hiddenGameIds.includes(gameMenu.game.id)}
+          onToggleHidden={() => {
+            const target = gameMenu.game;
+            setGameMenu(null);
+            handleToggleHidden(target);
+          }}
           onClose={() => setGameMenu(null)}
           onPlay={() => {
             const target = gameMenu.game;

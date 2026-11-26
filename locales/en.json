@@ -271,7 +271,8 @@
       "favorite": "Favorites",
       "all": "All",
       "readyToPlay": "Ready to play",
-      "rtx": "RTX"
+      "rtx": "RTX",
+      "hidden": "Hidden"
     },
     "lastPlayed": {
       "never": "Never played",
@@ -288,7 +289,8 @@
       "noGamesFound": "No games found",
       "noGamesMatch": "No games match \"{{query}}\"",
       "noFilteredGames": "No games match those filters",
-      "tryAdjustingFilters": "Try clearing a filter or changing your search."
+      "tryAdjustingFilters": "Try clearing a filter or changing your search.",
+      "noHiddenGames": "No hidden games"
     },
     "gameDetails": "Game details",
     "descriptionUnavailable": "A Japanese description for this game is not currently available.",
@@ -357,7 +359,10 @@
       "photoMode": "Photo mode",
       "reflex": "Reflex",
       "rtx": "RTX"
-    }
+    },
+    "hideGame": "Hide from library",
+    "unhideGame": "Unhide from library",
+    "hideGameHint": "Right-click a tile and choose Hide from library."
   },
   "gameCard": {
     "selectGame": "Select {{title}}",

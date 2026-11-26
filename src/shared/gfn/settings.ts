@@ -125,6 +125,8 @@ export interface Settings {
   launchInConsoleMode: boolean;
   autoFullScreen: boolean;
   favoriteGameIds: string[];
+  /** Library games hidden from the grid and the command palette. */
+  hiddenGameIds: string[];
   sessionCounterEnabled: boolean;
   /** Also show the session-limit countdown in the stats overlay while streaming */
   showSessionTimeRemainingInStatsOverlay: boolean;

@@ -6,6 +6,7 @@ import type { CatalogSortOption, GameInfo } from "@shared/gfn";
 import { GameCardListItem, useCatalogCardActionsRef } from "./GameCardListItem";
 import { filterGamesByCollection, type GameCollection } from "../lib/collections";
 import { GameDetailsModal } from "./GameDetailsModal";
+import { HIDDEN_FILTER_ID, filterHiddenGames, toHiddenIdSet } from "../lib/hiddenGames";
 import type { PlaytimeData } from "../lib/gameCatalog";
 import { formatTotalPlaytime, playtimeUnits, toFavoriteSet } from "../lib/localPreferences";
 import { getControllerFeaturedGames } from "../lib/controllerCatalogUi";
@@ -66,6 +67,10 @@ export interface LibraryPageProps {
   onDeleteCollection?: (collection: GameCollection) => void;
   /** Opens the tile context menu (details, collections, favourite). */
   onOpenGameMenu?: (game: GameInfo, event: { clientX: number; clientY: number }) => void;
+  /** Ids of games hidden from the library grid. */
+  hiddenGameIds?: string[];
+  /** Hides or restores a game; the "Hidden" chip is how it comes back. */
+  onToggleHidden?: (game: GameInfo) => void;
 }
 
 export const LibraryPage = memo(function LibraryPage({
@@ -100,6 +105,8 @@ export const LibraryPage = memo(function LibraryPage({
   onRenameCollection,
   onDeleteCollection,
   onOpenGameMenu,
+  hiddenGameIds = [],
+  onToggleHidden,
 }: LibraryPageProps): JSX.Element {
   const { t } = useTranslation();
   const [detailsGame, setDetailsGame] = useState<GameInfo | null>(null);
@@ -169,10 +176,14 @@ export const LibraryPage = memo(function LibraryPage({
   );
   // The first group is the desktop-style quick row (All / Ready / RTX /
   // Controller / stores); the rest stay in the dropdown.
-  const quickFilterOptions = useMemo(
-    () => libraryFilterGroups.find((group) => group.id === "quick")?.options ?? [],
-    [libraryFilterGroups],
-  );
+  const quickFilterOptions = useMemo(() => {
+    const options = libraryFilterGroups.find((group) => group.id === "quick")?.options ?? [];
+    if (hiddenGameIds.length === 0) return options;
+    return [
+      ...options,
+      { id: HIDDEN_FILTER_ID, label: t("library.filterOptions.hidden"), count: hiddenGameIds.length },
+    ];
+  }, [hiddenGameIds.length, libraryFilterGroups, t]);
   const secondaryFilterGroups = useMemo(
     () => libraryFilterGroups.filter((group) => group.id !== "quick"),
     [libraryFilterGroups],
@@ -185,9 +196,14 @@ export const LibraryPage = memo(function LibraryPage({
     () => filterGamesByCollection(games, activeCollection),
     [activeCollection, games],
   );
+  // "Hidden" is not a normal filter chip: it swaps the grid to the hidden games
+  // instead of narrowing it, exactly like the desktop Library.
+  const showingHiddenGames = selectedLibraryFilterIds.includes(HIDDEN_FILTER_ID);
+  const hiddenIdSet = useMemo(() => toHiddenIdSet(hiddenGameIds), [hiddenGameIds]);
   const visibleLibraryGames = useMemo(
-    () => collectionScopedGames.filter((game) => gameMatchesLibraryFilters(game, selectedLibraryFilterIds, playtimeData, t, favoriteGameIds)),
-    [collectionScopedGames, favoriteGameIds, playtimeData, selectedLibraryFilterIds, t],
+    () => filterHiddenGames(collectionScopedGames, hiddenGameIds, showingHiddenGames)
+      .filter((game) => showingHiddenGames || gameMatchesLibraryFilters(game, selectedLibraryFilterIds, playtimeData, t, favoriteGameIds)),
+    [collectionScopedGames, favoriteGameIds, hiddenGameIds, playtimeData, selectedLibraryFilterIds, showingHiddenGames, t],
   );
   const activeLibraryFilterOptions = useMemo(
     () => selectedLibraryFilterIds
@@ -531,7 +547,10 @@ export const LibraryPage = memo(function LibraryPage({
       // "3日前" in one column and "未プレイ" in the next.
       const lastPlayedMs = gameActivityTimestamp(game, playtimeData);
       return (
-        <div key={game.id} className={`library-game-wrapper${isFavorite ? " is-favorite" : ""}`}>
+        <div
+          key={game.id}
+          className={`library-game-wrapper${isFavorite ? " is-favorite" : ""}${hiddenIdSet.has(game.id) ? " is-hidden-game" : ""}`}
+        >
           {isFavorite && (
             <span className="library-favorite-pin" title={t("library.filterOptions.favorite")}>
               ★
@@ -561,7 +580,7 @@ export const LibraryPage = memo(function LibraryPage({
         </div>
       );
     }),
-    [catalogActionsRef, favoriteIdSet, playtimeData, selectedGameId, selectedVariantByGameId, t, visibleLibraryGames],
+    [catalogActionsRef, favoriteIdSet, hiddenIdSet, playtimeData, selectedGameId, selectedVariantByGameId, t, visibleLibraryGames],
   );
 
   if (controllerMode) {
@@ -791,7 +810,12 @@ export const LibraryPage = memo(function LibraryPage({
         ) : visibleLibraryGames.length === 0 ? (
           <div className="library-empty-state">
             <Search className="library-empty-icon" size={44} />
-            {activeCollection && !librarySearchHasQuery && !hasActiveLibraryFilters ? (
+            {showingHiddenGames && !librarySearchHasQuery ? (
+              <>
+                <h3>{t("library.empty.noHiddenGames")}</h3>
+                <p>{t("library.hideGameHint")}</p>
+              </>
+            ) : activeCollection && !librarySearchHasQuery && !hasActiveLibraryFilters ? (
               <>
                 <h3>{t("collections.emptyView")}</h3>
                 <p>{t("collections.addHint")}</p>

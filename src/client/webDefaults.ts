@@ -243,6 +243,7 @@ export const WEB_DEFAULT_SETTINGS: Settings = {
   launchInConsoleMode: false,
   autoFullScreen: false,
   favoriteGameIds: [],
+  hiddenGameIds: [],
   sessionCounterEnabled: false,
   showSessionTimeRemainingInStatsOverlay: false,
   sessionClockShowEveryMinutes: 60,
