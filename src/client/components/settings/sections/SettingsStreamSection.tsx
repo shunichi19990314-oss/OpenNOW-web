@@ -1038,27 +1038,6 @@ export function SettingsStreamSection({
           </span>
         </div>
 
-        <div className="settings-row settings-row--column">
-          <div className="settings-row-top settings-row-top--compact">
-            <label className="settings-label settings-label--wrap">
-              <span className="settings-label-title">
-                {t("settings.video.launchInConsoleMode")}
-              </span>
-            </label>
-            <label className="settings-toggle">
-              <input
-                type="checkbox"
-                checked={settings.launchInConsoleMode}
-                onChange={(e) => handleChange("launchInConsoleMode", e.target.checked)}
-              />
-              <span className="settings-toggle-track" />
-            </label>
-          </div>
-          <span className="settings-subtle-hint">
-            {t("settings.video.launchInConsoleModeHint")}
-          </span>
-        </div>
-
         {/* Video filters (client-side GPU shaders) */}
         <div className="settings-row settings-row--column">
           <div className="settings-row-top settings-row-top--compact">

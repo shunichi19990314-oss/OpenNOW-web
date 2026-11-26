@@ -31,6 +31,7 @@ import { SettingsStreamSection } from "./settings/sections/SettingsStreamSection
 import { SettingsStoresSection } from "./settings/sections/SettingsStoresSection";
 import { SettingsSubscriptionSection } from "./settings/sections/SettingsSubscriptionSection";
 import { SettingsRecordingSection } from "./settings/sections/SettingsRecordingSection";
+import { SettingsConsoleSection } from "./settings/sections/SettingsConsoleSection";
 import { SettingsThanksSection } from "./settings/sections/SettingsThanksSection";
 
 export type { SettingsSectionId } from "./settings/settingsTypes";
@@ -179,6 +180,7 @@ export function SettingsPage({
   const showAccount = showAccountStorage;
   const showStores = showAll ? scopeMatchesSearch("stores") : activeSection === "stores";
   const showSubscription = showAll ? scopeMatchesSearch("subscription") : activeSection === "subscription";
+  const showConsole = showAll ? scopeMatchesSearch("console") : activeSection === "console";
   const showRecording = showAll ? scopeMatchesSearch("recording") : activeSection === "recording";
   const showStreamRegion = showAll ? scopeMatchesSearch("stream-region") : activeSection === "stream";
   const showStreamVideo = showAll ? scopeMatchesSearch("stream-video") : activeSection === "stream";
@@ -192,7 +194,7 @@ export function SettingsPage({
   const showAi = showAll ? scopeMatchesSearch("ai") : activeSection === "ai";
   const showAbout = showAll ? scopeMatchesSearch("about") : activeSection === "about";
   const showThanks = showAll ? scopeMatchesSearch("thanks") : activeSection === "thanks";
-  const hasAnySearchMatches = showAccount || showStores || showSubscription || showRecording || showStream || showGame || showAudio || showInput || showInterface || showUpdates || showAi || showAbout || showThanks;
+  const hasAnySearchMatches = showAccount || showStores || showSubscription || showRecording || showConsole || showStream || showGame || showAudio || showInput || showInterface || showUpdates || showAi || showAbout || showThanks;
   const shouldRenderSettingsSections = showAll || activeSection !== "thanks";
 
   useEffect(() => {
@@ -297,6 +299,14 @@ export function SettingsPage({
                       settings={settings}
                       showAll={showAll}
                       handleChange={handleChange}
+                    />
+                  )}
+                  {showConsole && (
+                    <SettingsConsoleSection
+                      settings={settings}
+                      showAll={showAll}
+                      handleChange={handleChange}
+                      consoleModeActive={settings.controllerMode}
                     />
                   )}
                   {showRecording && (

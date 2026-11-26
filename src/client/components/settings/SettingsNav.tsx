@@ -1,6 +1,6 @@
 import {
   Search, X, Users, Wifi, Globe, Mic, Keyboard, Monitor, Info, Heart, Sparkles, Rocket,
-  Store, Crown, Film,
+  Store, Crown, Film, Tv,
 } from "lucide-react";
 import { useMemo, type JSX } from "react";
 import { useTranslation } from "../../i18n";
@@ -51,6 +51,7 @@ export function SettingsNav({
       label: t("settings.nav.groupApp"),
       items: [
         { id: "interface", label: t("settings.sections.interface"), icon: <Monitor size={15} /> },
+        { id: "console", label: t("settings.sections.console"), icon: <Tv size={15} /> },
         { id: "updates", label: t("settings.sections.updates"), icon: <Rocket size={15} /> },
         { id: "ai", label: t("settings.sections.ai"), icon: <Sparkles size={15} /> },
         { id: "about", label: t("settings.sections.about"), icon: <Info size={15} /> },
