@@ -17,6 +17,8 @@ export type GameAccountBusyAction = "link" | "unlink" | "resync";
 
 export type SettingsSectionId =
   | "account"
+  | "stores"
+  | "subscription"
   | "stream"
   | "game"
   | "audio"
@@ -28,6 +30,8 @@ export type SettingsSectionId =
   | "thanks";
 export type SettingsSearchScopeId =
   | "account-storage"
+  | "stores"
+  | "subscription"
   | "stream-region"
   | "stream-video"
   | "stream-codec-diagnostics"
@@ -68,6 +72,34 @@ export const SETTINGS_SCOPE_SEARCH_TERMS: Record<SettingsSearchScopeId, readonly
     "downloads",
     "available",
     "used",
+  ],
+  stores: [
+    "stores",
+    "store",
+    "connections",
+    "connected accounts",
+    "game accounts",
+    "link accounts",
+    "unlink accounts",
+    "sync library",
+    "steam",
+    "epic",
+    "gog",
+    "ubisoft",
+    "battle.net",
+    "xbox",
+    "gaijin",
+  ],
+  subscription: [
+    "subscription",
+    "membership",
+    "plan",
+    "tier",
+    "entitlements",
+    "hours",
+    "ultimate",
+    "priority",
+    "unlimited",
   ],
   "stream-region": [
     "stream",
@@ -250,6 +282,8 @@ export const SETTINGS_SCOPE_LABEL_KEYS: Record<SettingsSearchScopeId, readonly s
   input: ["settings.sections.input"],
   interface: ["settings.sections.interface", "settings.interface.appearance", "settings.interface.theme", "settings.interface.themePack", "settings.interface.accentColor"],
   ai: ["settings.sections.ai"],
+  stores: ["settings.sections.stores", "settings.accountConnections.title"],
+  subscription: ["settings.sections.subscription", "settings.subscription.title"],
   updates: ["settings.sections.updates", "settings.updates.title"],
   about: ["settings.sections.about"],
   thanks: ["settings.sections.thanks"],

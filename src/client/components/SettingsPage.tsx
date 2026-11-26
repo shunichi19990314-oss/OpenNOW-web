@@ -28,6 +28,8 @@ import { SettingsInputSection } from "./settings/sections/SettingsInputSection";
 import { SettingsAiSection } from "./settings/sections/SettingsAiSection";
 import { SettingsInterfaceSection } from "./settings/sections/SettingsInterfaceSection";
 import { SettingsStreamSection } from "./settings/sections/SettingsStreamSection";
+import { SettingsStoresSection } from "./settings/sections/SettingsStoresSection";
+import { SettingsSubscriptionSection } from "./settings/sections/SettingsSubscriptionSection";
 import { SettingsThanksSection } from "./settings/sections/SettingsThanksSection";
 
 export type { SettingsSectionId } from "./settings/settingsTypes";
@@ -171,6 +173,8 @@ export function SettingsPage({
 
   const showAccountStorage = showAll ? scopeMatchesSearch("account-storage") : activeSection === "account";
   const showAccount = showAccountStorage;
+  const showStores = showAll ? scopeMatchesSearch("stores") : activeSection === "stores";
+  const showSubscription = showAll ? scopeMatchesSearch("subscription") : activeSection === "subscription";
   const showStreamRegion = showAll ? scopeMatchesSearch("stream-region") : activeSection === "stream";
   const showStreamVideo = showAll ? scopeMatchesSearch("stream-video") : activeSection === "stream";
   const showStreamCodecDiagnostics = showAll ? scopeMatchesSearch("stream-codec-diagnostics") : activeSection === "stream";
@@ -183,7 +187,7 @@ export function SettingsPage({
   const showAi = showAll ? scopeMatchesSearch("ai") : activeSection === "ai";
   const showAbout = showAll ? scopeMatchesSearch("about") : activeSection === "about";
   const showThanks = showAll ? scopeMatchesSearch("thanks") : activeSection === "thanks";
-  const hasAnySearchMatches = showAccount || showStream || showGame || showAudio || showInput || showInterface || showUpdates || showAi || showAbout || showThanks;
+  const hasAnySearchMatches = showAccount || showStores || showSubscription || showStream || showGame || showAudio || showInput || showInterface || showUpdates || showAi || showAbout || showThanks;
   const shouldRenderSettingsSections = showAll || activeSection !== "thanks";
 
   useEffect(() => {
@@ -252,6 +256,17 @@ export function SettingsPage({
                       showAll={showAll}
                       subscriptionInfo={subscriptionInfo}
                       subscriptionLoading={subscriptionLoading}
+                    />
+                  )}
+                  {showStores && (
+                    <SettingsStoresSection settings={settings} showAll={showAll} />
+                  )}
+                  {showSubscription && (
+                    <SettingsSubscriptionSection
+                      showAll={showAll}
+                      subscriptionInfo={subscriptionInfo}
+                      subscriptionLoading={subscriptionLoading}
+                      onRefresh={() => void loadSubscriptionData()}
                     />
                   )}
                   {(showStream || streamOverlayBlocking) && (

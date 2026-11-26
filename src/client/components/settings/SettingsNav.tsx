@@ -1,4 +1,7 @@
-import { Search, X, Users, Wifi, Globe, Mic, Keyboard, Monitor, Info, Heart, Sparkles, Rocket } from "lucide-react";
+import {
+  Search, X, Users, Wifi, Globe, Mic, Keyboard, Monitor, Info, Heart, Sparkles, Rocket,
+  Store, Crown,
+} from "lucide-react";
 import { useMemo, type JSX } from "react";
 import { useTranslation } from "../../i18n";
 import type { SettingsNavGroup, SettingsSectionId } from "./settingsTypes";
@@ -25,6 +28,8 @@ export function SettingsNav({
       label: t("settings.nav.groupAccount"),
       items: [
         { id: "account", label: t("settings.sections.account"), icon: <Users size={15} /> },
+        { id: "stores", label: t("settings.sections.stores"), icon: <Store size={15} /> },
+        { id: "subscription", label: t("settings.sections.subscription"), icon: <Crown size={15} /> },
       ],
     },
     {
