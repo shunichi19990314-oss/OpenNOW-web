@@ -34,7 +34,7 @@ export interface CommandPaletteContext {
   canStream: boolean;
   /** True while a stream is actually running (stop/toggles make sense). */
   isStreaming: boolean;
-  pages: ReadonlyArray<"home" | "library" | "captures" | "settings">;
+  pages: ReadonlyArray<"home" | "library" | "captures" | "friends" | "settings">;
 }
 
 export type CommandPaletteTranslate = (
@@ -59,6 +59,7 @@ const PAGE_ICON_KEYWORDS: Record<string, string[]> = {
   home: ["home", "store", "catalog", "ホーム", "ストア"],
   library: ["library", "collection", "owned", "ライブラリ"],
   captures: ["captures", "media", "screenshots", "recordings", "キャプチャ"],
+  friends: ["friends", "social", "presence", "coop", "フレンド", "協力プレイ"],
   settings: ["settings", "preferences", "options", "設定"],
 };
 

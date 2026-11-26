@@ -165,7 +165,8 @@
     "railLabel": "メインナビゲーション",
     "commandPalette": "コマンドパレット",
     "themePack": "テーマパック",
-    "captures": "キャプチャ"
+    "captures": "キャプチャ",
+    "friends": "フレンド"
   },
   "home": {
     "searchPlaceholder": "ゲームを検索...",
@@ -1452,7 +1453,8 @@
       "home": "ホームへ移動",
       "library": "ライブラリへ移動",
       "settings": "設定を開く",
-      "captures": "キャプチャへ移動"
+      "captures": "キャプチャへ移動",
+      "friends": "フレンドを開く"
     },
     "stream": {
       "toggleStats": "パフォーマンス統計を切り替え",
@@ -1672,5 +1674,20 @@
     "fullscreen": "全画面の切り替え",
     "antiAfk": "Anti-AFK の切り替え",
     "button": "ショートカット一覧"
+  },
+  "friends": {
+    "title": "フレンドは準備中です",
+    "comingSoon": "近日公開",
+    "body": "NVIDIA は GeForce NOW のフレンド・プレゼンス・招待の機能をサードパーティ製クライアントに公開していません。公開され次第、ここに表示されます。",
+    "coopEyebrow": "利用できます",
+    "coopTitle": "この画面で一緒にプレイ",
+    "coopBody": "この端末に接続した最大 4 台のコントローラーは、それぞれ別のプレイヤーとしてそのままゲームに渡されます。",
+    "slotWaiting": "待機中",
+    "slotConnected": "接続済み",
+    "slotEmpty": "未接続",
+    "connectController": "コントローラーを接続",
+    "setUpPlayerTwo": "プレイヤー 2 を設定",
+    "controllerSettings": "コントローラー設定",
+    "controllerFallback": "コントローラー"
   }
 }

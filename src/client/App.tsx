@@ -142,6 +142,8 @@ import { AppHeaderSearch } from "./components/AppHeaderSearch";
 import { AppRail } from "./components/AppRail";
 import { ShortcutsOverlay, type ShortcutRow } from "./components/ShortcutsOverlay";
 import { MediaPage } from "./components/MediaPage";
+import { FriendsPage } from "./components/FriendsPage";
+import type { SettingsSectionId } from "./components/settings/settingsTypes";
 import { CollectionDialog, type CollectionDialogMode } from "./components/CollectionDialog";
 import { GameDetailsModal } from "./components/GameDetailsModal";
 import {
@@ -192,7 +194,7 @@ const FREE_TIER_15_MIN_WARNING_SECONDS = 15 * 60;
 const FREE_TIER_FINAL_MINUTE_WARNING_SECONDS = 60;
 const STREAM_WARNING_VISIBILITY_MS = 15 * 1000;
 
-type AppPage = "home" | "library" | "captures" | "settings";
+type AppPage = "home" | "library" | "captures" | "friends" | "settings";
 type ExitPromptState = { open: boolean; gameTitle: string };
 
 const isMac = navigator.platform.toLowerCase().includes("mac");
@@ -338,7 +340,7 @@ export function App(): JSX.Element {
   const [isResumingNavbarSession, setIsResumingNavbarSession] = useState(false);
   const [isTerminatingNavbarSession, setIsTerminatingNavbarSession] = useState(false);
   const [launchError, setLaunchError] = useState<LaunchErrorState | null>(null);
-  const [settingsFocusSection, setSettingsFocusSection] = useState<"account" | undefined>();
+  const [settingsFocusSection, setSettingsFocusSection] = useState<SettingsSectionId | undefined>();
   const [pendingDirectLaunchRequest, setPendingDirectLaunchRequest] = useState<DirectLaunchRequest | null>(null);
   // Argument-driven launches always use the console (big picture) experience for this run,
   // without persisting the user's Controller Mode setting.
@@ -1890,6 +1892,13 @@ export function App(): JSX.Element {
   const handleOpenGameMenu = useCallback((game: GameInfo, event: { clientX: number; clientY: number }): void => {
     setGameMenu({ game, x: event.clientX, y: event.clientY });
   }, []);
+
+  /** Deep link into a settings section (e.g. Friends → controller settings). */
+  const handleOpenSettingsSection = useCallback((section: SettingsSectionId): void => {
+    setSettingsFocusSection(section);
+    setPageBeforeSettings(currentPage === "settings" ? pageBeforeSettings : currentPage);
+    setCurrentPage("settings");
+  }, [currentPage, pageBeforeSettings]);
 
   const handleToggleGameInCollection = useCallback((collectionId: string, gameId: string): void => {
     setCollections((previous) => {
@@ -3988,7 +3997,7 @@ export function App(): JSX.Element {
   // Command palette: available on every catalog page, never inside a launch
   // overlay or the login screen (both render an early return above).
   const commandPalettePages = useMemo(
-    () => ["home", "library", "captures", "settings"] as const,
+    () => ["home", "library", "captures", "friends", "settings"] as const,
     [],
   );
   const commandPaletteContext = useMemo(() => ({
@@ -4394,6 +4403,8 @@ export function App(): JSX.Element {
             ? t("navigation.library")
             : currentPage === "captures"
               ? t("navigation.captures")
+              : currentPage === "friends"
+                ? t("navigation.friends")
               : currentPage === "settings"
                 ? t("navigation.settings")
                 : t("navigation.home")
@@ -4483,6 +4494,12 @@ export function App(): JSX.Element {
             {mainPage === "captures" && (
               <PageErrorBoundary label="captures">
                 <MediaPage />
+              </PageErrorBoundary>
+            )}
+
+            {mainPage === "friends" && (
+              <PageErrorBoundary label="friends">
+                <FriendsPage onOpenControllerSettings={() => handleOpenSettingsSection("input")} />
               </PageErrorBoundary>
             )}
 
