@@ -14549,3 +14549,39 @@ body {
   color: var(--ink);
   border-color: color-mix(in srgb, var(--ink) 18%, transparent);
 }
+
+/* SUBSCRIPTION (Settings) */
+.settings-subscription-headline {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.settings-subscription-tier {
+  font-size: 1rem;
+  font-weight: 800;
+  letter-spacing: -0.01em;
+}
+
+.settings-subscription-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+  margin: 10px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.settings-subscription-chip {
+  display: inline-flex;
+  align-items: center;
+  height: 26px;
+  padding: 0 11px;
+  border-radius: var(--r-full);
+  border: 1px solid var(--panel-border);
+  background: color-mix(in srgb, var(--ink) 4%, transparent);
+  font-size: 0.73rem;
+  font-weight: 600;
+  color: var(--ink-soft);
+}

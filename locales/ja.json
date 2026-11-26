@@ -769,7 +769,9 @@
       "thanks": "謝辞",
       "account": "アカウント",
       "ai": "AI プレイヤー",
-      "updates": "アップデート"
+      "updates": "アップデート",
+      "stores": "ストア",
+      "subscription": "サブスクリプション"
     },
     "region": {
       "title": "地域",
@@ -1257,6 +1259,20 @@
       "statusLabel": "状態: {{status}}",
       "checkNow": "今すぐアップデートを確認",
       "checkUnavailable": "このビルドでは手動チェックはできません。"
+    },
+    "subscription": {
+      "title": "サブスクリプション",
+      "description": "現在のプランと利用可能な上限を確認します。",
+      "loading": "サブスクリプションを読み込み中…",
+      "unavailable": "メンバーシップを取得できません",
+      "signInHint": "サインインすると、プランと利用時間が表示されます。",
+      "unlimited": "時間無制限",
+      "hoursLeft": "残り {{hours}} 時間",
+      "refresh": "権限を更新",
+      "refreshing": "権限を更新中",
+      "manage": "プランの管理",
+      "manageHint": "プランの変更や支払いは NVIDIA のアカウントページで行います。",
+      "openAccount": "NVIDIA で管理"
     }
   },
   "navbar": {

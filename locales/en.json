@@ -772,7 +772,9 @@
       "about": "About",
       "thanks": "Thanks",
       "ai": "AI",
-      "updates": "Updates"
+      "updates": "Updates",
+      "stores": "Stores",
+      "subscription": "Subscription"
     },
     "region": {
       "title": "Region",
@@ -1260,6 +1262,20 @@
       "statusLabel": "Status: {{status}}",
       "checkNow": "Check for updates now",
       "checkUnavailable": "This build cannot check for updates manually."
+    },
+    "subscription": {
+      "title": "Subscription",
+      "description": "Your current plan and the limits it allows.",
+      "loading": "Loading subscription…",
+      "unavailable": "Membership unavailable",
+      "signInHint": "Sign in to see your plan and playtime.",
+      "unlimited": "UNLIMITED",
+      "hoursLeft": "{{hours}} h left",
+      "refresh": "Refresh entitlements",
+      "refreshing": "Refreshing entitlements",
+      "manage": "Manage plan",
+      "manageHint": "Changing or paying for a plan happens on your NVIDIA account page.",
+      "openAccount": "Manage on NVIDIA"
     }
   },
   "navbar": {
