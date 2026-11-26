@@ -10832,6 +10832,21 @@ button.game-card-store-chip.owned.active:hover {
   opacity: 0.46;
 }
 
+/* Light mode: the atmosphere stays as a faint texture, never as a grey wash.
+   The shader's fragment output is authored for the dark controller UI (its base
+   colour is `vec3(0.004, 0.008, 0.009)`), so painting it at the dark-mode
+   opacity over a light shell greys out the entire Home / Library surface: card
+   titles fell to ~3.5:1 and the muted metadata line to under 2:1. The element's
+   own background is also what a machine without WebGL (or with reduced motion)
+   sees, so it is repainted from the tokens instead of the fixed `#020605`. */
+[data-theme="light"] .catalog-atmosphere.shader-atmosphere--controller {
+  opacity: 0.14;
+  background:
+    radial-gradient(ellipse at 18% 78%, color-mix(in srgb, var(--accent) 12%, transparent), transparent 48%),
+    radial-gradient(ellipse at 82% 22%, color-mix(in srgb, var(--accent) 8%, transparent), transparent 42%),
+    var(--bg-a);
+}
+
 .shader-atmosphere--queue,
 .shader-atmosphere--connecting {
   z-index: 0;
@@ -11647,8 +11662,14 @@ button.game-card-store-chip.owned.active:hover {
   padding: 12px 14px;
   margin-bottom: 14px;
   border-radius: 12px;
-  border: 1px solid var(--panel-border-solid, rgba(255, 255, 255, 0.08));
-  background: linear-gradient(120deg, rgba(118, 185, 0, 0.10), rgba(255, 255, 255, 0.03) 55%);
+  border: 1px solid var(--panel-border);
+  /*
+    Accent-tinted card surface built from tokens. The literal white wash this
+    replaces was tuned for the dark shell and disappeared into the light one.
+  */
+  background:
+    linear-gradient(120deg, color-mix(in srgb, var(--accent) 10%, transparent), transparent 55%),
+    var(--card);
 }
 
 .home-continue-art {
@@ -11694,8 +11715,13 @@ button.game-card-store-chip.owned.active:hover {
   padding: 10px 18px;
   border-radius: 8px;
   border: 1px solid transparent;
-  background: var(--accent, #76b900);
-  color: #0b0d10;
+  background: var(--accent);
+  /*
+    `--accent-on` is the contrast colour computed for the *current* accent: the
+    light appearance swaps the accent for a darker variant, so a hardcoded near
+    black label turned into dark-on-dark.
+  */
+  color: var(--accent-on);
   font-weight: 700;
   cursor: pointer;
   flex: 0 0 auto;
@@ -12792,14 +12818,21 @@ body {
   width: clamp(210px, calc(260px * var(--game-poster-scale, 1)), 320px);
   scroll-snap-align: start;
   border-radius: var(--r-md, 12px);
-  border: 1px solid var(--panel-border-solid, rgba(255, 255, 255, 0.08));
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.045), rgba(255, 255, 255, 0.015));
+  /*
+    Token-based card surface, same recipe as `.game-card`. The previous value
+    was a translucent white wash tuned for the dark shell: in light mode the
+    tile was indistinguishable from the page and every label on it lost
+    contrast. `--card` / `--panel-border` are written by the colour pack in
+    both appearances.
+  */
+  border: 1px solid var(--panel-border);
+  background: var(--card);
   overflow: hidden;
   transition: border-color 140ms ease, transform 140ms ease;
 }
 
 .home-continue-tile:hover {
-  border-color: color-mix(in srgb, var(--accent) 38%, var(--panel-border-solid, rgba(255, 255, 255, 0.1)));
+  border-color: color-mix(in srgb, var(--accent) 38%, var(--panel-border));
   transform: translateY(-2px);
 }
 
@@ -12810,7 +12843,7 @@ body {
   aspect-ratio: 16 / 9;
   padding: 0;
   border: none;
-  background: color-mix(in srgb, var(--ink) 8%, transparent);
+  background: color-mix(in srgb, var(--ink) 8%, var(--card));
   cursor: pointer;
   overflow: hidden;
 }
@@ -12843,8 +12876,9 @@ body {
   width: 32px;
   height: 32px;
   border-radius: var(--r-full);
-  background: color-mix(in srgb, var(--accent) 88%, #000);
-  color: var(--accent-on, #0b0d10);
+  background: var(--accent);
+  color: var(--accent-on);
+  box-shadow: var(--shadow-sm);
   opacity: 0;
   transform: scale(0.9);
   transition: opacity 140ms ease, transform 140ms ease;
@@ -12883,6 +12917,20 @@ body {
 
 .home-continue-tile-meta--muted {
   color: var(--ink-muted);
+}
+
+/*
+  The pack writes `--ink-soft` / `--ink-muted` as alpha ink, which is tuned for
+  the near-black dark shell. On the light card they land at ~3.3:1 (muted) for
+  0.71rem text, so the rail's playtime and "last played" lines become hard to
+  read. Solid ink mixes keep both lines above 4.5:1 in the light appearance.
+*/
+[data-theme="light"] .home-continue-tile-meta {
+  color: color-mix(in srgb, var(--ink) 95%, transparent);
+}
+
+[data-theme="light"] .home-continue-tile-meta--muted {
+  color: color-mix(in srgb, var(--ink) 86%, transparent);
 }
 
 .home-continue-tile-resume {
