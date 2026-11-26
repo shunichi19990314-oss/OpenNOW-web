@@ -4,7 +4,7 @@ import type { GameInfo } from "@shared/gfn";
 import { useTranslation } from "../i18n";
 import { getJapaneseGameDescription } from "../utils/localizedGameText";
 import { getStoreDisplayName } from "./GameCard";
-import { playTypeLabel } from "../lib/gfnLabels";
+import { controlLabel, genreLabel, nvidiaTechLabel, playTypeLabel } from "../lib/gfnLabels";
 
 export interface GameDetailsModalProps {
   game: GameInfo;
@@ -19,6 +19,13 @@ export function GameDetailsModal({ game, isFavorite, onToggleFavorite, onPlay, o
   const stores = (game.availableStores ?? []).map((store) => getStoreDisplayName(store, t));
   const playerCount = [game.maxLocalPlayers, game.maxOnlinePlayers].filter((value): value is number => typeof value === "number" && value > 0);
   const description = getJapaneseGameDescription(game.longDescription, game.description, t("library.descriptionUnavailable"));
+  // Catalogue genres/tech arrive as English or screaming-case enums; an
+  // unrecognised value is dropped rather than printed as a raw token.
+  const tags = [
+    ...(game.genres ?? []).map((genre) => genreLabel(genre, t)),
+    ...(game.supportedControls ?? []).map((control) => controlLabel(control, t)),
+    ...(game.nvidiaTech ?? []).map((tech) => nvidiaTechLabel(tech, t)),
+  ].filter((tag): tag is string => Boolean(tag));
 
   return (
     <div className="game-details-backdrop" role="presentation" onMouseDown={(event) => { if (event.target === event.currentTarget) onClose(); }}>
@@ -61,9 +68,9 @@ export function GameDetailsModal({ game, isFavorite, onToggleFavorite, onPlay, o
             {playerCount.length > 0 && <span><Users size={14} />{t("library.players", { players: playerCount.join(" / ") })}</span>}
             {stores.length > 0 && <span>{stores.join(" · ")}</span>}
           </div>
-          {((game.genres?.length ?? 0) > 0 || (game.supportedControls?.length ?? 0) > 0 || (game.nvidiaTech?.length ?? 0) > 0) && (
+          {tags.length > 0 && (
             <div className="game-details-tags">
-              {[...(game.genres ?? []), ...(game.supportedControls ?? []), ...(game.nvidiaTech ?? [])].slice(0, 12).map((tag) => (
+              {tags.slice(0, 12).map((tag) => (
                 <span key={tag}>{tag}</span>
               ))}
             </div>

@@ -116,6 +116,100 @@ export function isUnknownStore(store: string | undefined): boolean {
   return key === "UNKNOWN" || key === "UNRECOGNIZED" || key === "";
 }
 
+/**
+ * Known catalogue genre values.
+ *
+ * The catalogue is requested with `locale: ja_JP`, so most genres already come
+ * back in Japanese and pass straight through. This table covers the payloads
+ * that still arrive as English genre names, so a details panel never mixes
+ * `アクション` with `Action`.
+ */
+const GENRE_KEYS: Record<string, string> = {
+  action: "library.genreLabels.action",
+  adventure: "library.genreLabels.adventure",
+  arcade: "library.genreLabels.arcade",
+  battle_royale: "library.genreLabels.battleRoyale",
+  card: "library.genreLabels.card",
+  casual: "library.genreLabels.casual",
+  family: "library.genreLabels.family",
+  fighting: "library.genreLabels.fighting",
+  first_person_shooter: "library.genreLabels.shooter",
+  fps: "library.genreLabels.shooter",
+  horror: "library.genreLabels.horror",
+  indie: "library.genreLabels.indie",
+  metroidvania: "library.genreLabels.metroidvania",
+  moba: "library.genreLabels.moba",
+  mmo: "library.genreLabels.mmo",
+  mmorpg: "library.genreLabels.mmo",
+  music: "library.genreLabels.music",
+  open_world: "library.genreLabels.openWorld",
+  party: "library.genreLabels.party",
+  platformer: "library.genreLabels.platformer",
+  puzzle: "library.genreLabels.puzzle",
+  racing: "library.genreLabels.racing",
+  rhythm: "library.genreLabels.music",
+  roguelike: "library.genreLabels.roguelike",
+  role_playing_game: "library.genreLabels.rpg",
+  rpg: "library.genreLabels.rpg",
+  sandbox: "library.genreLabels.sandbox",
+  shooter: "library.genreLabels.shooter",
+  simulation: "library.genreLabels.simulation",
+  sports: "library.genreLabels.sports",
+  stealth: "library.genreLabels.stealth",
+  strategy: "library.genreLabels.strategy",
+  survival: "library.genreLabels.survival",
+  third_person_shooter: "library.genreLabels.shooter",
+  tower_defense: "library.genreLabels.towerDefense",
+  visual_novel: "library.genreLabels.visualNovel",
+};
+
+/** Latin letters only: anything else is already localised by the catalogue. */
+const HAS_LATIN = /[A-Za-z]/;
+
+/**
+ * `genres` as a display label.
+ *
+ * Already-localised values are returned untouched; an English genre is
+ * translated when known, and dropped when it is not, rather than printed as an
+ * English chip inside the Japanese UI.
+ */
+export function genreLabel(genre: string | undefined, t: TranslateFn): string | null {
+  const value = genre?.trim();
+  if (!value) return null;
+  if (!HAS_LATIN.test(value)) return value;
+  const key = GENRE_KEYS[words(value)];
+  return key ? t(key) : null;
+}
+
+/**
+ * NVIDIA technology / feature tags.
+ *
+ * `nvidiaTech` arrives as screaming-case enums (`PHOTO_MODE`, `FREESTYLE`), and
+ * those used to be rendered verbatim in the details panel.
+ */
+const NVIDIA_TECH_KEYS: Record<string, string> = {
+  dlss: "library.techLabels.dlss",
+  freestyle: "library.techLabels.freestyle",
+  gsync: "library.techLabels.gsync",
+  hdr: "library.techLabels.hdr",
+  highlights: "library.techLabels.highlights",
+  photo_mode: "library.techLabels.photoMode",
+  reflex: "library.techLabels.reflex",
+  rtx: "library.techLabels.rtx",
+};
+
+export function nvidiaTechLabel(tech: string | undefined, t: TranslateFn): string | null {
+  const value = tech?.trim();
+  if (!value) return null;
+  const key = NVIDIA_TECH_KEYS[words(value)];
+  if (key) return t(key);
+  // Unknown technology tags are marketing names more often than not; a readable
+  // form beats an uppercase enum, and a non-Latin value is already localised.
+  if (!HAS_LATIN.test(value)) return value;
+  const readable = readableWords(value);
+  return readable ? readable.replace(/\b\w/g, (letter) => letter.toUpperCase()) : null;
+}
+
 /** Known `membershipTier` values (GeForce NOW plan names are product names). */
 const MEMBERSHIP_TIER_KEYS: Record<string, string> = {
   free: "app.labels.free",
