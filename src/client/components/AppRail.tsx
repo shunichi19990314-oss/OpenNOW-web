@@ -1,10 +1,10 @@
-import { House, Library, Film, Settings, Command, Palette, Keyboard } from "lucide-react";
+import { House, Library, Film, Users, Settings, Command, Palette, Keyboard } from "lucide-react";
 import type { JSX } from "react";
 import { m } from "motion/react";
 
 import { useTranslation } from "../i18n";
 
-export type RailPage = "home" | "library" | "captures" | "settings";
+export type RailPage = "home" | "library" | "captures" | "friends" | "settings";
 
 interface AppRailProps {
   currentPage: RailPage;
@@ -30,6 +30,7 @@ export function AppRail({ currentPage, onNavigate, onOpenCommandPalette, onOpenS
     { id: "home", label: t("navigation.home"), icon: House },
     { id: "library", label: t("navigation.library"), icon: Library },
     { id: "captures", label: t("navigation.captures"), icon: Film },
+    { id: "friends", label: t("navigation.friends"), icon: Users },
     { id: "settings", label: t("navigation.settings"), icon: Settings },
   ];
 

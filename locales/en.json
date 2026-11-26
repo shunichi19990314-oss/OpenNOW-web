@@ -168,7 +168,8 @@
     "railLabel": "Main navigation",
     "commandPalette": "Command palette",
     "themePack": "Theme pack",
-    "captures": "Captures"
+    "captures": "Captures",
+    "friends": "Friends"
   },
   "home": {
     "searchPlaceholder": "Search games...",
@@ -1452,7 +1453,8 @@
       "home": "Go to Home",
       "library": "Go to Library",
       "settings": "Open Settings",
-      "captures": "Go to captures"
+      "captures": "Go to captures",
+      "friends": "Open Friends"
     },
     "stream": {
       "toggleStats": "Toggle performance stats",
@@ -1672,5 +1674,20 @@
     "fullscreen": "Toggle fullscreen",
     "antiAfk": "Toggle Anti-AFK",
     "button": "Show shortcuts"
+  },
+  "friends": {
+    "title": "Friends are on the way",
+    "comingSoon": "COMING SOON",
+    "body": "NVIDIA does not expose the GeForce NOW friends, presence, or invitation service to third-party clients. When it does, presence and invites will live here.",
+    "coopEyebrow": "AVAILABLE NOW",
+    "coopTitle": "Play together on this screen",
+    "coopBody": "Up to four controllers on this device go straight to your game as separate players.",
+    "slotWaiting": "Waiting",
+    "slotConnected": "Connected",
+    "slotEmpty": "Not connected",
+    "connectController": "Connect another controller",
+    "setUpPlayerTwo": "Set up player two",
+    "controllerSettings": "Controller settings",
+    "controllerFallback": "Gamepad"
   }
 }

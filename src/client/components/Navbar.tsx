@@ -8,8 +8,8 @@ import { OpenNowLogoMark } from "./OpenNowLogoMark";
 import { MotionSpinner } from "./MotionSpinner";
 
 interface NavbarProps {
-  currentPage: "home" | "library" | "captures" | "settings";
-  onNavigate: (page: "home" | "library" | "captures" | "settings") => void;
+  currentPage: "home" | "library" | "captures" | "friends" | "settings";
+  onNavigate: (page: "home" | "library" | "captures" | "friends" | "settings") => void;
   user: AuthUser | null;
   subscription: SubscriptionInfo | null;
   activeSession: ActiveSessionInfo | null;

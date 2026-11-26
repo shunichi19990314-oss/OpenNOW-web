@@ -49,7 +49,7 @@ export interface UseCatalogDataInput {
   authSession: AuthSession | null;
   activeSessionProxyUrl: string | undefined;
   effectiveStreamingBaseUrl: string;
-  currentPage: "home" | "library" | "captures" | "settings";
+  currentPage: "home" | "library" | "captures" | "friends" | "settings";
   effectiveControllerMode: boolean;
   isInitializing: boolean;
   t: TranslateFunction;
