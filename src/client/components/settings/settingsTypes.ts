@@ -19,6 +19,7 @@ export type SettingsSectionId =
   | "account"
   | "stores"
   | "subscription"
+  | "recording"
   | "stream"
   | "game"
   | "audio"
@@ -32,6 +33,7 @@ export type SettingsSearchScopeId =
   | "account-storage"
   | "stores"
   | "subscription"
+  | "recording"
   | "stream-region"
   | "stream-video"
   | "stream-codec-diagnostics"
@@ -72,6 +74,17 @@ export const SETTINGS_SCOPE_SEARCH_TERMS: Record<SettingsSearchScopeId, readonly
     "downloads",
     "available",
     "used",
+  ],
+  recording: [
+    "recording",
+    "record",
+    "clip",
+    "replay",
+    "capture",
+    "captures",
+    "screenshot",
+    "screenshots",
+    "bitrate",
   ],
   stores: [
     "stores",
@@ -282,6 +295,7 @@ export const SETTINGS_SCOPE_LABEL_KEYS: Record<SettingsSearchScopeId, readonly s
   input: ["settings.sections.input"],
   interface: ["settings.sections.interface", "settings.interface.appearance", "settings.interface.theme", "settings.interface.themePack", "settings.interface.accentColor"],
   ai: ["settings.sections.ai"],
+  recording: ["settings.sections.recording", "settings.recording.title"],
   stores: ["settings.sections.stores", "settings.accountConnections.title"],
   subscription: ["settings.sections.subscription", "settings.subscription.title"],
   updates: ["settings.sections.updates", "settings.updates.title"],

@@ -1,6 +1,6 @@
 import {
   Search, X, Users, Wifi, Globe, Mic, Keyboard, Monitor, Info, Heart, Sparkles, Rocket,
-  Store, Crown,
+  Store, Crown, Film,
 } from "lucide-react";
 import { useMemo, type JSX } from "react";
 import { useTranslation } from "../../i18n";
@@ -43,6 +43,7 @@ export function SettingsNav({
       items: [
         { id: "game", label: t("settings.sections.game"), icon: <Globe size={15} /> },
         { id: "audio", label: t("settings.sections.audio"), icon: <Mic size={15} /> },
+        { id: "recording", label: t("settings.sections.recording"), icon: <Film size={15} /> },
         { id: "input", label: t("settings.sections.input"), icon: <Keyboard size={15} /> },
       ],
     },
