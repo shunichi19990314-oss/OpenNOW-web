@@ -259,7 +259,8 @@
       "noGamesFound": "ゲームが見つかりません",
       "noGamesMatch": "「{{query}}」に一致するゲームはありません",
       "noFilteredGames": "フィルターに一致するゲームはありません",
-      "tryAdjustingFilters": "フィルターを解除するか、検索条件を変更してみてください。"
+      "tryAdjustingFilters": "フィルターを解除するか、検索条件を変更してみてください。",
+      "noHiddenGames": "非表示にしたゲームはありません"
     },
     "filteredGameCount": "全{{total}}件中{{shown}}件のゲーム",
     "filters": "フィルター",
@@ -285,7 +286,8 @@
       "favorite": "お気に入り",
       "all": "すべて",
       "readyToPlay": "今すぐプレイ可能",
-      "rtx": "RTX"
+      "rtx": "RTX",
+      "hidden": "非表示"
     },
     "gameDetails": "ゲーム詳細",
     "descriptionUnavailable": "このゲームの日本語説明は現在利用できません。",
@@ -354,7 +356,10 @@
       "photoMode": "フォトモード",
       "reflex": "Reflex",
       "rtx": "RTX"
-    }
+    },
+    "hideGame": "ライブラリから非表示",
+    "unhideGame": "ライブラリに戻す",
+    "hideGameHint": "タイルを右クリックすると「ライブラリから非表示」を選べます。"
   },
   "gameCard": {
     "selectGame": "{{title}}を選択します",

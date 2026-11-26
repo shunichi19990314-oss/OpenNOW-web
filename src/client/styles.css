@@ -14351,3 +14351,16 @@ body {
   line-height: 1.7;
   color: var(--ink-soft);
 }
+
+/* HIDDEN GAMES */
+/* Only reachable through the Hidden chip, where the grid shows what was hidden;
+   the tile is dimmed so restoring one is an obvious action. */
+.library-game-wrapper.is-hidden-game .game-card {
+  opacity: 0.62;
+  filter: saturate(0.6);
+}
+
+.library-game-wrapper.is-hidden-game:hover .game-card {
+  opacity: 1;
+  filter: none;
+}

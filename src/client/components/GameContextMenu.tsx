@@ -1,4 +1,4 @@
-import { Check, FolderPlus, Heart, Info, Play } from "lucide-react";
+import { Check, Eye, EyeOff, FolderPlus, Heart, Info, Play } from "lucide-react";
 import { useEffect, useRef, type JSX } from "react";
 import { createPortal } from "react-dom";
 
@@ -17,12 +17,15 @@ interface GameContextMenuProps {
   state: GameContextMenuState;
   collections: readonly GameCollection[];
   isFavorite: boolean;
+  /** Whether this game is currently hidden from the library grid. */
+  isHidden?: boolean;
   onClose: () => void;
   onPlay: () => void;
   onDetails: () => void;
   onToggleFavorite: () => void;
   onToggleCollection: (collectionId: string) => void;
   onCreateCollection: () => void;
+  onToggleHidden?: () => void;
 }
 
 /**
@@ -36,12 +39,14 @@ export function GameContextMenu({
   state,
   collections,
   isFavorite,
+  isHidden = false,
   onClose,
   onPlay,
   onDetails,
   onToggleFavorite,
   onToggleCollection,
   onCreateCollection,
+  onToggleHidden,
 }: GameContextMenuProps): JSX.Element {
   const { t } = useTranslation();
   const menuRef = useRef<HTMLDivElement | null>(null);
@@ -94,6 +99,12 @@ export function GameContextMenu({
         <Heart size={14} fill={isFavorite ? "currentColor" : "none"} aria-hidden="true" />
         {isFavorite ? t("library.filterOptions.favorite") : t("gameCard.addFavorite")}
       </button>
+      {onToggleHidden && (
+        <button type="button" role="menuitem" className="game-context-menu-item" onClick={onToggleHidden}>
+          {isHidden ? <Eye size={14} aria-hidden="true" /> : <EyeOff size={14} aria-hidden="true" />}
+          {isHidden ? t("library.unhideGame") : t("library.hideGame")}
+        </button>
+      )}
       <div className="game-context-menu-separator" role="separator" />
       <div className="game-context-menu-heading">{t("collections.addToCollection")}</div>
       <div className="game-context-menu-collections">
