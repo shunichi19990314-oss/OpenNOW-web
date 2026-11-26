@@ -1,4 +1,4 @@
-import { Check } from "lucide-react";
+import { Check, Keyboard } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState, type JSX } from "react";
 import type { Settings } from "@shared/gfn";
 import { keyboardLayoutOptions } from "@shared/gfn";
@@ -279,6 +279,7 @@ export function SettingsInputSection({ settings, showAll, handleChange }: Settin
     <section className="settings-section">
       {showAll && <div className="settings-section-context">{t("settings.sections.input")}</div>}
       <div className="settings-section-header">
+        <Keyboard size={18} />
         <h2>{t("settings.input.title")}</h2>
       </div>
       <div className="settings-rows">

@@ -1,4 +1,4 @@
-import { Check } from "lucide-react";
+import { Check, Globe } from "lucide-react";
 import { useEffect, useMemo, useRef, useState, type JSX } from "react";
 import type { Settings } from "@shared/gfn";
 import { useTranslation } from "../../../i18n";
@@ -34,6 +34,7 @@ export function SettingsGameSection({ settings, showAll, handleChange }: Setting
     <section className="settings-section">
       {showAll && <div className="settings-section-context">{t("settings.sections.game")}</div>}
       <div className="settings-section-header">
+        <Globe size={18} />
         <h2>{t("settings.game.title")}</h2>
       </div>
       <div className="settings-rows">

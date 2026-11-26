@@ -48,6 +48,7 @@ export function SettingsAboutSection({
     <section className="settings-section">
       {showAll && <div className="settings-section-context">{t("settings.sections.about")}</div>}
       <div className="settings-section-header">
+        <Info size={18} />
         <h2>{t("settings.sections.about")}</h2>
       </div>
       <div className="settings-rows">

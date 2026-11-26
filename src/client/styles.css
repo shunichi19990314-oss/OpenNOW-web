@@ -14585,3 +14585,22 @@ body {
   font-weight: 600;
   color: var(--ink-soft);
 }
+
+/* SETTINGS NAV — the list has grown to twelve sections; tighten it so the
+   whole navigation still fits without scrolling on a 720px-tall window. */
+.settings-nav {
+  gap: 10px;
+}
+
+.settings-nav-group {
+  gap: 1px;
+}
+
+.settings-nav-group-label {
+  margin-bottom: 2px;
+}
+
+.settings-nav-item {
+  padding-top: 6px;
+  padding-bottom: 6px;
+}

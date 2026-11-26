@@ -1,4 +1,4 @@
-import { ClipboardCheck, ClipboardCopy, FileDown } from "lucide-react";
+import { ClipboardCheck, ClipboardCopy, FileDown, Stethoscope } from "lucide-react";
 import { useCallback, useEffect, useState, type JSX } from "react";
 
 import type { Settings } from "@shared/gfn";
@@ -124,6 +124,7 @@ export function DiagnosticsSection({
     <section className="settings-section">
       {showAll && <div className="settings-section-context">{t("settings.sections.about")}</div>}
       <div className="settings-section-header">
+        <Stethoscope size={18} />
         <h2>{t("settings.diagnostics.title")}</h2>
         <span className="settings-hint">{t("settings.diagnostics.privacy")}</span>
       </div>
