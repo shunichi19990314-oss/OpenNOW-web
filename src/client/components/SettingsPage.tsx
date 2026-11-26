@@ -16,9 +16,11 @@ import {
 import type { SettingsSectionId, SettingsSearchScopeId } from "./settings/settingsTypes";
 import { SETTINGS_SCOPE_LABEL_KEYS, SETTINGS_SCOPE_SEARCH_TERMS } from "./settings/settingsTypes";
 import { matchesSettingsQuery, tokenizeSettingsQuery } from "../lib/settingsSearch";
+import type { StreamDiagnosticsStore } from "../utils/streamDiagnosticsStore";
 import { SettingsNav } from "./settings/SettingsNav";
 import { SettingsAccountSection } from "./settings/sections/SettingsAccountSection";
 import { SettingsAboutSection } from "./settings/sections/SettingsAboutSection";
+import { DiagnosticsSection } from "./DiagnosticsSection";
 import { SettingsAudioSection } from "./settings/sections/SettingsAudioSection";
 import { SettingsGameSection } from "./settings/sections/SettingsGameSection";
 import { SettingsInputSection } from "./settings/sections/SettingsInputSection";
@@ -40,6 +42,8 @@ interface SettingsPageProps {
   focusSection?: SettingsSectionId;
   /** Called when the user clicks "What's new" in the About section */
   onOpenWhatsNew?: () => void;
+  /** Live/last stream stats store, used by the diagnostics report */
+  streamDiagnostics?: StreamDiagnosticsStore | null;
 }
 
 export function SettingsPage({
@@ -52,6 +56,7 @@ export function SettingsPage({
   onClose,
   focusSection,
   onOpenWhatsNew,
+  streamDiagnostics,
 }: SettingsPageProps): JSX.Element {
   const { t } = useTranslation();
   const [savedIndicator, setSavedIndicator] = useState(false);
@@ -293,10 +298,17 @@ export function SettingsPage({
                   )}
                   {showAi && <SettingsAiSection showAll={showAll} />}
                   {showAbout && (
-                    <SettingsAboutSection
-                      showAll={showAll}
-                      onOpenWhatsNew={onOpenWhatsNew}
-                    />
+                    <>
+                      <SettingsAboutSection
+                        showAll={showAll}
+                        onOpenWhatsNew={onOpenWhatsNew}
+                      />
+                      <DiagnosticsSection
+                        showAll={showAll}
+                        settings={settings}
+                        streamDiagnostics={streamDiagnostics}
+                      />
+                    </>
                   )}
                 </>
               )}

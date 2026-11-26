@@ -1182,6 +1182,16 @@
       "groupStreaming": "Streaming",
       "groupControls": "Controls",
       "groupApp": "App"
+    },
+    "diagnostics": {
+      "title": "Diagnostics report",
+      "privacy": "NO PERSONAL DATA",
+      "copy": "Copy diagnostics",
+      "copyHint": "Collects the build, browser, stream settings and last session stats into your clipboard.",
+      "download": "Save to file",
+      "copied": "Diagnostics report copied to the clipboard.",
+      "downloaded": "Diagnostics report saved to a file.",
+      "failed": "The diagnostics report could not be created. Try again."
     }
   },
   "navbar": {

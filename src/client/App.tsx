@@ -4516,6 +4516,7 @@ export function App(): JSX.Element {
             onClose={handleCloseSettings}
             focusSection={settingsFocusSection}
             onOpenWhatsNew={handleOpenWhatsNew}
+            streamDiagnostics={diagnosticsStoreRef.current}
           />
         )}
       </SettingsModalHost>

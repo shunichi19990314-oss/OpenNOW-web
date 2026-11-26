@@ -14290,3 +14290,22 @@ body {
   font-weight: 700;
   white-space: nowrap;
 }
+
+/* DIAGNOSTICS */
+.settings-diagnostics-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.settings-diagnostics-status {
+  margin: 2px 0 0;
+  font-size: 0.82rem;
+  color: var(--ink-soft);
+}
+
+.settings-diagnostics-status--failed {
+  color: var(--danger, #ff6b6b);
+}
