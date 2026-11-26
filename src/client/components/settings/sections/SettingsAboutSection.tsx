@@ -1,15 +1,45 @@
-import { FileDown, Info, Trash2 } from "lucide-react";
-import type { JSX } from "react";
+import { FileDown, Info, RotateCcw, Scale, Trash2 } from "lucide-react";
+import { useState, type JSX } from "react";
 
 import { useTranslation } from "../../../i18n";
 
 export interface SettingsAboutSectionProps {
   showAll: boolean;
   onOpenWhatsNew?: () => void;
+  /**
+   * Restores every persisted preference. The parent re-applies the returned
+   * settings so the UI reflects them without a reload.
+   */
+  onResetSettings?: () => Promise<boolean>;
+  /** True while a stream is running: a reset would pull the rug from under it. */
+  resetDisabled?: boolean;
 }
 
-export function SettingsAboutSection({ showAll, onOpenWhatsNew }: SettingsAboutSectionProps): JSX.Element {
+export function SettingsAboutSection({
+  showAll,
+  onOpenWhatsNew,
+  onResetSettings,
+  resetDisabled = false,
+}: SettingsAboutSectionProps): JSX.Element {
   const { t } = useTranslation();
+  const [confirmReset, setConfirmReset] = useState(false);
+  const [resetBusy, setResetBusy] = useState(false);
+  const [resetMessage, setResetMessage] = useState<"done" | "failed" | null>(null);
+
+  const handleReset = async (): Promise<void> => {
+    if (!onResetSettings) return;
+    setResetBusy(true);
+    setResetMessage(null);
+    try {
+      const ok = await onResetSettings();
+      setResetMessage(ok ? "done" : "failed");
+      setConfirmReset(!ok);
+    } catch {
+      setResetMessage("failed");
+    } finally {
+      setResetBusy(false);
+    }
+  };
 
   return (
     <section className="settings-section">
@@ -88,6 +118,67 @@ export function SettingsAboutSection({ showAll, onOpenWhatsNew }: SettingsAboutS
             {t("settings.about.deleteCache")}
           </button>
         </div>
+
+        <div className="settings-row">
+          <label className="settings-label">
+            {t("settings.about.resetSettings")}
+            <span className="settings-hint">{t("settings.about.resetSettingsHint")}</span>
+          </label>
+          {confirmReset ? (
+            <div className="settings-inline-confirm" role="group" aria-label={t("settings.about.resetSettings")}>
+              <span className="settings-inline-confirm-text">{t("settings.about.resetSettingsConfirm")}</span>
+              <button
+                type="button"
+                className="settings-delete-cache-btn"
+                disabled={resetBusy}
+                onClick={() => void handleReset()}
+              >
+                {t("settings.about.resetSettingsConfirmAction")}
+              </button>
+              <button
+                type="button"
+                className="settings-export-logs-btn"
+                disabled={resetBusy}
+                onClick={() => {
+                  setConfirmReset(false);
+                  setResetMessage(null);
+                }}
+              >
+                {t("settings.about.resetSettingsCancel")}
+              </button>
+            </div>
+          ) : (
+            <button
+              type="button"
+              className="settings-delete-cache-btn"
+              disabled={resetDisabled || !onResetSettings}
+              onClick={() => {
+                setResetMessage(null);
+                setConfirmReset(true);
+              }}
+            >
+              <RotateCcw size={16} />
+              {t("settings.about.resetSettings")}
+            </button>
+          )}
+          {resetMessage && (
+            <p className="settings-diagnostics-status" role="status">
+              {t(
+                resetMessage === "done"
+                  ? "settings.about.resetSettingsDone"
+                  : "settings.about.resetSettingsFailed",
+              )}
+            </p>
+          )}
+        </div>
+      </div>
+
+      <div className="settings-legal">
+        <div className="settings-legal-title">
+          <Scale size={14} />
+          {t("settings.about.legalTitle")}
+        </div>
+        <p className="settings-legal-body">{t("settings.about.legalBody")}</p>
       </div>
     </section>
   );

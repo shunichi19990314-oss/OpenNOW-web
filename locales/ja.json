@@ -955,7 +955,16 @@
       "updateChannelNightly": "Nightly(先行版)",
       "updateChannelNightlyHint": "Nightly ビルドは安定性が低い場合があります。チャンネルを切り替えると直ちに更新の確認を行います。",
       "whatsNew": "新着情報",
-      "whatsNewHint": "OpenNOW の現在のバージョンのリリースノートを表示します。"
+      "whatsNewHint": "OpenNOW の現在のバージョンのリリースノートを表示します。",
+      "legalTitle": "法的情報",
+      "legalBody": "OpenNOW は NVIDIA と提携・承認・サポート関係にはありません。GeForce NOW は NVIDIA Corporation の商標です。アカウントとサブスクリプションはご自身でご用意ください。",
+      "resetSettings": "すべての設定をリセット",
+      "resetSettingsHint": "この端末に保存された OpenNOW の設定を初期状態に戻します。",
+      "resetSettingsConfirm": "OpenNOW の設定をすべてリセットします。続行しますか?",
+      "resetSettingsConfirmAction": "リセットする",
+      "resetSettingsCancel": "キャンセル",
+      "resetSettingsDone": "設定をリセットしました。",
+      "resetSettingsFailed": "設定をリセットできませんでした。もう一度試してください。"
     },
     "nativeStreamer": {
       "title": "ネイティブストリーマー",

@@ -1046,7 +1046,16 @@
         "updateAvailable": "Update available",
         "downloading": "Downloading",
         "readyToInstall": "Ready to install"
-      }
+      },
+      "legalTitle": "Legal",
+      "legalBody": "OpenNOW is not affiliated with, endorsed by or supported by NVIDIA. GeForce NOW is a trademark of NVIDIA Corporation. You bring your own account and subscription.",
+      "resetSettings": "Reset all settings",
+      "resetSettingsHint": "Restores every OpenNOW preference stored on this device to its default.",
+      "resetSettingsConfirm": "This resets all OpenNOW preferences. Continue?",
+      "resetSettingsConfirmAction": "Reset",
+      "resetSettingsCancel": "Cancel",
+      "resetSettingsDone": "Settings were reset.",
+      "resetSettingsFailed": "Settings could not be reset. Try again."
     },
     "nativeStreamer": {
       "title": "Native Streamer",

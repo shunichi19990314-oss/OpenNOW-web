@@ -4085,6 +4085,21 @@ export function App(): JSX.Element {
       });
   }, []);
 
+  // Restore every persisted preference. The reset writes the defaults to
+  // storage and hands them back, so the in-memory state can adopt them without
+  // a reload (a reload would also drop an in-progress stream).
+  const handleResetSettings = useCallback(async (): Promise<boolean> => {
+    try {
+      const restored = await window.openNow.resetSettings();
+      setSettings(restored);
+      setShowStatsOverlay(restored.showStatsOnLaunch);
+      return true;
+    } catch (error) {
+      console.warn("[App] Failed to reset settings:", error);
+      return false;
+    }
+  }, []);
+
   const handleDismissReleaseHighlights = useCallback((): void => {
     if (releaseHighlightsIsAuto) {
       void window.openNow.ackReleaseHighlights().catch((err) => {
@@ -4517,6 +4532,7 @@ export function App(): JSX.Element {
             focusSection={settingsFocusSection}
             onOpenWhatsNew={handleOpenWhatsNew}
             streamDiagnostics={diagnosticsStoreRef.current}
+            onResetSettings={handleResetSettings}
           />
         )}
       </SettingsModalHost>
