@@ -13,6 +13,8 @@ export interface SettingsAboutSectionProps {
   onResetSettings?: () => Promise<boolean>;
   /** True while a stream is running: a reset would pull the rug from under it. */
   resetDisabled?: boolean;
+  /** Switches the settings page to the Updates section. */
+  onOpenUpdates?: () => void;
 }
 
 export function SettingsAboutSection({
@@ -20,6 +22,7 @@ export function SettingsAboutSection({
   onOpenWhatsNew,
   onResetSettings,
   resetDisabled = false,
+  onOpenUpdates,
 }: SettingsAboutSectionProps): JSX.Element {
   const { t } = useTranslation();
   const [confirmReset, setConfirmReset] = useState(false);
@@ -51,15 +54,15 @@ export function SettingsAboutSection({
         <div className="settings-row">
           <label className="settings-label">
             {t("settings.about.whatsNew")}
-            <span className="settings-hint">{t("settings.about.whatsNewHint")}</span>
+            <span className="settings-hint">{t("settings.about.openUpdatesHint")}</span>
           </label>
           <button
             type="button"
             className="settings-export-logs-btn"
-            onClick={() => onOpenWhatsNew?.()}
+            onClick={() => (onOpenUpdates ? onOpenUpdates() : onOpenWhatsNew?.())}
           >
             <Info size={16} />
-            {t("settings.about.whatsNew")}
+            {t("settings.about.openUpdates")}
           </button>
         </div>
 

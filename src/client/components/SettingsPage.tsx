@@ -21,6 +21,7 @@ import { SettingsNav } from "./settings/SettingsNav";
 import { SettingsAccountSection } from "./settings/sections/SettingsAccountSection";
 import { SettingsAboutSection } from "./settings/sections/SettingsAboutSection";
 import { DiagnosticsSection } from "./DiagnosticsSection";
+import { SettingsUpdatesSection } from "./settings/sections/SettingsUpdatesSection";
 import { SettingsAudioSection } from "./settings/sections/SettingsAudioSection";
 import { SettingsGameSection } from "./settings/sections/SettingsGameSection";
 import { SettingsInputSection } from "./settings/sections/SettingsInputSection";
@@ -178,10 +179,11 @@ export function SettingsPage({
   const showAudio = showAll ? scopeMatchesSearch("audio") : activeSection === "audio";
   const showInput = showAll ? scopeMatchesSearch("input") : activeSection === "input";
   const showInterface = showAll ? scopeMatchesSearch("interface") : activeSection === "interface";
+  const showUpdates = showAll ? scopeMatchesSearch("updates") : activeSection === "updates";
   const showAi = showAll ? scopeMatchesSearch("ai") : activeSection === "ai";
   const showAbout = showAll ? scopeMatchesSearch("about") : activeSection === "about";
   const showThanks = showAll ? scopeMatchesSearch("thanks") : activeSection === "thanks";
-  const hasAnySearchMatches = showAccount || showStream || showGame || showAudio || showInput || showInterface || showAi || showAbout || showThanks;
+  const hasAnySearchMatches = showAccount || showStream || showGame || showAudio || showInput || showInterface || showUpdates || showAi || showAbout || showThanks;
   const shouldRenderSettingsSections = showAll || activeSection !== "thanks";
 
   useEffect(() => {
@@ -299,6 +301,9 @@ export function SettingsPage({
                       onSaved={markSaved}
                     />
                   )}
+                  {showUpdates && (
+                    <SettingsUpdatesSection showAll={showAll} onOpenWhatsNew={onOpenWhatsNew} />
+                  )}
                   {showAi && <SettingsAiSection showAll={showAll} />}
                   {showAbout && (
                     <>
@@ -307,6 +312,7 @@ export function SettingsPage({
                         onOpenWhatsNew={onOpenWhatsNew}
                         onResetSettings={onResetSettings}
                         resetDisabled={streamOverlayBlocking}
+                        onOpenUpdates={() => setActiveSection("updates")}
                       />
                       <DiagnosticsSection
                         showAll={showAll}

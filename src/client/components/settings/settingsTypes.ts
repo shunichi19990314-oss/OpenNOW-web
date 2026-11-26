@@ -15,7 +15,17 @@ export type ThanksLoadState = "idle" | "loading" | "loaded" | "error";
 export type StorageResetState = "idle" | "resetting" | "success" | "error";
 export type GameAccountBusyAction = "link" | "unlink" | "resync";
 
-export type SettingsSectionId = "account" | "stream" | "game" | "audio" | "input" | "interface" | "ai" | "about" | "thanks";
+export type SettingsSectionId =
+  | "account"
+  | "stream"
+  | "game"
+  | "audio"
+  | "input"
+  | "interface"
+  | "updates"
+  | "ai"
+  | "about"
+  | "thanks";
 export type SettingsSearchScopeId =
   | "account-storage"
   | "stream-region"
@@ -25,6 +35,7 @@ export type SettingsSearchScopeId =
   | "audio"
   | "input"
   | "interface"
+  | "updates"
   | "ai"
   | "about"
   | "thanks";
@@ -193,6 +204,19 @@ export const SETTINGS_SCOPE_SEARCH_TERMS: Record<SettingsSearchScopeId, readonly
     "api key",
     "model",
   ],
+  updates: [
+    "updates",
+    "update",
+    "version",
+    "release notes",
+    "changelog",
+    "channel",
+    "stable",
+    "nightly",
+    "download",
+    "install",
+    "restart",
+  ],
   about: [
     "about",
     "what's new",
@@ -226,6 +250,7 @@ export const SETTINGS_SCOPE_LABEL_KEYS: Record<SettingsSearchScopeId, readonly s
   input: ["settings.sections.input"],
   interface: ["settings.sections.interface", "settings.interface.appearance", "settings.interface.theme", "settings.interface.themePack", "settings.interface.accentColor"],
   ai: ["settings.sections.ai"],
+  updates: ["settings.sections.updates", "settings.updates.title"],
   about: ["settings.sections.about"],
   thanks: ["settings.sections.thanks"],
 };

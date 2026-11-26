@@ -770,7 +770,8 @@
       "interface": "Interface",
       "about": "About",
       "thanks": "Thanks",
-      "ai": "AI"
+      "ai": "AI",
+      "updates": "Updates"
     },
     "region": {
       "title": "Region",
@@ -1102,7 +1103,9 @@
       "resetSettingsConfirmAction": "Reset",
       "resetSettingsCancel": "Cancel",
       "resetSettingsDone": "Settings were reset.",
-      "resetSettingsFailed": "Settings could not be reset. Try again."
+      "resetSettingsFailed": "Settings could not be reset. Try again.",
+      "openUpdates": "Open Updates",
+      "openUpdatesHint": "Version, update channel and release notes live under Updates."
     },
     "nativeStreamer": {
       "title": "Native Streamer",
@@ -1248,6 +1251,14 @@
       "copied": "Diagnostics report copied to the clipboard.",
       "downloaded": "Diagnostics report saved to a file.",
       "failed": "The diagnostics report could not be created. Try again."
+    },
+    "updates": {
+      "title": "Updates",
+      "currentVersion": "Current version: {{version}}",
+      "webManagedHint": "The web client is updated on the host. New builds cannot be installed from this page.",
+      "statusLabel": "Status: {{status}}",
+      "checkNow": "Check for updates now",
+      "checkUnavailable": "This build cannot check for updates manually."
     }
   },
   "navbar": {
