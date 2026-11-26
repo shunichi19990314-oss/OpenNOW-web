@@ -193,7 +193,18 @@ export const SETTINGS_SCOPE_SEARCH_TERMS: Record<SettingsSearchScopeId, readonly
     "api key",
     "model",
   ],
-  about: ["about", "what's new", "release notes", "logs", "cache", "export", "delete"],
+  about: [
+    "about",
+    "what's new",
+    "release notes",
+    "logs",
+    "cache",
+    "export",
+    "delete",
+    "diagnostics",
+    "report",
+    "redacted",
+  ],
   thanks: ["thanks", "contributors", "supporters", "sponsors", "community"],
 };
 
