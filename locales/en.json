@@ -1405,7 +1405,8 @@
     "queueMaintenanceTitle": "Queue server maintenance",
     "queueMaintenanceDescription": "The queue server was removed for maintenance (code 71). Try again, optionally selecting a different queue server.",
     "recoveryExhaustedTitle": "Could not connect to the game server",
-    "recoveryExhaustedDescription": "All reconnection attempts were exhausted while waiting for the game server. Try launching again; if it keeps failing, try a different time or network."
+    "recoveryExhaustedDescription": "All reconnection attempts were exhausted while waiting for the game server. Try launching again; if it keeps failing, try a different time or network.",
+    "storeUrlUnavailable": "Could not open the store page for {{title}}. Pick a store first and try again."
   },
   "releaseHighlights": {
     "kicker": "What's new",
@@ -1740,5 +1741,10 @@
     "setUpPlayerTwo": "Set up player two",
     "controllerSettings": "Controller settings",
     "controllerFallback": "Gamepad"
+  },
+  "gameDetails": {
+    "buyOnStore": "Buy on store",
+    "openingStore": "Opening the store…",
+    "buyHint": "GeForce NOW does not sell games; purchases settle in the stores (Steam, Epic, …). This site opens the matching product page directly."
   }
 }

@@ -67,7 +67,8 @@ export interface HomePageProps {
   storePanels?: GamePanelResult[];
   storeHeroGames?: GameInfo[];
   activeSessionAppIds?: number[];
-  onBuyGame?: (game: GameInfo, selectedVariantId?: string) => void;
+  /** Opens the store page that sells the selected variant (see `handleBuyGame`). */
+  onBuyGame?: (game: GameInfo, selectedVariantId?: string) => void | Promise<void>;
   onMarkGameOwned?: (game: GameInfo, selectedVariantId?: string) => void;
   markOwnedInFlightByVariantId?: Record<string, boolean>;
   onPreviousControllerPage?: () => void;
@@ -333,6 +334,17 @@ export const HomePage = memo(function HomePage({
 }: HomePageProps): JSX.Element {
   const { t } = useTranslation();
   const [detailsGame, setDetailsGame] = useState<GameInfo | null>(null);
+  // Store hand-off state for the details modal's "buy" action.
+  const [buyPendingGameId, setBuyPendingGameId] = useState<string | null>(null);
+  const handleBuyFromDetails = async (target: GameInfo): Promise<void> => {
+    if (!onBuyGame) return;
+    setBuyPendingGameId(target.id);
+    try {
+      await onBuyGame(target, selectedVariantByGameId[target.id]);
+    } finally {
+      setBuyPendingGameId(null);
+    }
+  };
   const catalogActionsRef = useCatalogCardActionsRef({
     onPlayGame,
     onToggleFavorite,
@@ -1256,6 +1268,8 @@ export const HomePage = memo(function HomePage({
           onToggleFavorite={() => onToggleFavorite(detailsGame)}
           onPlay={() => onPlayGame(detailsGame)}
           lockedReason={lockedReasonFor(detailsGame, gameAccess, t)}
+          onBuy={onBuyGame ? () => { void handleBuyFromDetails(detailsGame); } : undefined}
+          isBuyPending={buyPendingGameId === detailsGame.id}
           onClose={() => setDetailsGame(null)}
         />
       )}

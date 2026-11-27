@@ -1397,7 +1397,8 @@
     "queueMaintenanceTitle": "キューサーバーのメンテナンス",
     "queueMaintenanceDescription": "キューサーバーがメンテナンスのため外されました(コード 71)。別のキューサーバーを選んで再試行してください。",
     "recoveryExhaustedTitle": "ゲームサーバーに接続できませんでした",
-    "recoveryExhaustedDescription": "ゲームサーバーを待機中に再接続の試行回数を使い切りました。もう一度起動してみてください。繰り返し失敗する場合は、時間帯やネットワークを変えてお試しください。"
+    "recoveryExhaustedDescription": "ゲームサーバーを待機中に再接続の試行回数を使い切りました。もう一度起動してみてください。繰り返し失敗する場合は、時間帯やネットワークを変えてお試しください。",
+    "storeUrlUnavailable": "{{title}} のストアページを開けませんでした。ストア名を選んでから再度お試しください。"
   },
   "common": {
     "loading": "読み込み中..."
@@ -1740,5 +1741,10 @@
     "setUpPlayerTwo": "プレイヤー 2 を設定",
     "controllerSettings": "コントローラー設定",
     "controllerFallback": "コントローラー"
+  },
+  "gameDetails": {
+    "buyOnStore": "ストアで購入",
+    "openingStore": "ストアを開いています…",
+    "buyHint": "GeForce NOW はゲームを販売していないため、購入は各ストア（Steam / Epic など）で行います。このサイトでは該当するストアの商品ページを直接開きます。"
   }
 }

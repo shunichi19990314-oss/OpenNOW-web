@@ -14746,3 +14746,15 @@ body {
 .settings-row--matched .settings-label-title {
   color: var(--accent);
 }
+
+/* Details modal: store hand-off note under the primary action. */
+.game-details-purchase-note {
+  margin: 0 0 4px;
+  padding: 8px 11px;
+  border-radius: var(--r-sm, 8px);
+  border: 1px solid color-mix(in srgb, var(--accent) 26%, transparent);
+  background: var(--accent-surface, color-mix(in srgb, var(--accent) 8%, transparent));
+  color: var(--ink-soft);
+  font-size: 0.76rem;
+  line-height: 1.45;
+}
