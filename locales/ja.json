@@ -858,7 +858,10 @@
       "persistInGameSettings": "ゲーム内グラフィック設定を保存",
       "persistInGameSettingsHint": "対応ゲームでストリーム内に変更したグラフィックオプションを保持できます。NVIDIA のゲーム内設定永続化に対応すると宣言しているゲームにのみ送信されます。",
       "hideUnplayable": "使用できないゲームを隠す",
-      "hideUnplayableHint": "未所有のゲームと、今のメンバーシップではプレイできないゲームをストアの一覧から除外します。Free-to-play のタイトルは残ります。"
+      "hideUnplayableHint": "未所有のゲームと、今のメンバーシップではプレイできないゲームをストアの一覧から除外します。Free-to-play のタイトルは残ります。",
+      "hideUnplayableNotes": "対象外: {{library}}（所有済みのため）と{{palette}}（「未所有」表示で残ります）。",
+      "hideUnplayableLibrary": "ライブラリ",
+      "hideUnplayablePalette": "コマンドパレット"
     },
     "audio": {
       "title": "オーディオ",

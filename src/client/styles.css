@@ -14734,3 +14734,15 @@ body {
   font-size: 0.8rem;
   font-weight: 700;
 }
+
+/* Settings row highlighted by the settings search. The section-level match
+   alone scrolled past the exact switch, so a matching row gets a quiet ring. */
+.settings-row--matched {
+  border-radius: var(--r-sm, 8px);
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent) 42%, transparent);
+  background: color-mix(in srgb, var(--accent) 6%, transparent);
+}
+
+.settings-row--matched .settings-label-title {
+  color: var(--accent);
+}

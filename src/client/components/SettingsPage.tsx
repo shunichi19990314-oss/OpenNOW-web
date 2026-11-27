@@ -1,5 +1,5 @@
 import { Check, X } from "lucide-react";
-import { useCallback, useEffect, useRef, useState, type JSX } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, type JSX } from "react";
 
 import type {
   EntitledResolution,
@@ -14,8 +14,12 @@ import {
   saveCachedEntitledResolutions,
 } from "./settings/settingsFormatters";
 import type { SettingsSectionId, SettingsSearchScopeId } from "./settings/settingsTypes";
-import { SETTINGS_SCOPE_LABEL_KEYS, SETTINGS_SCOPE_SEARCH_TERMS } from "./settings/settingsTypes";
-import { matchesSettingsQuery, tokenizeSettingsQuery } from "../lib/settingsSearch";
+import {
+  SEARCHABLE_SETTING_ROW_KEYS,
+  SETTINGS_SCOPE_LABEL_KEYS,
+  SETTINGS_SCOPE_SEARCH_TERMS,
+} from "./settings/settingsTypes";
+import { foldSettingsText, matchesSettingsQuery, tokenizeSettingsQuery } from "../lib/settingsSearch";
 import type { StreamDiagnosticsStore } from "../utils/streamDiagnosticsStore";
 import { SettingsNav } from "./settings/SettingsNav";
 import { SettingsAccountSection } from "./settings/sections/SettingsAccountSection";
@@ -197,6 +201,21 @@ export function SettingsPage({
   const hasAnySearchMatches = showAccount || showStores || showSubscription || showRecording || showConsole || showStream || showGame || showAudio || showInput || showInterface || showUpdates || showAi || showAbout || showThanks;
   const shouldRenderSettingsSections = showAll || activeSection !== "thanks";
 
+  /**
+   * Rows that own a searchable label of their own. A section-level match only
+   * widens the list; highlighting the exact row keeps a query like 「隠す」 from
+   * scrolling past the switch the player was looking for.
+   */
+  const highlightedSettingRows = useMemo(() => {
+    if (!showAll || searchNeedles.length === 0) return new Set<string>();
+    const hits = new Set<string>();
+    for (const labelKey of SEARCHABLE_SETTING_ROW_KEYS) {
+      const label = foldSettingsText(t(labelKey));
+      if (searchNeedles.some((needle) => label.includes(needle))) hits.add(labelKey);
+    }
+    return hits;
+  }, [searchNeedles, showAll, t]);
+
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent): void => {
       if (event.key === "Escape" && !escapeBlocked) {
@@ -299,6 +318,7 @@ export function SettingsPage({
                       settings={settings}
                       showAll={showAll}
                       handleChange={handleChange}
+                      highlightedSettingKeys={highlightedSettingRows}
                     />
                   )}
                   {showConsole && (

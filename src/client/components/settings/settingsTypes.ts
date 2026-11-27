@@ -297,6 +297,15 @@ export const SETTINGS_SCOPE_SEARCH_TERMS: Record<SettingsSearchScopeId, readonly
  * Searching the rendered section titles as well makes the search work in the
  * language the UI is actually in.
  */
+/**
+ * Settings rows whose label is matched on its own while searching. Matching a
+ * whole section is coarse: 「隠す」 has to be able to point at the exact switch,
+ * not just at the Game section that contains it.
+ */
+export const SEARCHABLE_SETTING_ROW_KEYS: readonly string[] = [
+  "settings.game.hideUnplayable",
+];
+
 export const SETTINGS_SCOPE_LABEL_KEYS: Record<SettingsSearchScopeId, readonly string[]> = {
   "account-storage": ["settings.sections.account", "settings.accountConnections.title", "settings.persistentStorage.title", "settings.region.title"],
   "stream-region": ["settings.sections.stream", "settings.region.title", "settings.queueNotifications"],
