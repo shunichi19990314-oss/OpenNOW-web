@@ -949,7 +949,10 @@
       "preferredStore": "Preferred Store",
       "launchBehavior": "Launch Behavior",
       "hideUnplayable": "Hide games you cannot play",
-      "hideUnplayableHint": "Removes games you do not own and games your membership cannot launch from the store lists. Free-to-play titles stay visible."
+      "hideUnplayableHint": "Removes games you do not own and games your membership cannot launch from the store lists. Free-to-play titles stay visible.",
+      "hideUnplayableNotes": "Not affected: {{library}} (owned games stay) and {{palette}} (still listed, marked as not owned).",
+      "hideUnplayableLibrary": "the Library",
+      "hideUnplayablePalette": "the command palette"
     },
     "audio": {
       "title": "Audio",

@@ -8,9 +8,16 @@ export interface SettingsGameSectionProps {
   settings: Settings;
   showAll: boolean;
   handleChange: <K extends keyof Settings>(key: K, value: Settings[K]) => void;
+  /** Row label keys that matched the settings search; they get a highlight. */
+  highlightedSettingKeys?: ReadonlySet<string>;
 }
 
-export function SettingsGameSection({ settings, showAll, handleChange }: SettingsGameSectionProps): JSX.Element {
+export function SettingsGameSection({
+  settings,
+  showAll,
+  handleChange,
+  highlightedSettingKeys,
+}: SettingsGameSectionProps): JSX.Element {
   const { t } = useTranslation();
   const [gameLanguageDropdownOpen, setGameLanguageDropdownOpen] = useState(false);
   const gameLanguageDropdownRef = useRef<HTMLDivElement | null>(null);
@@ -74,6 +81,36 @@ export function SettingsGameSection({ settings, showAll, handleChange }: Setting
             )}
           </div>
         </div>
+        <div
+          className={`settings-row settings-row--column${highlightedSettingKeys?.has("settings.game.hideUnplayable") ? " settings-row--matched" : ""}`}
+        >
+          <div className="settings-row-top settings-row-top--compact">
+            <label className="settings-label settings-label--wrap">
+              <span className="settings-label-title">
+                {t("settings.game.hideUnplayable")}
+              </span>
+            </label>
+            <label className="settings-toggle">
+              <input
+                type="checkbox"
+                checked={settings.hideUnplayableGames}
+                onChange={(e) => handleChange("hideUnplayableGames", e.target.checked)}
+              />
+              <span className="settings-toggle-track" />
+            </label>
+          </div>
+          <span className="settings-subtle-hint">
+            {t("settings.game.hideUnplayableHint")}
+          </span>
+          {settings.hideUnplayableGames && (
+            <span className="settings-subtle-hint">
+              {t("settings.game.hideUnplayableNotes", {
+                library: t("settings.game.hideUnplayableLibrary"),
+                palette: t("settings.game.hideUnplayablePalette"),
+              })}
+            </span>
+          )}
+        </div>
         <div className="settings-row settings-row--column">
           <div className="settings-row-top settings-row-top--compact">
             <label className="settings-label settings-label--wrap">
@@ -92,26 +129,6 @@ export function SettingsGameSection({ settings, showAll, handleChange }: Setting
           </div>
           <span className="settings-subtle-hint">
             {t("settings.game.persistInGameSettingsHint")}
-          </span>
-        </div>
-        <div className="settings-row settings-row--column">
-          <div className="settings-row-top settings-row--compact">
-            <label className="settings-label settings-label--wrap">
-              <span className="settings-label-title">
-                {t("settings.game.hideUnplayable")}
-              </span>
-            </label>
-            <label className="settings-toggle">
-              <input
-                type="checkbox"
-                checked={settings.hideUnplayableGames}
-                onChange={(e) => handleChange("hideUnplayableGames", e.target.checked)}
-              />
-              <span className="settings-toggle-track" />
-            </label>
-          </div>
-          <span className="settings-subtle-hint">
-            {t("settings.game.hideUnplayableHint")}
           </span>
         </div>
       </div>
