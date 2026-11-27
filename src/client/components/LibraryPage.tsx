@@ -8,6 +8,7 @@ import { filterGamesByCollection, type GameCollection } from "../lib/collections
 import { GameDetailsModal } from "./GameDetailsModal";
 import { HIDDEN_FILTER_ID, filterHiddenGames, toHiddenIdSet } from "../lib/hiddenGames";
 import { isGameLockedForAccount, type GameAccessMap } from "../lib/gameAccess";
+import { canAddFreeGameToLibrary } from "../lib/freeGames";
 import type { PlaytimeData } from "../lib/gameCatalog";
 import { formatTotalPlaytime, playtimeUnits, toFavoriteSet } from "../lib/localPreferences";
 import { getControllerFeaturedGames } from "../lib/controllerCatalogUi";
@@ -44,6 +45,8 @@ export interface LibraryPageProps {
   onToggleFavorite: (game: GameInfo) => void;
   /** Opens the store page that sells the selected variant (see `handleBuyGame`). */
   onBuyGame?: (game: GameInfo, selectedVariantId?: string) => void | Promise<void>;
+  /** Adds a free-to-play title to the account's GFN library (no purchase). */
+  onAddFreeGameToLibrary?: (game: GameInfo, selectedVariantId?: string) => void | Promise<void>;
   isLoading: boolean;
   selectedGameId: string;
   onSelectGame: (id: string) => void;
@@ -90,6 +93,7 @@ export const LibraryPage = memo(function LibraryPage({
   favoriteGameIds,
   onToggleFavorite,
   onBuyGame,
+  onAddFreeGameToLibrary,
   isLoading,
   selectedGameId,
   onSelectGame,
@@ -119,6 +123,7 @@ export const LibraryPage = memo(function LibraryPage({
   const { t } = useTranslation();
   const [detailsGame, setDetailsGame] = useState<GameInfo | null>(null);
   const [buyPendingGameId, setBuyPendingGameId] = useState<string | null>(null);
+  const [addPendingGameId, setAddPendingGameId] = useState<string | null>(null);
   const handleBuyFromDetails = async (target: GameInfo): Promise<void> => {
     if (!onBuyGame) return;
     setBuyPendingGameId(target.id);
@@ -126,6 +131,15 @@ export const LibraryPage = memo(function LibraryPage({
       await onBuyGame(target, selectedVariantByGameId[target.id]);
     } finally {
       setBuyPendingGameId(null);
+    }
+  };
+  const handleAddFromDetails = async (target: GameInfo): Promise<void> => {
+    if (!onAddFreeGameToLibrary) return;
+    setAddPendingGameId(target.id);
+    try {
+      await onAddFreeGameToLibrary(target, selectedVariantByGameId[target.id]);
+    } finally {
+      setAddPendingGameId(null);
     }
   };
   const catalogActionsRef = useCatalogCardActionsRef({
@@ -873,6 +887,12 @@ export const LibraryPage = memo(function LibraryPage({
           })()}
           onBuy={onBuyGame ? () => { void handleBuyFromDetails(detailsGame); } : undefined}
           isBuyPending={buyPendingGameId === detailsGame.id}
+          onAddToLibrary={
+            onAddFreeGameToLibrary && canAddFreeGameToLibrary(detailsGame, gameAccess?.get(detailsGame.id))
+              ? () => { void handleAddFromDetails(detailsGame); }
+              : undefined
+          }
+          isAddPending={addPendingGameId === detailsGame.id}
           onClose={() => setDetailsGame(null)}
         />
       )}

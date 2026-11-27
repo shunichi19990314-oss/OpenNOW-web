@@ -3728,6 +3728,7 @@ body,
   gap: 10px;
 }
 .game-details-play,
+.game-details-add,
 .game-details-favorite {
   min-height: 38px;
   display: inline-flex;
@@ -14757,4 +14758,75 @@ body {
   color: var(--ink-soft);
   font-size: 0.76rem;
   line-height: 1.45;
+}
+
+/* "Add to library" in the details modal: same shape as Play, quieter, because
+   it is a secondary action next to the primary one. */
+.game-details-add {
+  border-color: color-mix(in srgb, var(--accent) 40%, transparent);
+  background: var(--accent-surface, color-mix(in srgb, var(--accent) 10%, transparent));
+  color: var(--ink);
+}
+
+.game-details-add:disabled,
+.game-details-play:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
+/* Free-to-play: the note explains that nothing is bought, so it stays neutral
+   rather than borrowing the buy note's accent. */
+.game-details-purchase-note--free {
+  border-color: var(--panel-border-solid);
+  background: color-mix(in srgb, var(--ink) 5%, transparent);
+}
+
+/* --- 無料のゲーム shelf --- */
+.home-free-row-hint {
+  margin: -4px 0 10px;
+  color: var(--ink-muted);
+  font-size: 0.76rem;
+  line-height: 1.5;
+}
+
+.home-free-item {
+  flex: 0 0 auto;
+  width: clamp(150px, calc(200px * var(--game-poster-scale, 1)), 270px);
+  scroll-snap-align: start;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.home-free-add {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-height: 32px;
+  padding: 0 12px;
+  border-radius: var(--r-full);
+  border: 1px solid color-mix(in srgb, var(--accent) 40%, transparent);
+  background: var(--accent-surface, color-mix(in srgb, var(--accent) 10%, transparent));
+  color: var(--ink);
+  font: inherit;
+  font-size: 0.78rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: border-color var(--t-fast), background var(--t-fast);
+}
+
+.home-free-add:hover:not(:disabled) {
+  border-color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 18%, transparent);
+}
+
+.home-free-add:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 2px var(--accent-surface);
+}
+
+.home-free-add:disabled {
+  opacity: 0.6;
+  cursor: default;
 }

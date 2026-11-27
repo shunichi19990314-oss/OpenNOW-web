@@ -1,4 +1,4 @@
-import { Heart, Search, LayoutGrid, ArrowUpDown, Filter, ChevronDown, Gamepad2, Lock, Menu, Play, X } from "lucide-react";
+import { Gift, Heart, Search, LayoutGrid, ArrowUpDown, Filter, ChevronDown, Gamepad2, Lock, Menu, Play, X } from "lucide-react";
 import { memo, useEffect, useMemo, useRef, useState } from "react";
 import type { JSX } from "react";
 import { AnimatePresence, m } from "motion/react";
@@ -9,6 +9,7 @@ import { genreLabel, playTypeLabel, type TranslateFn } from "../lib/gfnLabels";
 import { formatCatalogLastPlayed } from "../utils/lastPlayedFormat";
 import { GameCardListItem, useCatalogCardActionsRef } from "./GameCardListItem";
 import { isGameLockedForAccount, type GameAccess, type GameAccessMap } from "../lib/gameAccess";
+import { canAddFreeGameToLibrary, collectFreeGames } from "../lib/freeGames";
 import { GameDetailsModal } from "./GameDetailsModal";
 import { appendImageType, appendUnique, gameMatchesActiveSession } from "../lib/controllerCatalogUi";
 import { gameActivityTimestamp, summarizeRecentActivity } from "../lib/localPreferences";
@@ -69,7 +70,7 @@ export interface HomePageProps {
   activeSessionAppIds?: number[];
   /** Opens the store page that sells the selected variant (see `handleBuyGame`). */
   onBuyGame?: (game: GameInfo, selectedVariantId?: string) => void | Promise<void>;
-  onMarkGameOwned?: (game: GameInfo, selectedVariantId?: string) => void;
+  onMarkGameOwned?: (game: GameInfo, selectedVariantId?: string) => void | Promise<void>;
   markOwnedInFlightByVariantId?: Record<string, boolean>;
   onPreviousControllerPage?: () => void;
   onNextControllerPage?: () => void;
@@ -336,6 +337,9 @@ export const HomePage = memo(function HomePage({
   const [detailsGame, setDetailsGame] = useState<GameInfo | null>(null);
   // Store hand-off state for the details modal's "buy" action.
   const [buyPendingGameId, setBuyPendingGameId] = useState<string | null>(null);
+  // Free titles are added to the GFN library in place (no store hand-off), so
+  // the modal needs its own pending state for that mutation.
+  const [addPendingGameId, setAddPendingGameId] = useState<string | null>(null);
   const handleBuyFromDetails = async (target: GameInfo): Promise<void> => {
     if (!onBuyGame) return;
     setBuyPendingGameId(target.id);
@@ -343,6 +347,15 @@ export const HomePage = memo(function HomePage({
       await onBuyGame(target, selectedVariantByGameId[target.id]);
     } finally {
       setBuyPendingGameId(null);
+    }
+  };
+  const handleAddFromDetails = async (target: GameInfo): Promise<void> => {
+    if (!onMarkGameOwned) return;
+    setAddPendingGameId(target.id);
+    try {
+      await onMarkGameOwned(target, selectedVariantByGameId[target.id]);
+    } finally {
+      setAddPendingGameId(null);
     }
   };
   const catalogActionsRef = useCatalogCardActionsRef({
@@ -657,6 +670,26 @@ export const HomePage = memo(function HomePage({
   }, [continueGame, gameAccess, hideLockedGames, storeHeroGames]);
 
   const browsingCatalog = searchQuery.trim().length === 0 && selectedFilterIds.length === 0;
+  /**
+   * 無料のゲーム shelf.
+   *
+   * Paid titles can only be bought elsewhere; free-to-play ones can be added to
+   * the account's GFN library right here, so they get their own row above the
+   * curated shelves instead of being buried in the grid. Shown while browsing
+   * only (a search result set is already the answer to the query), and limited
+   * to titles that are not in the library yet — an "add" row full of things
+   * already added is noise.
+   */
+  const freeGamesRow = useMemo(() => {
+    // The row exists to add titles; without the mutation (signed out) it would
+    // be a shelf that promises an action it cannot offer.
+    if (!browsingCatalog || !onMarkGameOwned) return [];
+    const candidates = collectFreeGames([...games, ...storeHeroGames, ...storePanels.flatMap((panel) => panel.sections.flatMap((section) => section.games))]);
+    const addable = candidates.filter((game) => canAddFreeGameToLibrary(game, gameAccess?.get(game.id)));
+    return addable.slice(0, 18);
+  }, [browsingCatalog, gameAccess, games, onMarkGameOwned, storeHeroGames, storePanels]);
+
+
   const showHero = browsingCatalog && heroSlides.length > 0;
   // Reserve the hero's box while its data is still loading so the rows below
   // do not jump down when it appears. Once loading finishes with no slides
@@ -1160,6 +1193,46 @@ export const HomePage = memo(function HomePage({
           );
         })()}
 
+        {freeGamesRow.length > 0 && (
+          <section className="home-row home-free-row" aria-labelledby="home-free-heading">
+            <h2 className="home-section-title" id="home-free-heading">
+              <span className="home-section-bar" aria-hidden="true" />
+              <Gift size={17} aria-hidden="true" />
+              {t("home.freeGames.title")}
+            </h2>
+            {/* Says what happens on click before it is clicked: these are added
+                to the GeForce NOW library here, they are not bought. */}
+            <p className="home-free-row-hint">{t("home.freeGames.hint")}</p>
+            <div className="home-row-scroller">
+              {freeGamesRow.map((game) => (
+                <div key={game.id} className="home-free-item">
+                  <GameCardListItem
+                    game={game}
+                    isSelected={game.id === selectedGameId}
+                    isFavorite={favoriteGameIds.includes(game.id)}
+                    selectedVariantId={selectedVariantByGameId[game.id]}
+                    access={gameAccess?.get(game.id)}
+                    actionsRef={catalogActionsRef}
+                  />
+                  {onMarkGameOwned && (
+                    <button
+                      type="button"
+                      className="home-free-add"
+                      disabled={addPendingGameId === game.id}
+                      onClick={() => { void handleAddFromDetails(game); }}
+                    >
+                      <Gift size={14} aria-hidden="true" />
+                      {addPendingGameId === game.id
+                        ? t("gameDetails.addingToLibrary")
+                        : t("gameDetails.addToLibrary")}
+                    </button>
+                  )}
+                </div>
+              ))}
+            </div>
+          </section>
+        )}
+
         {recentActivity.length > 0 && (
           <ContinuePlayingRail
             entries={recentActivity}
@@ -1270,6 +1343,12 @@ export const HomePage = memo(function HomePage({
           lockedReason={lockedReasonFor(detailsGame, gameAccess, t)}
           onBuy={onBuyGame ? () => { void handleBuyFromDetails(detailsGame); } : undefined}
           isBuyPending={buyPendingGameId === detailsGame.id}
+          onAddToLibrary={
+            onMarkGameOwned && canAddFreeGameToLibrary(detailsGame, gameAccess?.get(detailsGame.id))
+              ? () => { void handleAddFromDetails(detailsGame); }
+              : undefined
+          }
+          isAddPending={addPendingGameId === detailsGame.id}
           onClose={() => setDetailsGame(null)}
         />
       )}
