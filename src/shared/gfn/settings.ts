@@ -127,6 +127,12 @@ export interface Settings {
   favoriteGameIds: string[];
   /** Library games hidden from the grid and the command palette. */
   hiddenGameIds: string[];
+  /**
+   * Drop store entries the signed-in account cannot play (not owned, or a
+   * membership tier above the current plan) from the catalogue lists. The
+   * games stay in the underlying data, so turning this off restores them.
+   */
+  hideUnplayableGames: boolean;
   sessionCounterEnabled: boolean;
   /** Also show the session-limit countdown in the stats overlay while streaming */
   showSessionTimeRemainingInStatsOverlay: boolean;

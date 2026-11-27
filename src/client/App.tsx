@@ -134,6 +134,11 @@ import {
 } from "./lib/sessionState";
 import { defaultDiagnostics, mergeNativeStreamStats } from "./lib/streamDiagnostics";
 import { applyTheme, applyThemePack, applyTranslucentUI, getThemePack } from "./lib/uiCustomization";
+import {
+  buildGameAccessMap,
+  isGameLockedForAccount,
+  resolveGameAccess,
+} from "./lib/gameAccess";
 import { useTranslation } from "./i18n";
 
 // UI Components
@@ -283,6 +288,7 @@ export function App(): JSX.Element {
     autoFullScreen: false,
     favoriteGameIds: [],
     hiddenGameIds: [],
+    hideUnplayableGames: false,
     sessionCounterEnabled: false,
     showSessionTimeRemainingInStatsOverlay: false,
     sessionClockShowEveryMinutes: 60,
@@ -682,6 +688,7 @@ export function App(): JSX.Element {
     catalogSupportedCount,
     markOwnedInFlightByVariantId,
     catalogActionNotice,
+    setCatalogActionNotice,
     regions,
     setRegions,
     subscriptionInfo,
@@ -3306,6 +3313,19 @@ export function App(): JSX.Element {
     const effectiveTier = normalizeMembershipTier(
       subscriptionInfo?.membershipTier ?? authSession?.user.membershipTier,
     );
+    // Cards already refuse the click; this is the backstop for the paths that
+    // bypass them (command palette, direct launch, context menu). Nothing is
+    // sent to the provider — the account cannot launch the title anyway.
+    const access = resolveGameAccess(game, effectiveTier);
+    if (isGameLockedForAccount(access)) {
+      setCatalogActionNotice({
+        tone: "warn",
+        text: access.state === "tier-required"
+          ? t("gameCard.tierRequiredHint", { tier: access.tierLabel ?? t("gameCard.tierRequiredFallback") })
+          : t("gameCard.notOwnedHint"),
+      });
+      return;
+    }
     const isFreeUser = effectiveTier === "FREE";
     const activeProvider = authSession?.provider ?? selectedProvider;
     const isNvidiaAccount = isNvidiaProvider(activeProvider);
@@ -3366,7 +3386,7 @@ export function App(): JSX.Element {
       return;
     }
     void handlePlayGame(game);
-  }, [subscriptionInfo, authSession, selectedProvider, settings.hideServerSelector, streamStatus, handlePlayGame, effectiveStreamingBaseUrl]);
+  }, [subscriptionInfo, authSession, selectedProvider, settings.hideServerSelector, streamStatus, handlePlayGame, effectiveStreamingBaseUrl, setCatalogActionNotice, t]);
 
   const handleQueueModalConfirm = useCallback((zoneUrl: string | null) => {
     const game = queueModalGame;
@@ -3948,7 +3968,31 @@ export function App(): JSX.Element {
     toggleSessionFullscreen,
   ]);
 
-  const filteredGames = games;
+  /**
+   * Entitlement for every known game. GeForce NOW lists titles the account
+   * cannot launch — a store entry that was never bought, or one that needs a
+   * higher membership tier (`minimumMembershipTierLabel`). The desktop build
+   * keeps them visible and labels them; on the web the card, the hero, the
+   * details modal and the launch guard all read this one map.
+   */
+  const accountTierForAccess = useMemo(
+    () => normalizeMembershipTier(subscriptionInfo?.membershipTier ?? authSession?.user.membershipTier),
+    [authSession?.user.membershipTier, subscriptionInfo?.membershipTier],
+  );
+  const gameAccess = useMemo(
+    () => buildGameAccessMap(allKnownGames, accountTierForAccess),
+    [accountTierForAccess, allKnownGames],
+  );
+  // Store lists drop the locked entries when the player asked for that in
+  // settings › game; the Library keeps them (they are owned, and the tier gate
+  // is a plan problem the card explains).
+  const filteredGames = useMemo(() => {
+    if (!settings.hideUnplayableGames || games.length === 0) return games;
+    return games.filter((game) => {
+      const access = gameAccess.get(game.id);
+      return !access || !isGameLockedForAccount(access);
+    });
+  }, [gameAccess, games, settings.hideUnplayableGames]);
 
   const filteredLibraryGames = useMemo(() => {
     const query = searchQuery.trim();
@@ -4015,9 +4059,15 @@ export function App(): JSX.Element {
     canStream: streamStatus === "connecting" || streamStatus === "streaming",
     isStreaming: streamStatus === "streaming",
     pages: commandPalettePages,
+    // Locked entries stay listed (running one explains the lock) but their hint
+    // says "not owned" instead of the usual play line.
+    lockedGameIds: [...gameAccess.entries()]
+      .filter(([, access]) => isGameLockedForAccount(access))
+      .map(([id]) => id),
   }), [
     allKnownGames,
     commandPalettePages,
+    gameAccess,
     playtime,
     settings.favoriteGameIds,
     settings.hiddenGameIds,
@@ -4494,6 +4544,8 @@ export function App(): JSX.Element {
                 onPreviousControllerPage={() => navigateControllerPage(-1)}
                 onNextControllerPage={() => navigateControllerPage(1)}
                 showInlineSearch={effectiveControllerMode}
+                gameAccess={gameAccess}
+                hideLockedGames={settings.hideUnplayableGames}
               />
             )}
 
@@ -4535,6 +4587,7 @@ export function App(): JSX.Element {
                   onBuyGame={handleBuyGame}
                   onPreviousControllerPage={() => navigateControllerPage(-1)}
                   onNextControllerPage={() => navigateControllerPage(1)}
+                  gameAccess={gameAccess}
                   showInlineSearch={effectiveControllerMode}
                   collections={collections}
                   activeCollectionId={activeCollectionId}

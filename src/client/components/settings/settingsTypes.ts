@@ -190,7 +190,7 @@ export const SETTINGS_SCOPE_SEARCH_TERMS: Record<SettingsSearchScopeId, readonly
     "cpu",
     "test codecs",
   ],
-  game: ["game", "language", "keyboard layout", "store", "launch", "graphics settings", "in-game settings", "persistence"],
+  game: ["game", "language", "keyboard layout", "store", "launch", "graphics settings", "in-game settings", "persistence", "hide unplayable", "not owned", "membership tier"],
   audio: ["audio", "microphone", "mic", "push to talk", "voice activity"],
   input: [
     "touch gamepad",

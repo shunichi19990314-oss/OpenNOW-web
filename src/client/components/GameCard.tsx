@@ -1,4 +1,4 @@
-import { Heart, Info, Play, Monitor } from "lucide-react";
+import { Heart, Info, Lock, Play, Monitor } from "lucide-react";
 import { memo, useCallback, useMemo, useState } from "react";
 import type { JSX } from "react";
 import { m } from "motion/react";
@@ -6,6 +6,7 @@ import { normalizeGameStore } from "@shared/gfn";
 import { isUnknownStore, unknownStoreLabel, type TranslateFn } from "../lib/gfnLabels";
 import type { GameInfo } from "@shared/gfn";
 import { getActiveGameAvailabilityBadge } from "../lib/gameCardStatus";
+import { isGameLockedForAccount, type GameAccess } from "../lib/gameAccess";
 import { getStoreOptions as getGameCardStoreOptions } from "../lib/gameCardStores";
 import { useTranslation } from "../i18n";
 
@@ -13,6 +14,13 @@ interface GameCardProps {
   game: GameInfo;
   isSelected?: boolean;
   onPlay: () => void;
+  /**
+   * Entitlement resolved by the page (`resolveGameAccess`). When the account
+   * cannot play the title the card still renders — the desktop build keeps
+   * these entries visible — but the play affordance turns into a badge and
+   * `onPlay` is never called.
+   */
+  access?: GameAccess;
   onSelect: () => void;
   selectedVariantId?: string;
   onSelectStore?: (variantId: string) => void;
@@ -176,6 +184,7 @@ export const GameCard = memo(function GameCard({
   onToggleFavorite,
   onDetails,
   onContextMenu,
+  access,
 }: GameCardProps): JSX.Element {
   const { t } = useTranslation();
   const storeOptions = useMemo(
@@ -190,6 +199,19 @@ export const GameCard = memo(function GameCard({
     () => getActiveGameAvailabilityBadge(game, selectedVariantId),
     [game, selectedVariantId],
   );
+  const locked = access ? isGameLockedForAccount(access) : false;
+  const lockLabel = useMemo(() => {
+    if (!locked || !access) return null;
+    return access.state === "tier-required"
+      ? t("gameCard.tierRequired", { tier: access.tierLabel ?? t("gameCard.tierRequiredFallback") })
+      : t("gameCard.notOwned");
+  }, [access, locked, t]);
+  const lockHint = useMemo(() => {
+    if (!locked || !access) return null;
+    return access.state === "tier-required"
+      ? t("gameCard.tierRequiredHint", { tier: access.tierLabel ?? t("gameCard.tierRequiredFallback") })
+      : t("gameCard.notOwnedHint");
+  }, [access, locked, t]);
 
   const [aspectPct, setAspectPct] = useState<number | undefined>(undefined);
 
@@ -204,6 +226,7 @@ export const GameCard = memo(function GameCard({
 
   const handlePlayClick = (event: React.MouseEvent): void => {
     event.stopPropagation();
+    if (locked) return;
     onPlay();
   };
 
@@ -214,7 +237,7 @@ export const GameCard = memo(function GameCard({
 
   return (
     <m.div
-      className={`game-card ${isSelected ? "selected" : ""}`}
+      className={`game-card ${isSelected ? "selected" : ""}${locked ? " game-card--locked" : ""}`}
       whileHover={{ y: -2, scale: 1.01 }}
       whileTap={{ scale: 0.985 }}
       onClick={onSelect}
@@ -225,6 +248,7 @@ export const GameCard = memo(function GameCard({
         }
         if (event.key === "Enter" || event.key === " ") {
           event.preventDefault();
+          if (locked) return;
           onPlay();
         }
       }}
@@ -279,14 +303,21 @@ export const GameCard = memo(function GameCard({
               </button>
             )}
           </div>
-          <button
-            className="game-card-play-button"
-            onClick={handlePlayClick}
-            aria-label={t("gameCard.playGame", { title: game.title })}
-            tabIndex={-1}
-          >
-            <Play size={24} fill="currentColor" />
-          </button>
+          {locked ? (
+            <span className="game-card-lock-badge" title={lockHint ?? undefined}>
+              <Lock size={13} aria-hidden="true" />
+              {lockLabel}
+            </span>
+          ) : (
+            <button
+              className="game-card-play-button"
+              onClick={handlePlayClick}
+              aria-label={t("gameCard.playGame", { title: game.title })}
+              tabIndex={-1}
+            >
+              <Play size={24} fill="currentColor" />
+            </button>
+          )}
         </div>
 
         <div className="game-card-info">
