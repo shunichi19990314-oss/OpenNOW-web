@@ -224,7 +224,11 @@
       "clear": "Clear search"
     },
     "favorites": "Favorites",
-    "gamesAvailable": "{{count}} games"
+    "gamesAvailable": "{{count}} games",
+    "freeGames": {
+      "title": "Free games",
+      "hint": "No purchase needed. Add these to your GeForce NOW library right here (the store license stays with your store account)."
+    }
   },
   "library": {
     "title": "My Library",
@@ -1745,6 +1749,9 @@
   "gameDetails": {
     "buyOnStore": "Buy on store",
     "openingStore": "Opening the store…",
-    "buyHint": "GeForce NOW does not sell games; purchases settle in the stores (Steam, Epic, …). This site opens the matching product page directly."
+    "buyHint": "GeForce NOW does not sell games; purchases settle in the stores (Steam, Epic, …). This site opens the matching product page directly.",
+    "addToLibrary": "Add to library",
+    "addingToLibrary": "Adding…",
+    "freeHint": "This one is free to play. Nothing to buy — it can be added to your GeForce NOW library right here."
   }
 }

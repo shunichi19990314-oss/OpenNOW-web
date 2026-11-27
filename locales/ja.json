@@ -221,7 +221,11 @@
       "clear": "検索をクリア"
     },
     "favorites": "お気に入り",
-    "gamesAvailable": "{{count}}件のゲーム"
+    "gamesAvailable": "{{count}}件のゲーム",
+    "freeGames": {
+      "title": "無料のゲーム",
+      "hint": "購入不要。その場で GeForce NOW のライブラリに追加できます（ライセンスは各ストアのアカウントに紐づきます）。"
+    }
   },
   "library": {
     "title": "私のライブラリ",
@@ -1745,6 +1749,9 @@
   "gameDetails": {
     "buyOnStore": "ストアで購入",
     "openingStore": "ストアを開いています…",
-    "buyHint": "GeForce NOW はゲームを販売していないため、購入は各ストア（Steam / Epic など）で行います。このサイトでは該当するストアの商品ページを直接開きます。"
+    "buyHint": "GeForce NOW はゲームを販売していないため、購入は各ストア（Steam / Epic など）で行います。このサイトでは該当するストアの商品ページを直接開きます。",
+    "addToLibrary": "ライブラリに追加",
+    "addingToLibrary": "追加しています…",
+    "freeHint": "無料でプレイできるゲームです。購入は不要で、このサイトからそのまま GeForce NOW のライブラリに追加できます。"
   }
 }

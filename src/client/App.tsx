@@ -4611,6 +4611,7 @@ export function App(): JSX.Element {
                   featuredGames={featuredGames.length > 0 ? featuredGames : games}
                   activeSessionAppIds={activeSessionAppIds}
                   onBuyGame={handleBuyGame}
+                  onAddFreeGameToLibrary={handleMarkGameOwned}
                   onPreviousControllerPage={() => navigateControllerPage(-1)}
                   onNextControllerPage={() => navigateControllerPage(1)}
                   gameAccess={gameAccess}

@@ -1,10 +1,11 @@
-import { Check, Gamepad2, Heart, Lock, Monitor, Play, ShoppingCart, Users, X } from "lucide-react";
+import { Check, Gamepad2, Heart, Library, Lock, Monitor, Play, ShoppingCart, Users, X } from "lucide-react";
 import type { JSX } from "react";
 import type { GameInfo } from "@shared/gfn";
 import { useTranslation } from "../i18n";
 import { getJapaneseGameDescription } from "../utils/localizedGameText";
 import { getStoreDisplayName } from "./GameCard";
 import { controlLabel, genreLabel, nvidiaTechLabel, playTypeLabel } from "../lib/gfnLabels";
+import { isFreePlayGame } from "../lib/freeGames";
 
 export interface GameDetailsModalProps {
   game: GameInfo;
@@ -25,6 +26,15 @@ export interface GameDetailsModalProps {
   onBuy?: () => void;
   /** True while the store URL is being resolved. */
   isBuyPending?: boolean;
+  /**
+   * Adds a free-to-play title to the account's GeForce NOW library. Unlike
+   * `onBuy`, nothing is handed to another store: a free title needs no
+   * purchase, so the shell itself can add it (`POST /api/mark-owned`) and the
+   * next launch starts from ライブラリ. Omitted once the title is in there.
+   */
+  onAddToLibrary?: () => void;
+  /** True while the library mutation is in flight. */
+  isAddPending?: boolean;
   onClose: () => void;
 }
 
@@ -35,6 +45,8 @@ export function GameDetailsModal({
   onPlay,
   onBuy,
   isBuyPending = false,
+  onAddToLibrary,
+  isAddPending = false,
   onClose,
   lockedReason,
 }: GameDetailsModalProps): JSX.Element {
@@ -93,6 +105,19 @@ export function GameDetailsModal({
                 {t("app.actions.play")}
               </button>
             )}
+            {onAddToLibrary && (
+              // Free title, not in the library yet: the add runs here, not on a
+              // store page, so it sits next to Play instead of replacing it.
+              <button
+                type="button"
+                className="game-details-add"
+                onClick={onAddToLibrary}
+                disabled={isAddPending}
+              >
+                <Library size={16} />
+                {isAddPending ? t("gameDetails.addingToLibrary") : t("gameDetails.addToLibrary")}
+              </button>
+            )}
             <button
               type="button"
               className={`game-details-favorite ${isFavorite ? "active" : ""}`}
@@ -105,6 +130,11 @@ export function GameDetailsModal({
           </div>
           {lockedReason && onBuy && (
             <p className="game-details-purchase-note">{t("gameDetails.buyHint")}</p>
+          )}
+          {isFreePlayGame(game) && (
+            <p className="game-details-purchase-note game-details-purchase-note--free">
+              {t("gameDetails.freeHint")}
+            </p>
           )}
           <p className="game-details-description">{description}</p>
           <div className="game-details-meta">
