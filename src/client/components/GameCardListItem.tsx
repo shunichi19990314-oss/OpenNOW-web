@@ -1,5 +1,6 @@
 import { memo, useCallback, useRef, type MouseEvent, type RefObject } from "react";
 import type { GameInfo } from "@shared/gfn";
+import type { GameAccess } from "../lib/gameAccess";
 import { GameCard } from "./GameCard";
 
 export interface CatalogCardActions {
@@ -17,6 +18,8 @@ export interface GameCardListItemProps {
   selectedVariantId?: string;
   isSelected?: boolean;
   isFavorite?: boolean;
+  /** Entitlement for this game; the card labels it and refuses to launch. */
+  access?: GameAccess;
   actionsRef: RefObject<CatalogCardActions>;
 }
 
@@ -29,6 +32,8 @@ function gameCardListItemPropsAreEqual(
     && prev.selectedVariantId === next.selectedVariantId
     && prev.isSelected === next.isSelected
     && prev.isFavorite === next.isFavorite
+    && prev.access?.state === next.access?.state
+    && prev.access?.tierLabel === next.access?.tierLabel
     && prev.actionsRef === next.actionsRef
   );
 }
@@ -38,6 +43,7 @@ export const GameCardListItem = memo(function GameCardListItem({
   selectedVariantId,
   isSelected = false,
   isFavorite = false,
+  access,
   actionsRef,
 }: GameCardListItemProps) {
   const handleSelect = useCallback(() => {
@@ -73,6 +79,7 @@ export const GameCardListItem = memo(function GameCardListItem({
       game={game}
       isSelected={isSelected}
       selectedVariantId={selectedVariantId}
+      access={access}
       onSelect={handleSelect}
       onPlay={handlePlay}
       onSelectStore={handleSelectStore}

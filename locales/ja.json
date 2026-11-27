@@ -29,7 +29,8 @@
       "sort": "並べ替え",
       "stop": "停止",
       "switch": "スイッチ",
-      "markAsOwned": "所有としてマーク"
+      "markAsOwned": "所有としてマーク",
+      "upgradeMembership": "GeForce NOW のメンバーシップをアップグレード"
     },
     "status": {
       "checking": "チェック中",
@@ -376,7 +377,13 @@
     "addFavorite": "お気に入りに追加",
     "removeFavorite": "お気に入りから削除",
     "viewDetails": "{{title}}の詳細を見る",
-    "unknownStore": "不明"
+    "unknownStore": "不明",
+    "notOwned": "未所有",
+    "notOwnedHint": "このゲームはまだ所有していません。ストアで購入すると起動できます。",
+    "tierRequired": "{{tier}} 以上が必要",
+    "tierRequiredHint": "このゲームをプレイするには GeForce NOW の {{tier}} 以上が必要です。",
+    "lockedMessage": "{{title}} は今のアカウントではプレイできません。",
+    "tierRequiredFallback": "上位プラン"
   },
   "streamLoading": {
     "labels": {
@@ -849,7 +856,9 @@
       "preferredStore": "優先ストア",
       "launchBehavior": "起動動作",
       "persistInGameSettings": "ゲーム内グラフィック設定を保存",
-      "persistInGameSettingsHint": "対応ゲームでストリーム内に変更したグラフィックオプションを保持できます。NVIDIA のゲーム内設定永続化に対応すると宣言しているゲームにのみ送信されます。"
+      "persistInGameSettingsHint": "対応ゲームでストリーム内に変更したグラフィックオプションを保持できます。NVIDIA のゲーム内設定永続化に対応すると宣言しているゲームにのみ送信されます。",
+      "hideUnplayable": "使用できないゲームを隠す",
+      "hideUnplayableHint": "未所有のゲームと、今のメンバーシップではプレイできないゲームをストアの一覧から除外します。Free-to-play のタイトルは残ります。"
     },
     "audio": {
       "title": "オーディオ",

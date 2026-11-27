@@ -1,4 +1,4 @@
-import { Check, Gamepad2, Heart, Monitor, Play, Users, X } from "lucide-react";
+import { Check, Gamepad2, Heart, Lock, Monitor, Play, Users, X } from "lucide-react";
 import type { JSX } from "react";
 import type { GameInfo } from "@shared/gfn";
 import { useTranslation } from "../i18n";
@@ -8,13 +8,18 @@ import { controlLabel, genreLabel, nvidiaTechLabel, playTypeLabel } from "../lib
 
 export interface GameDetailsModalProps {
   game: GameInfo;
+  /**
+   * Why the account cannot launch this title, when that is the case. The modal
+   * then explains it instead of offering a Play button that would fail.
+   */
+  lockedReason?: string | null;
   isFavorite: boolean;
   onToggleFavorite: () => void;
   onPlay: () => void;
   onClose: () => void;
 }
 
-export function GameDetailsModal({ game, isFavorite, onToggleFavorite, onPlay, onClose }: GameDetailsModalProps): JSX.Element {
+export function GameDetailsModal({ game, isFavorite, onToggleFavorite, onPlay, onClose, lockedReason }: GameDetailsModalProps): JSX.Element {
   const { t } = useTranslation();
   const stores = (game.availableStores ?? []).map((store) => getStoreDisplayName(store, t));
   const playerCount = [game.maxLocalPlayers, game.maxOnlinePlayers].filter((value): value is number => typeof value === "number" && value > 0);
@@ -47,10 +52,17 @@ export function GameDetailsModal({ game, isFavorite, onToggleFavorite, onPlay, o
         </div>
         <div className="game-details-content">
           <div className="game-details-actions">
-            <button type="button" className="game-details-play" onClick={onPlay}>
-              <Play size={16} fill="currentColor" />
-              {t("app.actions.play")}
-            </button>
+            {lockedReason ? (
+              <span className="game-details-locked" title={lockedReason}>
+                <Lock size={15} aria-hidden="true" />
+                {lockedReason}
+              </span>
+            ) : (
+              <button type="button" className="game-details-play" onClick={onPlay}>
+                <Play size={16} fill="currentColor" />
+                {t("app.actions.play")}
+              </button>
+            )}
             <button
               type="button"
               className={`game-details-favorite ${isFavorite ? "active" : ""}`}

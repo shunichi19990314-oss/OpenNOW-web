@@ -1,4 +1,4 @@
-import { Heart, Search, LayoutGrid, ArrowUpDown, Filter, ChevronDown, Gamepad2, Menu, Play, X } from "lucide-react";
+import { Heart, Search, LayoutGrid, ArrowUpDown, Filter, ChevronDown, Gamepad2, Lock, Menu, Play, X } from "lucide-react";
 import { memo, useEffect, useMemo, useRef, useState } from "react";
 import type { JSX } from "react";
 import { AnimatePresence, m } from "motion/react";
@@ -8,6 +8,7 @@ import { getStoreDisplayName, getStoreIconComponent } from "./GameCard";
 import { genreLabel, playTypeLabel, type TranslateFn } from "../lib/gfnLabels";
 import { formatCatalogLastPlayed } from "../utils/lastPlayedFormat";
 import { GameCardListItem, useCatalogCardActionsRef } from "./GameCardListItem";
+import { isGameLockedForAccount, type GameAccess, type GameAccessMap } from "../lib/gameAccess";
 import { GameDetailsModal } from "./GameDetailsModal";
 import { appendImageType, appendUnique, gameMatchesActiveSession } from "../lib/controllerCatalogUi";
 import { gameActivityTimestamp, summarizeRecentActivity } from "../lib/localPreferences";
@@ -76,6 +77,10 @@ export interface HomePageProps {
    * copy is hidden there to avoid two inputs bound to one query.
    */
   showInlineSearch?: boolean;
+  /** Per-game entitlement (owned / tier gate); cards label and block locking games. */
+  gameAccess?: GameAccessMap;
+  /** Drop locked entries from the shelves entirely (settings › game). */
+  hideLockedGames?: boolean;
   /** Local playtime + activity data, used by the "Continue playing" rail. */
   playtimeData?: PlaytimeData;
   /**
@@ -169,10 +174,38 @@ function getPrimaryStoreName(game: GameInfo, t: TranslateFn, selectedVariantId?:
   return getStoreDisplayName(store, t);
 }
 
+/** Locked reason for the details modal; `null` keeps the Play button. */
+function lockedReasonFor(
+  game: GameInfo,
+  gameAccess: GameAccessMap | undefined,
+  t: TranslateFn,
+): string | null {
+  const access = gameAccess?.get(game.id);
+  if (!access || !isGameLockedForAccount(access)) return null;
+  return access.state === "tier-required"
+    ? t("gameCard.tierRequiredHint", { tier: access.tierLabel ?? t("gameCard.tierRequiredFallback") })
+    : t("gameCard.notOwnedHint");
+}
+
+/**
+ * The grid (`games`) is filtered by the shell; store panels and the featured
+ * hero arrive separately, so the shelves filter them here. Locked entries only
+ * disappear when settings › game › "hide games you cannot play" is on.
+ */
+function isLockedForShelves(
+  game: GameInfo,
+  gameAccess: GameAccessMap | undefined,
+  hideLockedGames: boolean,
+): boolean {
+  if (!hideLockedGames) return false;
+  return isGameLockedForAccount(gameAccess?.get(game.id) ?? { state: "ready" });
+}
+
 function ControllerStoreTile({
   game,
   selectedVariantId,
   focused,
+  access,
   onFocus,
   onMarkOwned,
   onPlay,
@@ -181,6 +214,8 @@ function ControllerStoreTile({
   game: GameInfo;
   selectedVariantId?: string;
   focused: boolean;
+  /** Entitlement: a locked tile never starts a launch. */
+  access?: GameAccess;
   onFocus: () => void;
   onMarkOwned: () => void;
   onPlay: () => void;
@@ -192,14 +227,20 @@ function ControllerStoreTile({
   const storeName = getPrimaryStoreName(game, t, selectedVariantId);
   const StoreIcon = getStoreIconComponent(selectedVariant?.store ?? storeName);
   const needsPurchase = gameNeedsPurchase(game, selectedVariantId);
+  const locked = access ? isGameLockedForAccount(access) : false;
+  const tierLocked = access?.state === "tier-required";
+  const lockLabel = tierLocked
+    ? t("gameCard.tierRequired", { tier: access?.tierLabel ?? t("gameCard.tierRequiredFallback") })
+    : t("gameCard.notOwned");
 
   return (
     <m.div
       role="button"
       tabIndex={0}
-      className={`controller-store-tile${focused ? " focused" : ""}`}
+      className={`controller-store-tile${focused ? " focused" : ""}${locked ? " is-locked" : ""}`}
       onClick={onFocus}
       onDoubleClick={() => {
+        if (locked) return;
         if (needsPurchase) {
           onMarkOwned();
           return;
@@ -221,8 +262,8 @@ function ControllerStoreTile({
         <StoreIcon />
         <span>{storeName}</span>
       </span>
-      <span className={`controller-store-tile-ownership${needsPurchase ? " is-not-owned" : " is-owned"}`}>
-        {needsPurchase ? t("home.controller.notOwned") : t("home.controller.owned")}
+      <span className={`controller-store-tile-ownership${needsPurchase || locked ? " is-not-owned" : " is-owned"}`}>
+        {locked ? lockLabel : needsPurchase ? t("home.controller.notOwned") : t("home.controller.owned")}
       </span>
       {!needsPurchase && (
         <span className="controller-store-tile-variant">
@@ -235,15 +276,20 @@ function ControllerStoreTile({
         onClick={(event) => {
           event.stopPropagation();
           onFocus();
+          if (locked) return;
           if (needsPurchase) {
             onMarkOwned();
             return;
           }
           onPlay();
         }}
-        disabled={isMarkingOwned}
+        disabled={isMarkingOwned || locked}
       >
-        {needsPurchase ? (isMarkingOwned ? t("app.status.markingOwned") : t("app.actions.markAsOwned")) : t("app.actions.play")}
+        {locked
+          ? lockLabel
+          : needsPurchase
+            ? (isMarkingOwned ? t("app.status.markingOwned") : t("app.actions.markAsOwned"))
+            : t("app.actions.play")}
       </button>
     </m.div>
   );
@@ -282,6 +328,8 @@ export const HomePage = memo(function HomePage({
   playtimeData = {},
   isHeroPending = false,
   showInlineSearch = true,
+  gameAccess,
+  hideLockedGames = false,
 }: HomePageProps): JSX.Element {
   const { t } = useTranslation();
   const [detailsGame, setDetailsGame] = useState<GameInfo | null>(null);
@@ -310,12 +358,20 @@ export const HomePage = memo(function HomePage({
   });
 
   const controllerSections = useMemo(
-    () => storePanels.flatMap((panel) => panel.sections).filter((section) => section.games.length > 0),
-    [storePanels],
+    () => storePanels
+      .flatMap((panel) => panel.sections)
+      .map((section) => ({
+        ...section,
+        games: section.games.filter((game) => !isLockedForShelves(game, gameAccess, hideLockedGames)),
+      }))
+      .filter((section) => section.games.length > 0),
+    [gameAccess, hideLockedGames, storePanels],
   );
   const controllerHeroGames = useMemo(
-    () => storeHeroGames.slice(0, 6),
-    [storeHeroGames],
+    () => storeHeroGames
+      .filter((game) => !isLockedForShelves(game, gameAccess, hideLockedGames))
+      .slice(0, 6),
+    [gameAccess, hideLockedGames, storeHeroGames],
   );
 
   const focusTile = (rowIndex: number, columnIndex: number): void => {
@@ -532,10 +588,11 @@ export const HomePage = memo(function HomePage({
         isSelected={game.id === selectedGameId}
         isFavorite={favoriteGameIds.includes(game.id)}
         selectedVariantId={selectedVariantByGameId[game.id]}
+        access={gameAccess?.get(game.id)}
         actionsRef={catalogActionsRef}
       />
     )),
-    [catalogActionsRef, favoriteGameIds, games, selectedGameId, selectedVariantByGameId],
+    [catalogActionsRef, favoriteGameIds, gameAccess, games, selectedGameId, selectedVariantByGameId],
   );
 
   // "Continue playing" hero: most recently played owned game, hidden while
@@ -581,10 +638,11 @@ export const HomePage = memo(function HomePage({
     for (const game of storeHeroGames) {
       if (slides.length >= 6) break;
       if (slides.some((entry) => entry.game.id === game.id)) continue;
+      if (isLockedForShelves(game, gameAccess, hideLockedGames)) continue;
       slides.push({ game, isResume: false });
     }
     return slides;
-  }, [continueGame, storeHeroGames]);
+  }, [continueGame, gameAccess, hideLockedGames, storeHeroGames]);
 
   const browsingCatalog = searchQuery.trim().length === 0 && selectedFilterIds.length === 0;
   const showHero = browsingCatalog && heroSlides.length > 0;
@@ -755,6 +813,7 @@ export const HomePage = memo(function HomePage({
                             selectedVariantId={selectedVariantId}
                             isMarkingOwned={Boolean(selectedVariant?.id && markOwnedInFlightByVariantId[selectedVariant.id])}
                             focused={focused}
+                            access={gameAccess?.get(game.id)}
                             onFocus={() => {
                               focusTile(rowIndex, columnIndex);
                               if (game.variants.length > 0) onSelectGameVariant(game.id, selectedVariantId ?? game.variants[game.selectedVariantIndex]?.id ?? game.variants[0].id);
@@ -969,6 +1028,11 @@ export const HomePage = memo(function HomePage({
           const heroImage = getControllerStoreImageCandidates(slide.game, true)[0] ?? slide.game.imageUrl;
           const heroLogo = getControllerStoreLogoUrl(slide.game);
           const heroStore = getPrimaryStoreName(slide.game, t, selectedVariantByGameId[slide.game.id]);
+          const heroAccess = gameAccess?.get(slide.game.id);
+          const heroLocked = heroAccess ? isGameLockedForAccount(heroAccess) : false;
+          const heroLockLabel = heroAccess?.state === "tier-required"
+            ? t("gameCard.tierRequired", { tier: heroAccess.tierLabel ?? t("gameCard.tierRequiredFallback") })
+            : t("gameCard.notOwned");
           return (
             <section
               className="home-hero"
@@ -1037,14 +1101,23 @@ export const HomePage = memo(function HomePage({
                       })()}
                     </div>
                     <div className="home-hero-actions">
-                      <button
-                        type="button"
-                        className="home-hero-play"
-                        onClick={() => onPlayGame(slide.game)}
-                      >
-                        <Play size={17} />
-                        {slide.isResume ? t("home.hero.resume") : t("home.hero.play")}
-                      </button>
+                      {heroLocked ? (
+                        // Locked titles keep their slide (the desktop build shows
+                        // them) but the primary action turns into the reason.
+                        <span className="home-hero-locked">
+                          <Lock size={15} aria-hidden="true" />
+                          {heroLockLabel}
+                        </span>
+                      ) : (
+                        <button
+                          type="button"
+                          className="home-hero-play"
+                          onClick={() => onPlayGame(slide.game)}
+                        >
+                          <Play size={17} />
+                          {slide.isResume ? t("home.hero.resume") : t("home.hero.play")}
+                        </button>
+                      )}
                       <button
                         type="button"
                         className="home-hero-details"
@@ -1098,6 +1171,7 @@ export const HomePage = memo(function HomePage({
                     isSelected={game.id === selectedGameId}
                     isFavorite
                     selectedVariantId={selectedVariantByGameId[game.id]}
+                    access={gameAccess?.get(game.id)}
                     actionsRef={catalogActionsRef}
                   />
                 </div>
@@ -1120,6 +1194,7 @@ export const HomePage = memo(function HomePage({
                     isSelected={game.id === selectedGameId}
                     isFavorite={favoriteGameIds.includes(game.id)}
                     selectedVariantId={selectedVariantByGameId[game.id]}
+                    access={gameAccess?.get(game.id)}
                     actionsRef={catalogActionsRef}
                   />
                 </div>
@@ -1180,6 +1255,7 @@ export const HomePage = memo(function HomePage({
           isFavorite={favoriteGameIds.includes(detailsGame.id)}
           onToggleFavorite={() => onToggleFavorite(detailsGame)}
           onPlay={() => onPlayGame(detailsGame)}
+          lockedReason={lockedReasonFor(detailsGame, gameAccess, t)}
           onClose={() => setDetailsGame(null)}
         />
       )}

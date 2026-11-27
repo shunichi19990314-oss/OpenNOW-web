@@ -244,6 +244,7 @@ export const WEB_DEFAULT_SETTINGS: Settings = {
   autoFullScreen: false,
   favoriteGameIds: [],
   hiddenGameIds: [],
+  hideUnplayableGames: false,
   sessionCounterEnabled: false,
   showSessionTimeRemainingInStatsOverlay: false,
   sessionClockShowEveryMinutes: 60,

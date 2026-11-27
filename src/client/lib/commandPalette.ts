@@ -35,6 +35,12 @@ export interface CommandPaletteContext {
   /** True while a stream is actually running (stop/toggles make sense). */
   isStreaming: boolean;
   pages: ReadonlyArray<"home" | "library" | "captures" | "friends" | "settings">;
+  /**
+   * Ids the signed-in account cannot launch (not owned, or above its membership
+   * tier). They stay in the list — the palette is a launcher, and running the
+   * entry explains why instead of failing silently — but the hint says so.
+   */
+  lockedGameIds?: readonly string[];
 }
 
 export type CommandPaletteTranslate = (
@@ -83,20 +89,25 @@ export function buildCommandPaletteEntries(
 
   const ranked = rankGamesForPalette(context.games, context.playtime, context.favoriteIds);
   const favorites = new Set(context.favoriteIds);
+  const lockedIds = new Set(context.lockedGameIds ?? []);
   // `gameLimit` is a search corpus bound, not a display limit: see MAX_GAME_LIMIT.
   const corpusSize = Math.min(MAX_GAME_LIMIT, Math.max(0, gameLimit));
   for (const game of ranked.slice(0, corpusSize)) {
     const lastPlayed = context.playtime[game.id]?.lastPlayedAt;
     const hintParts: string[] = [];
-    if (favorites.has(game.id)) hintParts.push(t("commandPalette.hints.favorite"));
-    if (lastPlayed) hintParts.push(t("commandPalette.hints.recent"));
+    if (lockedIds.has(game.id)) {
+      hintParts.push(t("gameCard.notOwned"));
+    } else {
+      if (favorites.has(game.id)) hintParts.push(t("commandPalette.hints.favorite"));
+      if (lastPlayed) hintParts.push(t("commandPalette.hints.recent"));
+    }
     entries.push({
       id: `game:${game.id}`,
       kind: "game",
       group: gameGroup,
       label: game.title,
       hint: hintParts.length > 0 ? hintParts.join(" · ") : t("commandPalette.hints.play"),
-      keywords: [foldForSearch(game.title), t("commandPalette.keywords.play"), "play", "起動"],
+      keywords: [foldForSearch(game.title), t("commandPalette.keywords.play"), "play", "起動"].filter(Boolean),
     });
   }
 

@@ -14652,3 +14652,85 @@ body {
   padding-top: 6px;
   padding-bottom: 6px;
 }
+
+/* ======================================================
+   ENTITLEMENT LOCKS (not owned / higher membership tier)
+   ====================================================== */
+/* GeForce NOW lists titles the signed-in account cannot launch. The desktop
+   build keeps them visible and labels them; the web shell does the same, but
+   the label has to read as "you cannot press this" rather than a status badge.
+   Every colour here is a token so light mode and the colour packs agree. */
+.game-card-lock-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 10px;
+  border-radius: var(--r-full);
+  border: 1px solid color-mix(in srgb, var(--ink) 22%, transparent);
+  background: color-mix(in srgb, var(--bg-a) 78%, transparent);
+  color: var(--ink);
+  font-size: 0.68rem;
+  font-weight: 750;
+  line-height: 1;
+  letter-spacing: 0.01em;
+  white-space: nowrap;
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+}
+
+.game-card-lock-badge svg {
+  flex: 0 0 auto;
+  opacity: 0.85;
+}
+
+/* The artwork stays readable, but the card no longer reads as clickable. */
+.game-card--locked .game-card-image {
+  filter: saturate(0.72) brightness(0.86);
+}
+
+.game-card--locked:hover .game-card-image {
+  transform: none;
+}
+
+.game-card--locked .game-card-play-button {
+  display: none;
+}
+
+.controller-store-tile.is-locked .controller-store-tile-art img {
+  filter: saturate(0.72) brightness(0.82);
+}
+
+.controller-store-tile.is-locked .controller-store-tile-action:disabled {
+  opacity: 0.72;
+  cursor: not-allowed;
+}
+
+.home-hero-locked {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  min-height: 40px;
+  padding: 0 16px;
+  border-radius: var(--r-full);
+  /* The hero scrim is dark in both appearances, so this pill is too. */
+  border: 1px solid rgba(255, 255, 255, 0.26);
+  background: rgba(0, 0, 0, 0.42);
+  color: #fff;
+  font-size: 0.82rem;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.game-details-locked {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  min-height: 36px;
+  padding: 0 14px;
+  border-radius: var(--r-sm, 8px);
+  border: 1px solid color-mix(in srgb, var(--ink) 24%, transparent);
+  background: color-mix(in srgb, var(--ink) 8%, transparent);
+  color: var(--ink);
+  font-size: 0.8rem;
+  font-weight: 700;
+}

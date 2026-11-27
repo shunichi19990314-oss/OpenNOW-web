@@ -7,6 +7,7 @@ import { GameCardListItem, useCatalogCardActionsRef } from "./GameCardListItem";
 import { filterGamesByCollection, type GameCollection } from "../lib/collections";
 import { GameDetailsModal } from "./GameDetailsModal";
 import { HIDDEN_FILTER_ID, filterHiddenGames, toHiddenIdSet } from "../lib/hiddenGames";
+import { isGameLockedForAccount, type GameAccessMap } from "../lib/gameAccess";
 import type { PlaytimeData } from "../lib/gameCatalog";
 import { formatTotalPlaytime, playtimeUnits, toFavoriteSet } from "../lib/localPreferences";
 import { getControllerFeaturedGames } from "../lib/controllerCatalogUi";
@@ -71,6 +72,11 @@ export interface LibraryPageProps {
   hiddenGameIds?: string[];
   /** Hides or restores a game; the "Hidden" chip is how it comes back. */
   onToggleHidden?: (game: GameInfo) => void;
+  /**
+   * Per-game entitlement. Owned titles can still be gated by the membership
+   * tier, and the grid must say so instead of offering a launch that fails.
+   */
+  gameAccess?: GameAccessMap;
 }
 
 export const LibraryPage = memo(function LibraryPage({
@@ -107,6 +113,7 @@ export const LibraryPage = memo(function LibraryPage({
   onOpenGameMenu,
   hiddenGameIds = [],
   onToggleHidden,
+  gameAccess,
 }: LibraryPageProps): JSX.Element {
   const { t } = useTranslation();
   const [detailsGame, setDetailsGame] = useState<GameInfo | null>(null);
@@ -561,6 +568,7 @@ export const LibraryPage = memo(function LibraryPage({
             isSelected={game.id === selectedGameId}
             isFavorite={isFavorite}
             selectedVariantId={selectedVariantByGameId[game.id]}
+            access={gameAccess?.get(game.id)}
             actionsRef={catalogActionsRef}
           />
           <div
@@ -580,7 +588,7 @@ export const LibraryPage = memo(function LibraryPage({
         </div>
       );
     }),
-    [catalogActionsRef, favoriteIdSet, hiddenIdSet, playtimeData, selectedGameId, selectedVariantByGameId, t, visibleLibraryGames],
+    [catalogActionsRef, favoriteIdSet, gameAccess, hiddenIdSet, playtimeData, selectedGameId, selectedVariantByGameId, t, visibleLibraryGames],
   );
 
   if (controllerMode) {
@@ -845,6 +853,13 @@ export const LibraryPage = memo(function LibraryPage({
           isFavorite={favoriteGameIds.includes(detailsGame.id)}
           onToggleFavorite={() => onToggleFavorite(detailsGame)}
           onPlay={() => onPlayGame(detailsGame)}
+          lockedReason={(() => {
+            const access = gameAccess?.get(detailsGame.id);
+            if (!access || !isGameLockedForAccount(access)) return null;
+            return access.state === "tier-required"
+              ? t("gameCard.tierRequiredHint", { tier: access.tierLabel ?? t("gameCard.tierRequiredFallback") })
+              : t("gameCard.notOwnedHint");
+          })()}
           onClose={() => setDetailsGame(null)}
         />
       )}

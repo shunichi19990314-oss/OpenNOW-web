@@ -32,7 +32,8 @@
       "showInFolder": "Show in folder",
       "sort": "Sort",
       "stop": "Stop",
-      "switch": "Switch"
+      "switch": "Switch",
+      "upgradeMembership": "Upgrade your GeForce NOW membership"
     },
     "status": {
       "checking": "Checking",
@@ -379,7 +380,13 @@
     "addFavorite": "Add to favorites",
     "removeFavorite": "Remove from favorites",
     "viewDetails": "View details for {{title}}",
-    "unknownStore": "Unknown"
+    "unknownStore": "Unknown",
+    "notOwned": "Not owned",
+    "notOwnedHint": "You do not own this game yet. Buy it in the store to launch it.",
+    "tierRequired": "Requires {{tier}}",
+    "tierRequiredHint": "This game needs a GeForce NOW {{tier}} membership or higher.",
+    "lockedMessage": "{{title}} is not playable on this account.",
+    "tierRequiredFallback": "a higher tier"
   },
   "streamLoading": {
     "labels": {
@@ -940,7 +947,9 @@
       "persistInGameSettingsHint": "Lets supported games keep graphics options changed inside the stream. Sent only for games that advertise NVIDIA in-game settings persistence support.",
       "keyboardLayout": "Keyboard Layout",
       "preferredStore": "Preferred Store",
-      "launchBehavior": "Launch Behavior"
+      "launchBehavior": "Launch Behavior",
+      "hideUnplayable": "Hide games you cannot play",
+      "hideUnplayableHint": "Removes games you do not own and games your membership cannot launch from the store lists. Free-to-play titles stay visible."
     },
     "audio": {
       "title": "Audio",
