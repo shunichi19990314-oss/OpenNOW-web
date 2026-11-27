@@ -42,7 +42,8 @@ export interface LibraryPageProps {
   onPlayGame: (game: GameInfo) => void;
   favoriteGameIds: string[];
   onToggleFavorite: (game: GameInfo) => void;
-  onBuyGame?: (game: GameInfo, selectedVariantId?: string) => void;
+  /** Opens the store page that sells the selected variant (see `handleBuyGame`). */
+  onBuyGame?: (game: GameInfo, selectedVariantId?: string) => void | Promise<void>;
   isLoading: boolean;
   selectedGameId: string;
   onSelectGame: (id: string) => void;
@@ -117,6 +118,16 @@ export const LibraryPage = memo(function LibraryPage({
 }: LibraryPageProps): JSX.Element {
   const { t } = useTranslation();
   const [detailsGame, setDetailsGame] = useState<GameInfo | null>(null);
+  const [buyPendingGameId, setBuyPendingGameId] = useState<string | null>(null);
+  const handleBuyFromDetails = async (target: GameInfo): Promise<void> => {
+    if (!onBuyGame) return;
+    setBuyPendingGameId(target.id);
+    try {
+      await onBuyGame(target, selectedVariantByGameId[target.id]);
+    } finally {
+      setBuyPendingGameId(null);
+    }
+  };
   const catalogActionsRef = useCatalogCardActionsRef({
     onPlayGame,
     onToggleFavorite,
@@ -860,6 +871,8 @@ export const LibraryPage = memo(function LibraryPage({
               ? t("gameCard.tierRequiredHint", { tier: access.tierLabel ?? t("gameCard.tierRequiredFallback") })
               : t("gameCard.notOwnedHint");
           })()}
+          onBuy={onBuyGame ? () => { void handleBuyFromDetails(detailsGame); } : undefined}
+          isBuyPending={buyPendingGameId === detailsGame.id}
           onClose={() => setDetailsGame(null)}
         />
       )}

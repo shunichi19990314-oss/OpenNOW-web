@@ -3408,7 +3408,17 @@ export function App(): JSX.Element {
     });
   }, []);
 
-  const handleBuyGame = useCallback((game: GameInfo, selectedVariantId?: string): void => {
+  /**
+   * Hand the player to the store page that sells this title.
+   *
+   * GeForce NOW is a streaming client, not a shop: NVIDIA does not sell the
+   * games, each one settles in Steam/Epic/Ubisoft/…. The shell therefore cannot
+   * take payment itself; what it can do — and what this does — is open the exact
+   * product page for the selected store variant, so "buy it" is one click
+   * instead of a search. Returns a promise so the caller can show a pending
+   * state while the URL is resolved.
+   */
+  const handleBuyGame = useCallback(async (game: GameInfo, selectedVariantId?: string): Promise<void> => {
     const selectedVariant = getSelectedVariant(game, selectedVariantId ?? defaultVariantId(game));
     const localStoreUrl = selectedVariant?.storeUrl
       ?? game.variants.find((variant) => variant.storeUrl)?.storeUrl;
@@ -3418,21 +3428,37 @@ export function App(): JSX.Element {
     }
 
     const token = authSession?.tokens.idToken ?? authSession?.tokens.accessToken;
-    if (!token) return;
+    if (!token) {
+      setCatalogActionNotice({ tone: "warn", text: t("errors.markOwnedSignInRequired") });
+      return;
+    }
 
-    void window.openNow.resolveStoreUrl({
-      token,
-      providerStreamingBaseUrl: effectiveStreamingBaseUrl,
-      proxyUrl: activeSessionProxyUrl,
-      appIdOrUuid: game.uuid ?? game.id,
-      variantId: selectedVariant?.id ?? selectedVariantId,
-      store: selectedVariant?.store,
-    }).then((storeUrl) => {
-      if (storeUrl) handleOpenStoreUrl(storeUrl);
-    }).catch((error) => {
+    try {
+      const storeUrl = await window.openNow.resolveStoreUrl({
+        token,
+        providerStreamingBaseUrl: effectiveStreamingBaseUrl,
+        proxyUrl: activeSessionProxyUrl,
+        appIdOrUuid: game.uuid ?? game.id,
+        variantId: selectedVariant?.id ?? selectedVariantId,
+        store: selectedVariant?.store,
+      });
+      if (storeUrl) {
+        handleOpenStoreUrl(storeUrl);
+        return;
+      }
+      setCatalogActionNotice({ tone: "warn", text: t("errors.storeUrlUnavailable", { title: game.title }) });
+    } catch (error) {
       console.error("Failed to resolve Store URL:", error);
-    });
-  }, [activeSessionProxyUrl, authSession, effectiveStreamingBaseUrl, handleOpenStoreUrl]);
+      setCatalogActionNotice({ tone: "warn", text: t("errors.storeUrlUnavailable", { title: game.title }) });
+    }
+  }, [
+    activeSessionProxyUrl,
+    authSession,
+    effectiveStreamingBaseUrl,
+    handleOpenStoreUrl,
+    setCatalogActionNotice,
+    t,
+  ]);
 
   useEffect(() => {
     if (!logoutConfirmOpen && !removeAccountConfirmOpen) return;

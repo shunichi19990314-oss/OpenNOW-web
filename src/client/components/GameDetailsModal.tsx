@@ -1,4 +1,4 @@
-import { Check, Gamepad2, Heart, Lock, Monitor, Play, Users, X } from "lucide-react";
+import { Check, Gamepad2, Heart, Lock, Monitor, Play, ShoppingCart, Users, X } from "lucide-react";
 import type { JSX } from "react";
 import type { GameInfo } from "@shared/gfn";
 import { useTranslation } from "../i18n";
@@ -16,10 +16,28 @@ export interface GameDetailsModalProps {
   isFavorite: boolean;
   onToggleFavorite: () => void;
   onPlay: () => void;
+  /**
+   * Opens the game's page on the store that sells it. GeForce NOW is a
+   * streaming client, not a shop: purchases settle in Steam/Epic/…, so the
+   * closest the shell can get to "buying it here" is handing the exact
+   * product page over without leaving the player to search for it.
+   */
+  onBuy?: () => void;
+  /** True while the store URL is being resolved. */
+  isBuyPending?: boolean;
   onClose: () => void;
 }
 
-export function GameDetailsModal({ game, isFavorite, onToggleFavorite, onPlay, onClose, lockedReason }: GameDetailsModalProps): JSX.Element {
+export function GameDetailsModal({
+  game,
+  isFavorite,
+  onToggleFavorite,
+  onPlay,
+  onBuy,
+  isBuyPending = false,
+  onClose,
+  lockedReason,
+}: GameDetailsModalProps): JSX.Element {
   const { t } = useTranslation();
   const stores = (game.availableStores ?? []).map((store) => getStoreDisplayName(store, t));
   const playerCount = [game.maxLocalPlayers, game.maxOnlinePlayers].filter((value): value is number => typeof value === "number" && value > 0);
@@ -52,7 +70,19 @@ export function GameDetailsModal({ game, isFavorite, onToggleFavorite, onPlay, o
         </div>
         <div className="game-details-content">
           <div className="game-details-actions">
-            {lockedReason ? (
+            {lockedReason && onBuy ? (
+              // The reason the title is locked is "not owned yet": offer the
+              // store page instead of a dead Play button.
+              <button
+                type="button"
+                className="game-details-play"
+                onClick={onBuy}
+                disabled={isBuyPending}
+              >
+                <ShoppingCart size={16} />
+                {isBuyPending ? t("gameDetails.openingStore") : t("gameDetails.buyOnStore")}
+              </button>
+            ) : lockedReason ? (
               <span className="game-details-locked" title={lockedReason}>
                 <Lock size={15} aria-hidden="true" />
                 {lockedReason}
@@ -73,6 +103,9 @@ export function GameDetailsModal({ game, isFavorite, onToggleFavorite, onPlay, o
               {isFavorite ? t("gameCard.removeFavorite") : t("gameCard.addFavorite")}
             </button>
           </div>
+          {lockedReason && onBuy && (
+            <p className="game-details-purchase-note">{t("gameDetails.buyHint")}</p>
+          )}
           <p className="game-details-description">{description}</p>
           <div className="game-details-meta">
             {game.developerName && <span><Gamepad2 size={14} />{t("library.developer", { developer: game.developerName })}</span>}
