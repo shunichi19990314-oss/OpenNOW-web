@@ -1,5 +1,6 @@
 import { Check, Gamepad2, Heart, Library, Lock, Monitor, Play, ShoppingCart, Users, X } from "lucide-react";
 import type { JSX } from "react";
+import { createPortal } from "react-dom";
 import type { GameInfo } from "@shared/gfn";
 import { useTranslation } from "../i18n";
 import { getJapaneseGameDescription } from "../utils/localizedGameText";
@@ -65,7 +66,7 @@ export function GameDetailsModal({
     ...(game.nvidiaTech ?? []).map((tech) => nvidiaTechLabel(tech, t)),
   ].filter((tag): tag is string => Boolean(tag));
 
-  return (
+  const dialog = (
     <div className="game-details-backdrop" role="presentation" onMouseDown={(event) => { if (event.target === event.currentTarget) onClose(); }}>
       <section className="game-details-modal" role="dialog" aria-modal="true" aria-labelledby="game-details-title">
         <button type="button" className="game-details-close" onClick={onClose} aria-label={t("app.actions.close")}>
@@ -157,4 +158,14 @@ export function GameDetailsModal({
       </section>
     </div>
   );
+
+  // The modal is rendered from inside `.main-content`, which creates its own
+  // stacking context (`position: relative; z-index: 1`). A `z-index` on the
+  // backdrop can therefore never rise above the fixed header — the opaque
+  // navbar painted over the top of the overlay, which is what made the hero
+  // look like it was sliding under the header. Portalling to `document.body`
+  // puts the overlay in the root stacking context, the same way every other
+  // overlay in this shell does it.
+  if (typeof document === "undefined") return dialog;
+  return createPortal(dialog, document.body);
 }
