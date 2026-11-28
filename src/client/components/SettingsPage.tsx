@@ -57,6 +57,12 @@ interface SettingsPageProps {
   onResetSettings?: () => Promise<boolean>;
   /** Opens the Captures page from the Recording section. */
   onOpenCaptures?: () => void;
+  /** Applies a restored settings backup (merge semantics). */
+  onRestoreSettings?: (settings: Settings) => void;
+  /** The build's defaults, used to write only changed keys into a backup. */
+  defaultSettings?: Settings;
+  /** Written into the exported backup so a restore shows whose file it is. */
+  accountLabel?: string;
 }
 
 export function SettingsPage({
@@ -72,6 +78,9 @@ export function SettingsPage({
   streamDiagnostics,
   onResetSettings,
   onOpenCaptures,
+  onRestoreSettings,
+  defaultSettings,
+  accountLabel,
 }: SettingsPageProps): JSX.Element {
   const { t } = useTranslation();
   const [savedIndicator, setSavedIndicator] = useState(false);
@@ -282,6 +291,9 @@ export function SettingsPage({
                       showAll={showAll}
                       subscriptionInfo={subscriptionInfo}
                       subscriptionLoading={subscriptionLoading}
+                      defaultSettings={defaultSettings}
+                      onRestoreSettings={onRestoreSettings}
+                      accountLabel={accountLabel}
                     />
                   )}
                   {showStores && (

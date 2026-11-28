@@ -77,7 +77,7 @@ import type {
 import { loadStoredCodecResults, saveStoredCodecResults, testCodecSupport, type CodecTestResult } from "./lib/codecDiagnostics";
 import { clampBitrateForConnection, readNavigatorConnection } from "./lib/connectionBitrate";
 import { ensureNotificationPermission, notifyQueueFailed, notifyStreamReady } from "./lib/queueNotifier";
-import { DEVICE_STREAM_DEFAULTS, fitResolutionToDisplay, getAutomaticMaxBitrateMbps } from "./webDefaults";
+import { DEVICE_STREAM_DEFAULTS, WEB_DEFAULT_SETTINGS, fitResolutionToDisplay, getAutomaticMaxBitrateMbps } from "./webDefaults";
 import {
   createSyntheticDirectLaunchGame,
   findDirectLaunchTarget,
@@ -169,6 +169,12 @@ import { captureFrameFromVideo } from "./lib/aiPlayerCapture";
 import { QueueServerSelectModal } from "./components/QueueServerSelectModal";
 import { CommandPalette } from "./components/CommandPalette";
 import { arrowKeyOf, isTypingTarget, nextGridIndex, readGridColumns } from "./lib/dialogKeys";
+import {
+  loadLaunchRoutes,
+  recordLaunchRoute,
+  saveLaunchRoutes,
+  type LaunchRouteStore,
+} from "./lib/launchRoutes";
 import { ReleaseHighlightsModal } from "./components/ReleaseHighlightsModal";
 import { overlayMotion, pageTransition, standardEase } from "./components/MotionProvider";
 import { LazyShaderAtmosphere } from "./components/LazyShaderAtmosphere";
@@ -227,6 +233,10 @@ export function App(): JSX.Element {
   const [settingsMounted, setSettingsMounted] = useState(false);
   // Ctrl/⌘+K command palette
   const [commandPaletteOpen, setCommandPaletteOpen] = useState(false);
+  // Last known launch route per game. Written when a launch starts, read by the
+  // "続きからプレイ" rail so a session that used a region/alliance server can be
+  // resumed on it instead of silently falling back to the default route.
+  const [launchRoutes, setLaunchRoutes] = useState<LaunchRouteStore>(() => loadLaunchRoutes(window.localStorage));
   // The palette can also be summoned mid-stream. The in-game keyboard handler
   // forwards every key to the remote rig, so streaming input is paused while
   // the palette is open and restored to its previous state on close.
@@ -1785,6 +1795,10 @@ export function App(): JSX.Element {
 
 
   // Save settings when changed
+  useEffect(() => {
+    saveLaunchRoutes(launchRoutes, window.localStorage);
+  }, [launchRoutes]);
+
   const updateSetting = useCallback(async <K extends keyof Settings>(key: K, value: Settings[K]) => {
     setSettings((prev) => ({ ...prev, [key]: value }));
     if (settingsLoaded) {
@@ -2829,6 +2843,14 @@ export function App(): JSX.Element {
       return;
     }
 
+    // Remember which server this launch went to, so "続きからプレイ" can offer
+    // the same route again instead of guessing. Recorded on the launch, not on
+    // success: a failed attempt still tells the visitor which server they tried.
+    setLaunchRoutes((previous) => recordLaunchRoute(previous, game.id, {
+      streamingBaseUrl: options?.streamingBaseUrl ?? effectiveStreamingBaseUrl,
+      providerName: selectedProvider?.displayName,
+    }));
+
     const selectedVariantId = options?.variantId ?? variantByGameId[game.id] ?? defaultVariantId(game);
     const selectedVariant = getSelectedVariant(game, selectedVariantId);
     const epicOwnershipError = getEpicOwnershipLaunchError(selectedVariant);
@@ -3310,7 +3332,7 @@ export function App(): JSX.Element {
   ]);
 
   // Gate handler: shows queue server modal for FREE-tier users before launching
-  const handleInitiatePlay = useCallback(async (game: GameInfo) => {
+  const handleInitiatePlay = useCallback(async (game: GameInfo, streamingBaseUrlOverride?: string) => {
     const effectiveTier = normalizeMembershipTier(
       subscriptionInfo?.membershipTier ?? authSession?.user.membershipTier,
     );
@@ -3327,18 +3349,22 @@ export function App(): JSX.Element {
       });
       return;
     }
+    // A route the visitor already played from ("続きからプレイ" on a saved
+    // region/alliance server) wins over the queue-server picker: they asked for
+    // that server, and the picker would route them somewhere else.
+    const launchBaseUrl = streamingBaseUrlOverride ?? effectiveStreamingBaseUrl;
     const isFreeUser = effectiveTier === "FREE";
     const activeProvider = authSession?.provider ?? selectedProvider;
     const isNvidiaAccount = isNvidiaProvider(activeProvider);
-    const isAllianceServer = isAllianceStreamingBaseUrl(effectiveStreamingBaseUrl);
+    const isAllianceServer = isAllianceStreamingBaseUrl(launchBaseUrl);
     if (!isNvidiaAccount || isAllianceServer) {
       setQueueModalData(null);
-      void handlePlayGame(game);
+      void handlePlayGame(game, streamingBaseUrlOverride ? { streamingBaseUrl: streamingBaseUrlOverride } : undefined);
       return;
     }
     if (settings.hideServerSelector) {
       setQueueModalData(null);
-      void handlePlayGame(game);
+      void handlePlayGame(game, streamingBaseUrlOverride ? { streamingBaseUrl: streamingBaseUrlOverride } : undefined);
       return;
     }
     if (isFreeUser && streamStatus === "idle" && !launchInFlightRef.current) {
@@ -4258,6 +4284,14 @@ export function App(): JSX.Element {
     }
   }, []);
 
+  // Apply a restored settings backup. Same path as a single setting change so
+  // storage, the in-memory state and the dependent UI (stats overlay) all move
+  // together; a full reload would drop an in-progress stream.
+  const handleRestoreSettingsBackup = useCallback((restored: Settings): void => {
+    setSettings(restored);
+    setShowStatsOverlay(restored.showStatsOnLaunch);
+  }, []);
+
   const handleDismissReleaseHighlights = useCallback((): void => {
     if (releaseHighlightsIsAuto) {
       void window.openNow.ackReleaseHighlights().catch((err) => {
@@ -4597,6 +4631,8 @@ export function App(): JSX.Element {
                 searchQuery={searchQuery}
                 onSearchChange={setSearchQuery}
                 onPlayGame={handleInitiatePlay}
+                onResumeRoute={handleInitiatePlay}
+                launchRoutes={launchRoutes}
                 favoriteGameIds={settings.favoriteGameIds}
                 onToggleFavorite={handleToggleFavorite}
                 isLoading={effectiveControllerMode ? isLoadingStorePanels : isLoadingCatalog}
@@ -4705,6 +4741,9 @@ export function App(): JSX.Element {
             onOpenWhatsNew={handleOpenWhatsNew}
             streamDiagnostics={diagnosticsStoreRef.current}
             onResetSettings={handleResetSettings}
+            onRestoreSettings={handleRestoreSettingsBackup}
+            defaultSettings={WEB_DEFAULT_SETTINGS}
+            accountLabel={authSession?.user?.email ?? authSession?.user?.userId}
             onOpenCaptures={handleOpenCapturesFromSettings}
           />
         )}

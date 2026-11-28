@@ -210,7 +210,9 @@
       "play": "Play",
       "railTitle": "Continue playing",
       "neverPlayed": "Never played",
-      "sessionCount": "{{count}} sessions"
+      "sessionCount": "{{count}} sessions",
+      "resumeOnRoute": "Resume on this server",
+      "routeHint": "Last played on: {{route}}"
     },
     "hero": {
       "play": "Play",
@@ -1320,6 +1322,26 @@
       "shellMode": "Shell",
       "shellDesktop": "Desktop",
       "shellConsole": "Console"
+    },
+    "backup": {
+      "title": "Settings backup",
+      "description": "Write your settings, favourites and hidden games to a single JSON file and restore them in another browser or machine. The file stays on your device — nothing is uploaded.",
+      "export": "Export to file",
+      "restore": "Restore from file",
+      "exported": "Exported {{count}} settings.",
+      "restored": "Restored {{count}} settings.",
+      "confirmTitle": "Confirm restore",
+      "confirmBody": "Restore {{summary}}? Settings included in this file will replace the current values.",
+      "confirm": "Restore",
+      "summaryKeys": "{{count}} settings",
+      "summaryAccount": "exported by {{account}}",
+      "unknownDate": "unknown date",
+      "errors": {
+        "notJson": "Could not read the file: it is not valid JSON.",
+        "notBackup": "That file is not a settings backup from this app.",
+        "unsupportedVersion": "That backup uses a newer format. Update the app first.",
+        "empty": "The file contains no settings to restore."
+      }
     }
   },
   "navbar": {

@@ -1,4 +1,4 @@
-import { Clock, History, Play } from "lucide-react";
+import { Clock, History, Play, Server } from "lucide-react";
 import { memo, type JSX } from "react";
 
 import type { GameInfo } from "@shared/gfn";
@@ -6,11 +6,24 @@ import type { GameInfo } from "@shared/gfn";
 import { useTranslation } from "../i18n";
 import { formatTotalPlaytime, playtimeUnits, type RecentActivityEntry } from "../lib/localPreferences";
 import { formatCatalogLastPlayed } from "../utils/lastPlayedFormat";
+import {
+  gameHasSavedRoute,
+  launchRouteLabel,
+  launchRouteStreamingUrl,
+  type LaunchRouteStore,
+} from "../lib/launchRoutes";
 
 export interface ContinuePlayingRailProps {
   entries: RecentActivityEntry[];
   onPlay: (game: GameInfo) => void;
   onDetails: (game: GameInfo) => void;
+  /**
+   * Resumes a game on the server it was last played on, instead of the default
+   * route. Omitted when the app has no route information to offer.
+   */
+  onResumeRoute?: (game: GameInfo, streamingBaseUrl: string) => void;
+  /** Last known launch route per game id (`launchRoutes.ts`). */
+  launchRoutes?: LaunchRouteStore;
   /** How many cards to show; the rail stays scannable on wide screens. */
   limit?: number;
 }
@@ -27,6 +40,8 @@ export const ContinuePlayingRail = memo(function ContinuePlayingRail({
   entries,
   onPlay,
   onDetails,
+  onResumeRoute,
+  launchRoutes = {},
   limit = 8,
 }: ContinuePlayingRailProps): JSX.Element | null {
   const { t } = useTranslation();
@@ -43,6 +58,13 @@ export const ContinuePlayingRail = memo(function ContinuePlayingRail({
         {entries.slice(0, limit).map((entry) => {
           const { game, lastPlayedMs, totalSeconds, sessionCount } = entry;
           const art = game.heroImageUrl ?? game.imageUrl;
+          // A session started on a region/alliance server is resumed there:
+          // falling back to the default route would quietly change where the
+          // game runs (latency, queue, save sync) from one click to the next.
+          const route = launchRoutes[game.id];
+          const savedRoute = gameHasSavedRoute(route) ? route : undefined;
+          const routeLabel = savedRoute ? launchRouteLabel(savedRoute) : null;
+          const routeUrl = savedRoute ? launchRouteStreamingUrl(savedRoute) : undefined;
           return (
             <div key={game.id} className="home-continue-tile">
               <button
@@ -76,14 +98,31 @@ export const ContinuePlayingRail = memo(function ContinuePlayingRail({
                     ? ` · ${t("home.continuePlaying.sessionCount", { count: sessionCount })}`
                     : ""}
                 </span>
+                {routeLabel && (
+                  <span
+                    className="home-continue-tile-meta home-continue-tile-route"
+                    title={t("home.continuePlaying.routeHint", { route: routeLabel })}
+                  >
+                    <Server size={11} aria-hidden="true" />
+                    {routeLabel}
+                  </span>
+                )}
               </div>
               <button
                 type="button"
                 className="home-continue-tile-resume"
-                onClick={() => onPlay(game)}
+                onClick={() => {
+                  if (routeUrl && onResumeRoute) {
+                    onResumeRoute(game, routeUrl);
+                    return;
+                  }
+                  onPlay(game);
+                }}
               >
                 <Play size={14} />
-                {t("home.continuePlaying.play")}
+                {routeUrl && onResumeRoute
+                  ? t("home.continuePlaying.resumeOnRoute")
+                  : t("home.continuePlaying.play")}
               </button>
             </div>
           );
