@@ -151,7 +151,21 @@ body,
   display: flex;
   flex-direction: column;
   background:
-    radial-gradient(900px 400px at 80% -5%, rgba(var(--accent-rgb), 0.03), transparent 70%),
+    /* Vignette: pulls the eye toward the grid and keeps the edges quiet. */
+    radial-gradient(120% 90% at 50% 0%, transparent 45%, rgba(0, 0, 0, 0.28) 100%),
+    /* Accent bloom, top right where the hero lives. */
+    radial-gradient(900px 400px at 80% -5%, rgba(var(--accent-rgb), 0.06), transparent 70%),
+    /* Second, cooler bloom bottom left so the page is not one-sided. */
+    radial-gradient(760px 420px at 4% 108%, color-mix(in srgb, var(--info) 7%, transparent), transparent 68%),
+    linear-gradient(180deg, var(--bg-a), var(--bg-b));
+}
+
+[data-theme="light"] .app-container {
+  /* The same composition with far less darkness: a white-on-white vignette
+     reads as a dirty edge, so light mode leans on the blooms only. */
+  background:
+    radial-gradient(900px 420px at 82% -6%, rgba(var(--accent-rgb), 0.12), transparent 70%),
+    radial-gradient(700px 400px at 2% 104%, color-mix(in srgb, var(--info) 9%, transparent), transparent 66%),
     linear-gradient(180deg, var(--bg-a), var(--bg-b));
 }
 
@@ -3900,7 +3914,12 @@ body,
 }
 
 .game-card:hover {
-  border-color: color-mix(in srgb, var(--ink) 10%, transparent);
+  border-color: color-mix(in srgb, var(--accent) 30%, var(--panel-border));
+  /* A real lift: the card leaves the plane instead of only changing its ring.
+     `--shadow-md` scales with the theme, so light mode gets a soft grey rather
+     than the dark mode's near-black smear. */
+  box-shadow: var(--shadow-md), 0 0 0 1px color-mix(in srgb, var(--accent) 16%, transparent);
+  transform: translate3d(0, -3px, 0);
 }
 
 .game-card:hover::after {
@@ -3909,7 +3928,57 @@ body,
 
 .game-card.selected {
   border-color: var(--accent);
-  box-shadow: 0 0 0 1px var(--accent-glow);
+  box-shadow: 0 0 0 1px var(--accent-glow), 0 0 24px -6px var(--accent-glow);
+}
+
+.game-card.selected::after {
+  opacity: 1;
+}
+
+/* The transition list above only covers border/shadow; the lift needs the
+   transform to animate too, and the reduced-motion block below cancels it. */
+.game-card {
+  transition:
+    border-color var(--t-normal),
+    box-shadow var(--t-normal),
+    transform var(--t-normal);
+}
+
+/* Base image treatment: a touch of saturation and contrast so catalogue art
+   does not look washed out next to the accent. */
+.game-card-image {
+  filter: saturate(1.06) contrast(1.03);
+  transition: transform var(--t-slow), filter var(--t-slow);
+}
+
+.game-card:hover .game-card-image {
+  filter: saturate(1.18) contrast(1.06) brightness(1.04);
+}
+
+/* Sheen sweep, drawn from the accent so it belongs to the theme.
+   Pure decoration: pointer-events none, and it only exists on hover. */
+.game-card-image-wrapper::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  pointer-events: none;
+  opacity: 0;
+  background: linear-gradient(
+    100deg,
+    transparent 32%,
+    color-mix(in srgb, var(--accent) 22%, transparent) 46%,
+    rgba(255, 255, 255, 0.16) 50%,
+    color-mix(in srgb, var(--accent) 22%, transparent) 54%,
+    transparent 68%
+  );
+  transform: translate3d(-65%, 0, 0);
+  transition: opacity var(--t-fast), transform 620ms var(--ease);
+}
+
+.game-card:hover .game-card-image-wrapper::after {
+  opacity: 0.85;
+  transform: translate3d(65%, 0, 0);
 }
 
 /* Image wrapper — portrait poster art */
@@ -3968,6 +4037,22 @@ body,
 .game-card:hover .game-card-gradient,
 .game-card:hover .game-card-play-button {
   opacity: 1;
+}
+
+/* The play affordance scales up rather than fading in flat: on a wide grid the
+   cursor is often already over a card, and a pop is easier to catch than an
+   opacity change alone. */
+.game-card-play-button {
+  transform: scale(0.86);
+  transition: opacity var(--t-normal), transform var(--t-normal);
+}
+
+.game-card:hover .game-card-play-button {
+  transform: scale(1);
+}
+
+.game-card-play-button:hover {
+  transform: scale(1.08);
 }
 
 .game-card:hover .game-card-play-button {
@@ -14956,4 +15041,243 @@ body {
 
 .settings-backup-message--error {
   color: var(--danger, #ff6b6b);
+}
+
+/* ======================================================
+   VISUAL POLISH PASS
+   Depth, glow and motion that the palette already supports. Everything here
+   is decoration layered on top of existing markup: no behaviour changes, and
+   every animation is cancelled by the reduced-motion block at the end.
+   ====================================================== */
+
+/* --- Navbar: a floating glass bar instead of a flat strip --- */
+.navbar {
+  background: color-mix(in srgb, var(--bg-a) 82%, transparent);
+  backdrop-filter: blur(18px) saturate(1.2);
+  -webkit-backdrop-filter: blur(18px) saturate(1.2);
+  border-bottom: 1px solid color-mix(in srgb, var(--ink) 8%, transparent);
+  /* A hairline of accent under the bar ties it to the brand mark. */
+  box-shadow: 0 1px 0 0 color-mix(in srgb, var(--accent) 14%, transparent), 0 10px 30px -18px rgba(0, 0, 0, 0.7);
+}
+
+/* --- Hero: accent halo + slow art drift --- */
+.home-hero::after {
+  content: "";
+  position: absolute;
+  inset: -1px;
+  border-radius: inherit;
+  pointer-events: none;
+  /* Inner rim light: the slide looks lit from the top-left corner. */
+  background: linear-gradient(140deg, color-mix(in srgb, var(--accent) 18%, transparent), transparent 32%);
+  opacity: 0.35;
+  mix-blend-mode: screen;
+}
+
+.home-hero-bg {
+  animation: hero-drift 26s ease-in-out infinite alternate;
+}
+
+@keyframes hero-drift {
+  from { transform: scale(1.02) translate3d(0, 0, 0); }
+  to   { transform: scale(1.075) translate3d(-1.2%, -0.9%, 0); }
+}
+
+/* Hero buttons: the primary action gets a soft accent glow on hover, the
+   secondary card stays glassy. */
+.home-hero-play {
+  transition: transform var(--t-fast), box-shadow var(--t-normal), background var(--t-fast);
+}
+
+.home-hero-play:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 24px -8px color-mix(in srgb, var(--accent) 70%, transparent);
+}
+
+.home-hero-details {
+  transition: transform var(--t-fast), background var(--t-fast), border-color var(--t-fast);
+}
+
+.home-hero-details:hover {
+  transform: translateY(-1px);
+}
+
+/* --- Section headings: gradient rule + accent tick --- */
+.home-section-bar {
+  background: linear-gradient(180deg, var(--accent), color-mix(in srgb, var(--accent) 30%, transparent));
+  border-radius: var(--r-full);
+  box-shadow: 0 0 10px -2px var(--accent-glow);
+}
+
+/* --- Rows: edge fade so scrolled cards do not collide with the page edge --- */
+.home-row-scroller,
+.home-grid-area .home-row-scroller {
+  -webkit-mask-image: linear-gradient(to right, transparent 0, #000 14px, #000 calc(100% - 22px), transparent 100%);
+  mask-image: linear-gradient(to right, transparent 0, #000 14px, #000 calc(100% - 22px), transparent 100%);
+}
+
+/* --- Continue rail tiles: same depth language as the cards --- */
+.home-continue-tile {
+  transition: transform var(--t-normal), border-color var(--t-normal), box-shadow var(--t-normal);
+}
+
+.home-continue-tile:hover {
+  box-shadow: var(--shadow-md), 0 0 0 1px color-mix(in srgb, var(--accent) 14%, transparent);
+}
+
+/* --- Toolbar chips: unify the hover ring with the accent --- */
+.home-filter-chip:hover,
+.library-quick-chip:hover {
+  border-color: color-mix(in srgb, var(--accent) 34%, var(--panel-border));
+}
+
+.home-filter-chip.active,
+.library-quick-chip--active {
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--accent) 26%, transparent), 0 2px 12px -6px var(--accent-glow);
+}
+
+/* --- Details modal: deeper stage, accent-lit action row --- */
+.game-details-modal {
+  animation: modal-rise 260ms var(--ease);
+  background:
+    radial-gradient(120% 70% at 50% 0%, color-mix(in srgb, var(--accent) 7%, transparent), transparent 60%),
+    var(--panel);
+}
+
+@keyframes modal-rise {
+  from { opacity: 0; transform: translate3d(0, 14px, 0) scale(0.985); }
+  to   { opacity: 1; transform: none; }
+}
+
+.game-details-play {
+  box-shadow: 0 8px 24px -10px color-mix(in srgb, var(--accent) 80%, transparent);
+  transition: transform var(--t-fast), box-shadow var(--t-normal), background var(--t-fast);
+}
+
+.game-details-play:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 12px 30px -10px color-mix(in srgb, var(--accent) 90%, transparent);
+}
+
+/* Tag chips already carry the accent hairline; only the hover reaction is
+   added, so the existing colour semantics stay intact. */
+.game-details-tags span {
+  transition: border-color var(--t-fast), background var(--t-fast), color var(--t-fast);
+}
+
+.game-details-tags span:hover {
+  border-color: color-mix(in srgb, var(--accent) 30%, transparent);
+  background: color-mix(in srgb, var(--accent) 8%, transparent);
+}
+
+/* --- Focus ring: one consistent, visible ring for keyboard visitors --- */
+.game-card:focus-visible,
+.home-continue-tile-resume:focus-visible,
+.home-hero-play:focus-visible,
+.home-free-add:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+/* --- Reduced motion: kill every animation added above --- */
+@media (prefers-reduced-motion: reduce) {
+  .home-hero-bg,
+  .game-details-modal {
+    animation: none !important;
+  }
+
+  .game-card,
+  .game-card-image,
+  .game-card-image-wrapper::after,
+  .game-card-play-button,
+  .home-continue-tile,
+  .home-hero-play,
+  .home-hero-details,
+  .game-details-play {
+    transition: none !important;
+  }
+
+  .game-card:hover {
+    transform: none;
+  }
+
+  .game-card:hover .game-card-image {
+    filter: saturate(1.06) contrast(1.03);
+  }
+
+  /* The sweep is pure motion: drop it rather than freezing it mid-card. */
+  .game-card-image-wrapper::after {
+    display: none;
+  }
+}
+
+/* --- Card caption: the title gets an underline that grows from the accent --- */
+.game-card-title {
+  position: relative;
+  transition: color var(--t-fast);
+}
+
+.game-card:hover .game-card-title {
+  color: var(--accent);
+}
+
+/* --- Store chips on a card: accent when the variant is owned --- */
+.game-card-store-chip {
+  transition: transform var(--t-fast), border-color var(--t-fast), background var(--t-fast);
+}
+
+.game-card-store-chip:hover {
+  transform: translateY(-1px);
+}
+
+.game-card-store-chip.active {
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--accent) 40%, transparent);
+}
+
+/* --- Empty states and skeletons: a little life, no layout shift --- */
+.home-empty-icon {
+  color: color-mix(in srgb, var(--accent) 55%, var(--ink-muted));
+  filter: drop-shadow(0 8px 20px var(--accent-glow));
+}
+
+.home-skeleton-card {
+  animation: skeleton-pulse 2.4s ease-in-out infinite;
+}
+
+@keyframes skeleton-pulse {
+  0%, 100% { opacity: 0.55; }
+  50%      { opacity: 0.95; }
+}
+
+/* --- Buttons across the shell: consistent press feedback --- */
+.home-continue-tile-resume:active,
+.home-free-add:active,
+.game-details-play:active,
+.settings-backup-btn:active {
+  transform: translateY(1px) scale(0.99);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .home-skeleton-card {
+    animation: none;
+    opacity: 0.8;
+  }
+
+  .game-card-store-chip:hover,
+  .home-continue-tile-resume:active,
+  .home-free-add:active,
+  .game-details-play:active,
+  .settings-backup-btn:active {
+    transform: none;
+  }
+}
+
+/* --- Row scrollers need vertical room now that cards lift and cast a shadow ---
+   `overflow-x: auto` forces `overflow-y` to `auto` as well, so the 2px top
+   padding clipped the top edge of a hovered card and the shadow of the one
+   below. The extra padding (not margin) keeps the clipping box open. */
+.home-row-scroller {
+  padding-top: 8px;
+  padding-bottom: 24px;
+  margin-top: -6px;
+  margin-bottom: -12px;
 }
