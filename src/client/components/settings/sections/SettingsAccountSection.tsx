@@ -6,12 +6,19 @@ import { useTranslation } from "../../../i18n";
 import { SelectDropdown } from "../../ui/SelectDropdown";
 import { formatStorageGb } from "../settingsFormatters";
 import type { StorageResetState } from "../settingsTypes";
+import { SettingsBackupCard } from "./SettingsBackupCard";
 
 export interface SettingsAccountSectionProps {
   settings: Settings;
   showAll: boolean;
   subscriptionInfo: SubscriptionInfo | null;
   subscriptionLoading: boolean;
+  /** The build's defaults, so a backup only carries what was changed. */
+  defaultSettings?: Settings;
+  /** Applies a restored backup (merge semantics, see `settingsBackup.ts`). */
+  onRestoreSettings?: (settings: Settings) => void;
+  /** Written into the exported file so a restore shows whose it is. */
+  accountLabel?: string;
 }
 
 export function SettingsAccountSection({
@@ -19,6 +26,9 @@ export function SettingsAccountSection({
   showAll,
   subscriptionInfo,
   subscriptionLoading,
+  defaultSettings,
+  onRestoreSettings,
+  accountLabel,
 }: SettingsAccountSectionProps): JSX.Element {
   const { t } = useTranslation();
   const [storageResetState, setStorageResetState] = useState<StorageResetState>("idle");
@@ -198,6 +208,17 @@ export function SettingsAccountSection({
           </div>
         </div>
       </div>
+
+      {showAll && defaultSettings && onRestoreSettings && (
+        // Only in the "show everything" view: the backup covers every section,
+        // so listing it inside one section's search results is misleading.
+        <SettingsBackupCard
+          settings={settings}
+          defaults={defaultSettings}
+          onRestore={onRestoreSettings}
+          accountLabel={accountLabel}
+        />
+      )}
     </section>
   );
 }

@@ -207,7 +207,9 @@
       "play": "起動",
       "railTitle": "続きからプレイ",
       "neverPlayed": "未プレイ",
-      "sessionCount": "{{count}} 回プレイ"
+      "sessionCount": "{{count}} 回プレイ",
+      "resumeOnRoute": "このサーバーで再開",
+      "routeHint": "最後にプレイしたサーバー: {{route}}"
     },
     "hero": {
       "play": "プレイ",
@@ -1317,6 +1319,26 @@
       "shellMode": "シェル",
       "shellDesktop": "デスクトップ",
       "shellConsole": "コンソール"
+    },
+    "backup": {
+      "title": "設定のバックアップ",
+      "description": "設定・お気に入り・非表示にしたゲームを 1 つの JSON ファイルに書き出し、別のブラウザや端末で復元できます。ファイルはこの端末に保存され、どこにも送信されません。",
+      "export": "ファイルに書き出す",
+      "restore": "ファイルから復元",
+      "exported": "{{count}} 件の設定を書き出しました。",
+      "restored": "{{count}} 件の設定を復元しました。",
+      "confirmTitle": "復元の確認",
+      "confirmBody": "{{summary}} を復元します。現在の設定のうち、このファイルに含まれる項目が上書きされます。",
+      "confirm": "復元する",
+      "summaryKeys": "{{count}} 件の設定",
+      "summaryAccount": "{{account}} で書き出し",
+      "unknownDate": "日付不明",
+      "errors": {
+        "notJson": "ファイルを読み取れませんでした。JSON 形式ではありません。",
+        "notBackup": "このアプリの設定バックアップではありません。",
+        "unsupportedVersion": "このバックアップは新しいバージョンの形式です。アプリを更新してください。",
+        "empty": "復元できる設定が入っていません。"
+      }
     }
   },
   "navbar": {

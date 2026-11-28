@@ -14845,3 +14845,115 @@ body {
     margin-bottom: 10px;
   }
 }
+
+/* Last launch route on the "continue playing" tile: a quiet third line, and
+   only when a non-default server was used (otherwise every tile carries it). */
+.home-continue-tile-route {
+  color: var(--accent);
+  font-weight: 600;
+}
+
+/* --- Settings backup card (Settings › Account) --- */
+.settings-backup-card {
+  margin-top: 18px;
+  padding: 16px 18px;
+  border-radius: var(--r-md, 12px);
+  border: 1px solid var(--panel-border-solid);
+  background: var(--card);
+}
+
+.settings-backup-copy h3 {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0 0 6px;
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--ink);
+}
+
+.settings-backup-copy p {
+  margin: 0 0 14px;
+  color: var(--ink-soft);
+  font-size: 0.8rem;
+  line-height: 1.6;
+}
+
+.settings-backup-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.settings-backup-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  min-height: 34px;
+  padding: 0 13px;
+  border-radius: var(--r-full);
+  border: 1px solid color-mix(in srgb, var(--accent) 40%, transparent);
+  background: var(--accent-surface, color-mix(in srgb, var(--accent) 10%, transparent));
+  color: var(--ink);
+  font: inherit;
+  font-size: 0.8rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.settings-backup-btn:hover {
+  border-color: var(--accent);
+}
+
+.settings-backup-btn:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 2px var(--accent-surface);
+}
+
+.settings-backup-btn--quiet {
+  border-color: var(--panel-border-solid);
+  background: transparent;
+  color: var(--ink-soft);
+}
+
+.settings-backup-btn--quiet:hover {
+  border-color: color-mix(in srgb, var(--ink) 30%, transparent);
+  color: var(--ink);
+}
+
+/* Native file input, driven by the button next to it. */
+.settings-backup-file {
+  display: none;
+}
+
+.settings-backup-confirm {
+  margin-top: 12px;
+  padding: 12px 14px;
+  border-radius: var(--r-sm, 8px);
+  border: 1px solid color-mix(in srgb, var(--warning, #f0b429) 38%, transparent);
+  background: color-mix(in srgb, var(--warning, #f0b429) 10%, transparent);
+}
+
+.settings-backup-confirm p {
+  display: flex;
+  align-items: flex-start;
+  gap: 7px;
+  margin: 0 0 10px;
+  font-size: 0.8rem;
+  line-height: 1.55;
+  color: var(--ink);
+}
+
+.settings-backup-message {
+  margin: 10px 0 0;
+  font-size: 0.78rem;
+  line-height: 1.5;
+}
+
+.settings-backup-message--applied {
+  color: var(--accent);
+}
+
+.settings-backup-message--error {
+  color: var(--danger, #ff6b6b);
+}

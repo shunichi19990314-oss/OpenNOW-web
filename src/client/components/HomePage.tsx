@@ -10,6 +10,7 @@ import { formatCatalogLastPlayed } from "../utils/lastPlayedFormat";
 import { GameCardListItem, useCatalogCardActionsRef } from "./GameCardListItem";
 import { isGameLockedForAccount, type GameAccess, type GameAccessMap } from "../lib/gameAccess";
 import { canAddFreeGameToLibrary, collectFreeGames } from "../lib/freeGames";
+import type { LaunchRouteStore } from "../lib/launchRoutes";
 import { GameDetailsModal } from "./GameDetailsModal";
 import { appendImageType, appendUnique, gameMatchesActiveSession } from "../lib/controllerCatalogUi";
 import { gameActivityTimestamp, summarizeRecentActivity } from "../lib/localPreferences";
@@ -48,6 +49,10 @@ export interface HomePageProps {
   searchQuery: string;
   onSearchChange: (query: string) => void;
   onPlayGame: (game: GameInfo) => void;
+  /** Resumes a game on the server it was last played on. */
+  onResumeRoute?: (game: GameInfo, streamingBaseUrl: string) => void;
+  /** Last known launch route per game (see `launchRoutes.ts`). */
+  launchRoutes?: LaunchRouteStore;
   favoriteGameIds: string[];
   onToggleFavorite: (game: GameInfo) => void;
   isLoading: boolean;
@@ -302,6 +307,8 @@ export const HomePage = memo(function HomePage({
   searchQuery,
   onSearchChange,
   onPlayGame,
+  onResumeRoute,
+  launchRoutes = {},
   favoriteGameIds,
   onToggleFavorite,
   isLoading,
@@ -1238,6 +1245,8 @@ export const HomePage = memo(function HomePage({
             entries={recentActivity}
             onPlay={onPlayGame}
             onDetails={setDetailsGame}
+            onResumeRoute={onResumeRoute}
+            launchRoutes={launchRoutes}
           />
         )}
 
