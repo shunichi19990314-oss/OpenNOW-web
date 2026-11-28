@@ -11,6 +11,7 @@ import { isGameLockedForAccount, type GameAccessMap } from "../lib/gameAccess";
 import { canAddFreeGameToLibrary } from "../lib/freeGames";
 import type { PlaytimeData } from "../lib/gameCatalog";
 import { formatTotalPlaytime, playtimeUnits, toFavoriteSet } from "../lib/localPreferences";
+import { summarizeLibraryPlaytime } from "../lib/libraryPlaytimeSummary";
 import { getControllerFeaturedGames } from "../lib/controllerCatalogUi";
 import {
   gameMatchesLibraryFilters,
@@ -244,6 +245,31 @@ export const LibraryPage = memo(function LibraryPage({
     [libraryFilterGroups, selectedLibraryFilterIds],
   );
   const hasActiveLibraryFilters = activeLibraryFilterOptions.length > 0;
+  // One line the tiles cannot give: how much of the library has actually been
+  // played, the running total, and which title took the most time. Built from
+  // the same tracker as the per-tile numbers, over the games currently shown.
+  const playtimeSummary = useMemo(
+    () => summarizeLibraryPlaytime(visibleLibraryGames, playtimeData),
+    [playtimeData, visibleLibraryGames],
+  );
+  const playtimeSummaryLine = playtimeSummary.totalSeconds > 0
+    ? [
+      t("library.playtimeSummary.total", {
+        time: formatTotalPlaytime(playtimeSummary.totalSeconds, t("home.continuePlaying.neverPlayed"), playtimeUnits(t)),
+      }),
+      t("library.playtimeSummary.played", {
+        played: playtimeSummary.playedGames,
+        total: playtimeSummary.games,
+      }),
+      playtimeSummary.topGame
+        ? t("library.playtimeSummary.top", {
+          title: playtimeSummary.topGame.title,
+          time: formatTotalPlaytime(playtimeSummary.topGameSeconds, t("home.continuePlaying.neverPlayed"), playtimeUnits(t)),
+        })
+        : null,
+    ].filter((part): part is string => Boolean(part)).join(" · ")
+    : null;
+
   const libraryCountLabel = hasActiveLibraryFilters || librarySearchHasQuery
     ? t("library.filteredGameCount", { shown: visibleLibraryGames.length, total: libraryCount, count: libraryCount })
     : t("library.gameCount", { count: libraryCount });
@@ -745,6 +771,10 @@ export const LibraryPage = memo(function LibraryPage({
 
         <span className="library-count">{libraryCountLabel}</span>
       </header>
+
+      {playtimeSummaryLine && (
+        <p className="library-playtime-summary">{playtimeSummaryLine}</p>
+      )}
 
       {(collections.length > 0 || onCreateCollection) && (
         <div className="library-collection-bar">

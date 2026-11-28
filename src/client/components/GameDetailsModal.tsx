@@ -6,6 +6,7 @@ import { getJapaneseGameDescription } from "../utils/localizedGameText";
 import { getStoreDisplayName } from "./GameCard";
 import { controlLabel, genreLabel, nvidiaTechLabel, playTypeLabel } from "../lib/gfnLabels";
 import { isFreePlayGame } from "../lib/freeGames";
+import { useEscapeToClose } from "../lib/dialogKeys";
 
 export interface GameDetailsModalProps {
   game: GameInfo;
@@ -51,6 +52,8 @@ export function GameDetailsModal({
   lockedReason,
 }: GameDetailsModalProps): JSX.Element {
   const { t } = useTranslation();
+  // Escape closes the dialog, like every other overlay in the app.
+  useEscapeToClose(true, onClose);
   const stores = (game.availableStores ?? []).map((store) => getStoreDisplayName(store, t));
   const playerCount = [game.maxLocalPlayers, game.maxOnlinePlayers].filter((value): value is number => typeof value === "number" && value > 0);
   const description = getJapaneseGameDescription(game.longDescription, game.description, t("library.descriptionUnavailable"));

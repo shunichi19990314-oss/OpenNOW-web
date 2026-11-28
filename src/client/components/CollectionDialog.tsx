@@ -10,6 +10,7 @@ import {
   type GameCollection,
 } from "../lib/collections";
 import { panelSpring } from "./MotionProvider";
+import { useEscapeToClose } from "../lib/dialogKeys";
 
 export type CollectionDialogMode = "create" | "rename" | "delete";
 
@@ -42,6 +43,9 @@ export function CollectionDialog({
   onSubmit,
 }: CollectionDialogProps): JSX.Element {
   const { t } = useTranslation();
+  // The input keeps focus, so a window-level Escape handler is what actually
+  // receives the key (the dialog itself never takes focus).
+  useEscapeToClose(true, onCancel);
   const [name, setName] = useState(collection?.name ?? "");
   const [touched, setTouched] = useState(false);
   const inputRef = useRef<HTMLInputElement | null>(null);

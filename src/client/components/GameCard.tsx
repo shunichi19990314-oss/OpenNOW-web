@@ -237,6 +237,9 @@ export const GameCard = memo(function GameCard({
 
   return (
     <m.div
+      // Lets keyboard navigation scroll the newly selected card into view
+      // without walking the DOM by position.
+      data-game-id={game.id}
       className={`game-card ${isSelected ? "selected" : ""}${locked ? " game-card--locked" : ""}`}
       whileHover={{ y: -2, scale: 1.01 }}
       whileTap={{ scale: 0.985 }}

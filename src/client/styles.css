@@ -14830,3 +14830,18 @@ body {
   opacity: 0.6;
   cursor: default;
 }
+
+/* Library playtime summary: one quiet line under the toolbar, above the
+   collection bar. It reports, it does not compete with the chips. */
+.library-playtime-summary {
+  margin: 2px 0 12px;
+  color: var(--ink-muted);
+  font-size: 0.78rem;
+  line-height: 1.5;
+}
+
+@media (max-width: 640px) {
+  .library-playtime-summary {
+    margin-bottom: 10px;
+  }
+}
