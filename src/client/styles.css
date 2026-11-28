@@ -3693,9 +3693,17 @@ body,
 }
 .game-details-hero {
   position: relative;
-  min-height: 260px;
+  /* A defined box with a real aspect ratio. When this was `min-height` only,
+     the absolutely-positioned art could overflow it, and the shade gradient
+     (meant for the art) painted over the first lines of the description. */
+  aspect-ratio: 16 / 9;
+  min-height: 220px;
+  max-height: 46vh;
   overflow: hidden;
   background: var(--bg-c);
+  isolation: isolate;
+  /* Round the top corners here so the art cannot square them off. */
+  border-radius: var(--r-2xl) var(--r-2xl) 0 0;
 }
 .game-details-hero > img,
 .game-details-hero-placeholder {
@@ -3735,6 +3743,12 @@ body,
 }
 .game-details-content {
   padding: 24px 28px 28px;
+  /* Own stacking level, so the shade gradient that belongs to the hero art
+     can never paint over the first lines of the description. No background
+     here: `background: inherit` copied the modal's gradient and produced a
+     visible seam where the two boxes met. */
+  position: relative;
+  z-index: 1;
 }
 .game-details-actions {
   display: flex;
@@ -3767,10 +3781,16 @@ body,
   color: var(--accent);
 }
 .game-details-description {
+  /* Preceded by either the action row (20px) or a note (16px + 14px); a
+     definition that always applied 20px left the note glued to the text. */
   margin-top: 20px;
   color: var(--ink-soft);
   line-height: 1.7;
   white-space: pre-line;
+}
+
+.game-details-purchase-note + .game-details-description {
+  margin-top: 14px;
 }
 .game-details-meta,
 .game-details-tags {
@@ -14835,7 +14855,9 @@ body {
 
 /* Details modal: store hand-off note under the primary action. */
 .game-details-purchase-note {
-  margin: 0 0 4px;
+  /* Sits directly under the action row: without a top margin the buttons and
+     the note touched (the row itself only has a bottom gap). */
+  margin: 16px 0 0;
   padding: 8px 11px;
   border-radius: var(--r-sm, 8px);
   border: 1px solid color-mix(in srgb, var(--accent) 26%, transparent);
@@ -15280,4 +15302,68 @@ body {
   padding-bottom: 24px;
   margin-top: -6px;
   margin-bottom: -12px;
+}
+
+/* ======================================================
+   DETAILS MODAL — LAYOUT FIXES
+   Two reported defects:
+   1. the top of the description was hidden,
+   2. the action row and the note below it touched.
+   The spacing rules above handle (2); these handle the hero box, the scroll
+   container and the reserved space behind the close button.
+   ====================================================== */
+
+/* `object-fit: cover` already crops; the inherited `min-height: 260px` on the
+   img forced the box taller than its container when the modal was narrow. */
+.game-details-hero > img {
+  min-height: 0;
+  height: 100%;
+}
+
+/* The close button must sit above the hero art *and* the content layer that
+   was lifted with z-index: 1 (see `.game-details-content`). */
+.game-details-close {
+  position: absolute;
+  z-index: 6;
+}
+
+/* Scroll padding so focusing the title (or an anchor) never hides it under the
+   modal's own top edge. */
+.game-details-modal {
+  scroll-padding-top: 16px;
+  scrollbar-gutter: stable;
+  overscroll-behavior: contain;
+}
+
+/* --- Details modal on short viewports ---------------------------------------
+   The hero is capped at 46vh so the action row and the description stay
+   reachable without scrolling to the bottom on a laptop screen. Below 640px
+   the modal is nearly full-width, and a 16:9 hero there leaves room for only
+   one line of text, so the art gets a shorter box. */
+@media (max-height: 760px) {
+  .game-details-hero {
+    min-height: 180px;
+    max-height: 34vh;
+  }
+
+  .game-details-content {
+    padding: 20px 22px 24px;
+  }
+}
+
+@media (max-width: 640px) {
+  .game-details-hero {
+    min-height: 160px;
+    max-height: 30vh;
+  }
+
+  .game-details-heading {
+    left: 20px;
+    right: 64px;
+    bottom: 18px;
+  }
+
+  .game-details-content {
+    padding: 18px 20px 22px;
+  }
 }
