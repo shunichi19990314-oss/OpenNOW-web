@@ -29,17 +29,44 @@ function lastBody(selector: string): string {
 }
 
 describe("details modal hero box", () => {
-  it("constrains the hero instead of only setting a minimum height", () => {
-    const hero = bodies(".game-details-hero").join("\n");
-    // A `min-height` alone let the absolutely positioned art overflow and the
-    // shade gradient paint over the description's first lines.
-    expect(hero).toContain("aspect-ratio");
+  it("gives the hero an explicit height instead of deriving it from its width", () => {
+    const hero = lastBody(".game-details-hero");
+    // `aspect-ratio` made the height follow the width, so the art stayed at
+    // its intrinsic (narrow) size and only covered part of the modal.
+    expect(hero).toContain("height:");
+    expect(hero).not.toContain("aspect-ratio");
     expect(hero).toContain("overflow: hidden");
   });
 
-  it("does not force the image taller than its own box", () => {
-    const image = bodies(".game-details-hero > img").join("\n");
+  it("lets the art fill the whole content width", () => {
+    // The rule is shared with the placeholder box: `.game-details-hero > img,
+    // .game-details-hero-placeholder { … }`.
+    const image =
+      /\.game-details-hero > img,\s*\.game-details-hero-placeholder\s*\{([^}]*)\}/.exec(css)?.[1] ?? "";
+    expect(image).toContain("width: 100%");
+    expect(image).toContain("object-fit: cover");
+    // `min-height: 260px` kept the art from shrinking into its box.
     expect(image).toContain("min-height: 0");
+  });
+
+  it("uses a modal wide enough for the hero to be a header, not a thumbnail", () => {
+    const width = /width:\s*min\((\d+)px,\s*100%\)/.exec(bodies(".game-details-modal")[0])?.[1];
+    expect(Number(width)).toBeGreaterThanOrEqual(960);
+  });
+
+  it("ends the hero shade gently so the hero edge is not a second dark band", () => {
+    const shade = lastBody(".game-details-hero-shade");
+    // A gradient that reaches full opacity at 100% draws a hard line on the
+    // hero edge; the last stop must be lighter than the one before it.
+    const stops = [...shade.matchAll(/rgba\(0,\s*0,\s*0,\s*([\d.]+)\)\s*(\d+)%/g)].map((match) => ({
+      alpha: Number(match[1]),
+      at: Number(match[2]),
+    }));
+    expect(stops.length).toBeGreaterThan(2);
+    const last = stops[stops.length - 1];
+    const previous = stops[stops.length - 2];
+    expect(last.at).toBe(100);
+    expect(last.alpha).toBeLessThan(previous.alpha);
   });
 
   it("keeps the content above the hero's stacking context", () => {
