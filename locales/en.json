@@ -368,7 +368,12 @@
     },
     "hideGame": "Hide from library",
     "unhideGame": "Unhide from library",
-    "hideGameHint": "Right-click a tile and choose Hide from library."
+    "hideGameHint": "Right-click a tile and choose Hide from library.",
+    "playtimeSummary": {
+      "total": "{{time}} total",
+      "played": "{{played}} of {{total}} played",
+      "top": "Most played: {{title}} ({{time}})"
+    }
   },
   "gameCard": {
     "selectGame": "Select {{title}}",

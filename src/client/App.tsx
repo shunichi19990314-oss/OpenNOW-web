@@ -168,6 +168,7 @@ import { AI_PLAYER_ACTION_NAMES } from "./lib/aiPlayerActions";
 import { captureFrameFromVideo } from "./lib/aiPlayerCapture";
 import { QueueServerSelectModal } from "./components/QueueServerSelectModal";
 import { CommandPalette } from "./components/CommandPalette";
+import { arrowKeyOf, isTypingTarget, nextGridIndex, readGridColumns } from "./lib/dialogKeys";
 import { ReleaseHighlightsModal } from "./components/ReleaseHighlightsModal";
 import { overlayMotion, pageTransition, standardEase } from "./components/MotionProvider";
 import { LazyShaderAtmosphere } from "./components/LazyShaderAtmosphere";
@@ -4013,12 +4014,17 @@ export function App(): JSX.Element {
   // settings › game; the Library keeps them (they are owned, and the tier gate
   // is a plan problem the card explains).
   const filteredGames = useMemo(() => {
-    if (!settings.hideUnplayableGames || games.length === 0) return games;
-    return games.filter((game) => {
+    if (games.length === 0) return games;
+    // Hidden titles never reach the store grid; the Library's "Hidden" chip is
+    // where they come back. Filtering here rather than only inside HomePage
+    // keeps arrow-key navigation on exactly the cards that are rendered.
+    const visible = games.filter((game) => !settings.hiddenGameIds.includes(game.id));
+    if (!settings.hideUnplayableGames) return visible;
+    return visible.filter((game) => {
       const access = gameAccess.get(game.id);
       return !access || !isGameLockedForAccount(access);
     });
-  }, [gameAccess, games, settings.hideUnplayableGames]);
+  }, [gameAccess, games, settings.hideUnplayableGames, settings.hiddenGameIds]);
 
   const filteredLibraryGames = useMemo(() => {
     const query = searchQuery.trim();
@@ -4076,6 +4082,55 @@ export function App(): JSX.Element {
     () => ["home", "library", "captures", "friends", "settings"] as const,
     [],
   );
+  /**
+   * Arrow keys walk the visible grid and keep the highlighted card on screen.
+   *
+   * The shelf rows already do this with a gamepad; a keyboard visitor had no
+   * way to move the selection at all. Keys owned by something else (a search
+   * box, an open dialog, a stream) are left alone, and the selection is only
+   * scrolled into view — Enter still runs whatever has focus, so this never
+   * launches a game on its own.
+   */
+  useEffect(() => {
+    if (streamStatus !== "idle" || exitPrompt.open || commandPaletteOpen || shortcutsOpen) return undefined;
+    if (currentPage !== "home" && currentPage !== "library") return undefined;
+
+    const visibleGames = currentPage === "home" ? filteredGames : filteredLibraryGames;
+
+    const handleArrowNavigation = (event: KeyboardEvent): void => {
+      if (event.defaultPrevented || event.ctrlKey || event.metaKey || event.altKey || event.shiftKey) return;
+      const arrow = arrowKeyOf(event);
+      if (!arrow || isTypingTarget(event.target)) return;
+      if (visibleGames.length === 0) return;
+
+      const pageRoot = document.querySelector(currentPage === "home" ? ".home-page" : ".library-page");
+      const grid = pageRoot?.querySelector(".game-grid") ?? null;
+      const columns = readGridColumns(grid);
+      const currentIndex = visibleGames.findIndex((game) => game.id === selectedGameId);
+      const nextIndex = nextGridIndex(currentIndex, arrow, visibleGames.length, columns);
+      if (nextIndex === null) return;
+
+      event.preventDefault();
+      const nextGame = visibleGames[nextIndex];
+      setSelectedGameId(nextGame.id);
+      const card = grid?.querySelector<HTMLElement>(`[data-game-id="${nextGame.id}"]`);
+      card?.scrollIntoView({ block: "nearest", inline: "nearest" });
+    };
+
+    window.addEventListener("keydown", handleArrowNavigation);
+    return () => window.removeEventListener("keydown", handleArrowNavigation);
+  }, [
+    commandPaletteOpen,
+    currentPage,
+    exitPrompt.open,
+    filteredGames,
+    filteredLibraryGames,
+    selectedGameId,
+    setSelectedGameId,
+    shortcutsOpen,
+    streamStatus,
+  ]);
+
   const commandPaletteContext = useMemo(() => ({
     // Hidden games stay out of the palette, like the desktop shell; the Library's
     // "Hidden" chip is where they can be restored.

@@ -365,7 +365,12 @@
     },
     "hideGame": "ライブラリから非表示",
     "unhideGame": "ライブラリに戻す",
-    "hideGameHint": "タイルを右クリックすると「ライブラリから非表示」を選べます。"
+    "hideGameHint": "タイルを右クリックすると「ライブラリから非表示」を選べます。",
+    "playtimeSummary": {
+      "total": "累計 {{time}}",
+      "played": "{{played}}/{{total}} 本をプレイ",
+      "top": "最多プレイ: {{title}}（{{time}}）"
+    }
   },
   "gameCard": {
     "selectGame": "{{title}}を選択します",
